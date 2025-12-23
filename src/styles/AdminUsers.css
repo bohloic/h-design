@@ -1,0 +1,269 @@
+/* AdminUsers.css */
+
+.admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+}
+
+.admin-title {
+  text-align: center;
+  margin-bottom: 40px;
+  font-size: 2.5rem;
+  color: #2c3e50;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* --- Section Formulaire (Style "Panneau de contrôle") --- */
+.form-section {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  margin-bottom: 50px;
+  border: 1px solid #f0f0f0;
+}
+
+.form-title {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #555;
+  font-size: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.input-field {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.input-field:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.form-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+/* --- Boutons --- */
+.btn {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: #27ae60; /* Vert pour créer/valider */
+  color: white;
+}
+
+.btn-warning {
+  background-color: #f39c12; /* Orange pour modifier */
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.btn-danger {
+  background-color: #e74c3c;
+  color: white;
+}
+
+/* --- La Grille des Utilisateurs (Style Collection) --- */
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+.user-card {
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.user-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+/* Petit entête décoratif dans la carte */
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.avatar-placeholder {
+  width: 50px;
+  height: 50px;
+  background-color: #34495e;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-right: 15px;
+}
+
+.user-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.user-email {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+}
+
+.loyalty-badge {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  display: inline-block;
+  margin-bottom: 20px;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #eee;
+  padding-top: 15px;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: background 0.2s;
+}
+
+.edit-btn { color: #3498db; }
+.edit-btn:hover { background: #ebf5fb; }
+
+.delete-btn { color: #e74c3c; }
+.delete-btn:hover { background: #fcebe9; }
+
+
+/* --- Styles pour la Modale --- */
+
+/* Le bouton principal pour ouvrir la modale */
+.add-user-btn {
+  background-color: #2c3e50;
+  color: white;
+  padding: 15px 30px;
+  border-radius: 30px;
+  border: none;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: block;
+  margin: 0 auto 30px auto; /* Centré horizontalement */
+  box-shadow: 0 4px 15px rgba(44, 62, 80, 0.3);
+  transition: transform 0.2s;
+}
+
+.add-user-btn:hover {
+  transform: scale(1.05);
+  background-color: #34495e;
+}
+
+/* L'arrière-plan sombre qui couvre tout l'écran */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6); /* Fond semi-transparent */
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Centre la modale verticalement et horizontalement */
+  z-index: 1000;
+  backdrop-filter: blur(3px); /* Petit effet de flou sympa */
+}
+
+/* La boîte blanche de la modale */
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 500px; /* Largeur max pour ne pas être trop large */
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Animation d'apparition */
+@keyframes slideIn {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Bouton pour fermer (la croix) */
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.close-modal-btn:hover {
+  color: #e74c3c;
+}
+
+/* Ajustement du formulaire dans la modale (plus compact) */
+.modal-content .form-grid {
+  display: flex; /* On passe en flex colonne pour la modale, c'est plus lisible */
+  flex-direction: column; 
+  gap: 15px;
+}
