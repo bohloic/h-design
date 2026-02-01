@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'; // 1. Import nécessaire
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingCart } from 'lucide-react';
 import { CartItem } from '../../types';
 import { formatCurrency } from '../../constants';
+import { BASE_IMG_URL } from './images/VoirImage';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -57,7 +58,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
           ) : (
             items.map((item) => (
               <div key={item.id} className="flex space-x-4 animate-fade-in">
-                <img src={item.image} alt={item.name} className="w-20 h-24 object-cover rounded-lg" />
+                <img src={BASE_IMG_URL + item.image} alt={item.name} className="w-20 h-24 object-cover rounded-lg" />
                 <div className="flex-1">
                   <h3 className="font-semibold text-slate-800">{item.name}</h3>
                   <p className="text-sm text-slate-500 mb-2">{formatCurrency(item.price)}</p>

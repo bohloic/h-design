@@ -1,0 +1,99 @@
+/* src/components/ProductCard.css & CollectionCarousel.css combinés */
+
+/* --- Layout Carousel --- */
+.carousel-section {
+  padding: 2rem 5%;
+  max-width: 1400px; /* Limite la largeur sur les très grands écrans */
+  margin: 0 auto;
+}
+
+.carousel-title {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-transform: capitalize;
+  font-weight: bold;
+}
+
+/* --- Style de la Carte Produit --- */
+.product-card {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+  background: white;
+  height: 100%; /* Important pour que toutes les cartes aient la même hauteur */
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.image-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3/4; /* Format portrait standard e-commerce */
+  overflow: hidden;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-info {
+  padding: 10px;
+  text-align: left;
+}
+
+.product-name {
+  font-size: 0.95rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Coupe le texte s'il est trop long */
+}
+
+.product-price {
+  font-weight: bold;
+  color: #333;
+  margin-top: 5px;
+}
+
+/* --- Palette de couleurs --- */
+.color-palette {
+  padding: 0 10px 15px 10px;
+  display: flex;
+  gap: 8px;
+  margin-top: auto; /* Pousse la palette vers le bas */
+}
+
+.color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.color-dot:hover {
+  transform: scale(1.2);
+  border-color: #333;
+}
+
+/* Dans ProductCard.css */
+.card {
+  width: 100%; /* La carte prend toute la place allouée par le slide */
+  height: auto;
+  /* min-width: 0;  <-- Parfois nécessaire avec Flexbox */
+}
+
+.card img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}

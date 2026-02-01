@@ -1,37 +1,24 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
+import { useLogout } from '../utils/hooks/useLogout';
 
-const LogoutButton = () => {
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-        // 1. SUPPRIMER LA PREUVE D'IDENTITÉ
-        // On retire le token du stockage
-        localStorage.removeItem('token');
-
-        // (Optionnel) Si tu stockes aussi les infos utilisateur, supprime-les aussi
-        localStorage.removeItem('userInfo'); 
-
-        // 2. REDIRIGER L'UTILISATEUR
-        // On le renvoie vers la page de login ou l'accueil
-        navigate('/login'); 
-        
-        // (Optionnel) Recharger la page pour être sûr de vider tous les états en mémoire
-        window.location.reload(); 
-    };
+// En JavaScript, on enlève "interface" et ": React.FC"
+const LogoutButton = ({ className = "" }) => {
+    const logout = useLogout();
+    const deconnect = () => {
+        localStorage.clear() 
+        logout()   
+    }
+    
+    
 
     return (
         <button 
-            onClick={()=> handleLogout()}
-            style={{
-                backgroundColor: '#ff4d4d', 
-                color: 'white', 
-                padding: '10px 20px', 
-                border: 'none', 
-                cursor: 'pointer'
-            }}
+            onClick={deconnect} 
+            className={`flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg transition-colors font-medium ${className}`}
         >
-            Se déconnecter
+            <LogOut size={20} />
+            <span>Se déconnecter</span>
         </button>
     );
 };

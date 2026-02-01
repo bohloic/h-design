@@ -1,0 +1,1 @@
+export const BASE_IMG_URL = "http://localhost:205/images/";

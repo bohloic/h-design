@@ -1,10 +1,11 @@
-
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 import { Product, Order } from "../typesAdmin";
-import { Type } from "lucide-react";
+// import { Type } from "lucide-react";
 
-const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 export const getGiftAdvice = async (prompt: string): Promise<string> => {
   try {
@@ -71,4 +72,93 @@ export const analyzeSales = async (orders: Order[], products: Product[]) => {
     console.error("AI Error:", error);
     return ["Optimisez vos stocks sur les best-sellers.", "Lancez une promotion sur les articles à faible rotation.", "Améliorez le suivi des commandes clients."];
   }
+};
+
+
+// export const getDesignSuggestions = async (prompt: string) => {
+//   try {
+//     const response = await ai.models.generateContent({
+//       model: 'gemini-3-flash-preview',
+//       contents: `L'utilisateur veut un design pour un produit personnalisé sur le thème suivant : "${prompt}". 
+//       Suggère 3 phrases d'accroche ou slogans courts et stylés en français. 
+//       Réponds uniquement au format JSON.`,
+//       config: {
+//         responseMimeType: "application/json",
+//         responseSchema: {
+//           type: Type.OBJECT,
+//           properties: {
+//             suggestions: {
+//               type: Type.ARRAY,
+//               items: { type: Type.STRING }
+//             }
+//           }
+//         }
+//       }
+//     });
+
+//     return JSON.parse(response.text).suggestions as string[];
+//   } catch (error) {
+//     console.error("Gemini Error:", error);
+//     return ["Inspiré par le futur", "Design Unique", "Création Libre"];
+//   }
+// };
+
+
+
+// export const generateDesignImage = async (prompt: string): Promise<string | null> => {
+//   try {
+//     const fullPrompt = `Isolated sticker style graphic of: ${prompt}. Pure white background, high contrast, clean edges, professional illustration, digital art style, no shadows, no text unless requested. Perfect for a t-shirt print.`;
+    
+//     const response = await ai.models.generateContent({
+//       model: 'gemini-2.5-flash-image',
+//       contents: {
+//         parts: [
+//           { text: fullPrompt }
+//         ]
+//       },
+//       config: {
+//         imageConfig: {
+//           aspectRatio: "1:1"
+//         }
+//       }
+//     });
+
+//     for (const part of response.candidates[0].content.parts) {
+//       if (part.inlineData) {
+//         return `data:image/png;base64,${part.inlineData.data}`;
+//       }
+//     }
+//     return null;
+//   } catch (error) {
+//     console.error("Gemini Image Gen Error:", error);
+//     return null;
+//   }
+// };
+
+
+
+
+
+
+// Simulation simple pour l'instant (mock)
+export const getDesignSuggestions = async (prompt: string): Promise<string[]> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([
+        `${prompt} - Version Vintage`,
+        `Super ${prompt} 2024`,
+        `I love ${prompt}`,
+        `Keep Calm and ${prompt}`
+      ]);
+    }, 1000);
+  });
+};
+
+export const generateDesignImage = async (prompt: string): Promise<string> => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      // Retourne une image placeholder pour tester
+      resolve(`https://source.unsplash.com/random/500x500/?${encodeURIComponent(prompt)}`);
+    }, 1500);
+  });
 };

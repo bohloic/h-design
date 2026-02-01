@@ -1,42 +1,155 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { CartItem, Product } from './types';
+import React, { useState, useEffect } from 'react';
+import { authFetch } from '@/src/utils/apiClient.ts';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { CartItem, DecodedToken, Product } from './types';
+import { jwtDecode } from 'jwt-decode';
 
 // Components
 import Navbar from './src/components/Navbar.tsx';
 import CartDrawer from './src/components/CartDrawer.tsx';
 import Snowfall from './src/components/Snowfall.tsx';
 import Footer from './src/components/Footer.tsx';
-import ProtectedRoute from './src/components/ProtectedRoute.tsx'; // Assurez-vous que ce fichier existe
+import ScrollToTop from './src/components/ScrollToTop.tsx';
+import ChatWidget from './src/components/ChatWidget.jsx';
+
+// Routes Guards
+import AdminRoute from './src/components/AdminRoute.jsx';
+import PrivateRoute from './src/components/PrivateRoute.tsx';
+import GuestRoute from './src/components/GuestRoute.tsx';
 
 // Pages
 import Home from './pages/Home';
 import Shop from './pages/Shop';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './pages/dashboard/Dashboard.tsx';
 import Checkout from './pages/Checkout';
 import Auth from './pages/Auth';
+import NotFound from './pages/NotFound';
+import OrderConfirmed from './pages/OrderConfirmed.tsx';
+import ProductDetails from './pages/products/ProductDetails.tsx';
+import ProductCustomizer from './pages/products/ProductCustomizer.tsx';
 
 // Admin Pages & Layouts
 import { AppLayout } from './src/layouts/AppLayout';
-import { DashboardView } from './pages/admin/DashboardView';
-import { ProductView } from './pages/admin/ProductView';
-import { OrderView } from './pages/admin/OrderView';
-import { CustomerView } from './pages/admin/CustomerView';
+import { DashboardView } from './pages/admin/DashboardView.tsx';
+import { ProductView } from './pages/admin/ProductView.tsx';
+import { OrderView } from './pages/admin/OrderView.tsx';
+import { CustomerView } from './pages/admin/CustomerView.tsx';
 import { CollectionView } from './pages/admin/CollectionView.tsx';
-import Error from './src/components/error/index.tsx';
-import NotFound from './pages/NotFound';
+import { CategoryView } from './pages/admin/CategoryView.tsx';
+import { DeliveryView } from './pages/admin/DeliveryView.tsx';
+import { OrderDetailView } from './pages/admin/OrderDetailView.tsx';
+import PaymentCallback from './pages/PaymentCallback.tsx';
+
 
 const App: React.FC = () => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  
+  // --- GESTION DU PANIER ---
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const savedCart = localStorage.getItem('cart');
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch (error) {
+      console.error("Erreur lecture panier", error);
+      return [];
+    }
+  });
+  
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // CORRECTION 1 : Force la valeur en booléen (true/false) avec '!!'
-  // Si le token existe, ça vaut true. Sinon, false.
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localStorage.getItem('token'));
+  // --- CORRECTION GESTION USER DATA ---
+  const [data, setData] = useState<any>(() => {
+    try {
+      const saveData = localStorage.getItem('data');
+      return saveData ? JSON.parse(saveData) : {};
+    } catch (error) {
+      console.error("Erreur lecture user data", error);
+      return {};
+    }
+  });
 
+  // 👇 LE BLOC MAGIQUE POUR VIDER LE PANIER APRÈS PAYSTACK 👇
+  useEffect(() => {
+    const checkCart = () => {
+      // On vérifie si le localStorage contient encore le panier
+      const savedCart = localStorage.getItem('cart');
+      
+      if (savedCart) {
+        try {
+            setCart(JSON.parse(savedCart));
+        } catch (e) {
+            setCart([]);
+        }
+      } else {
+        // Si le localStorage est vide (ce que fait PaymentCallback), on vide l'état React
+        setCart([]);
+      }
+    };
+
+    // On écoute le signal envoyé par PaymentCallback
+    window.addEventListener('cartUpdated', checkCart);
+    // On écoute aussi les changements d'onglets
+    window.addEventListener('storage', checkCart);
+
+    return () => {
+      window.removeEventListener('cartUpdated', checkCart);
+      window.removeEventListener('storage', checkCart);
+    };
+  }, []);
+  // 👆 FIN DU BLOC MAGIQUE 👆
+
+
+  // --- SAUVEGARDE PANIER ---
+  useEffect(() => {
+    // On ne sauvegarde que si le panier n'est pas vide pour éviter d'écraser le vidage
+    // Mais ici on veut synchroniser, donc on laisse le useEffect standard
+    localStorage.setItem('cart', JSON.stringify(cart));
+  }, [cart]);
+
+  // --- AUTHENTIFICATION & USER DATA ---
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+
+    if (token) {
+      setIsAuthenticated(true);
+      try {
+        const decodedToken = jwtDecode<DecodedToken>(token);
+        
+        if (decodedToken.userId) {
+            const fetchUser = async () => {
+              try {
+                const response = await authFetch(`/api/users/${decodedToken.userId}`);
+                if(response.ok) {
+                    const userData = await response.json();
+                    const { password, ...safeUserData } = userData; 
+                    setData(safeUserData);
+                    localStorage.setItem('data', JSON.stringify(safeUserData));
+                }
+              } catch (err) {
+                  console.error("Erreur fetch user", err);
+              }
+            };
+            fetchUser();
+        }
+      } catch (error) {
+        console.error("Erreur token invalide", error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('data');
+        setIsAuthenticated(false);
+      }
+    } else {
+        setIsAuthenticated(false);
+    }
+  }, []);
+
+
+  // --- LOGIQUE PANIER ---
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('data');
     setIsAuthenticated(false);
+    setData({});
+    window.location.href = '/'; 
   };
 
   const addToCart = (product: Product) => {
@@ -64,10 +177,13 @@ const App: React.FC = () => {
 
   const clearCart = () => setCart([]);
 
+  
   return (
     <Router>
+      <ScrollToTop />
       <div className="min-h-screen flex flex-col">
         <Snowfall />
+        
         <Navbar 
           cartCount={cart.reduce((sum, i) => sum + i.quantity, 0)} 
           onOpenCart={() => setIsCartOpen(true)} 
@@ -75,72 +191,49 @@ const App: React.FC = () => {
           onLogout={handleLogout}
         />
         
+        <ChatWidget />
+        
         <main className="flex-grow">
           <Routes>
-            {/* Routes Publiques */}
+            {/* --- Routes Publiques --- */}
             <Route path="/" element={<Home onAddToCart={addToCart} />} />
-            {/* <Route path="*" element={<Error />} /> */}
-            
             <Route path="/boutique" element={<Shop onAddToCart={addToCart} />} />
+            <Route path="/boutique/produit/:slug" element={<ProductDetails onAddToCart={addToCart} />} />
+            <Route path="/personnaliser/mon-design" element={<ProductCustomizer onAddToCart={addToCart} />} />
             
-            {/* Login : Redirige vers Dashboard si déjà connecté */}
-            <Route 
-              path="/login" 
-              element={
-                isAuthenticated ? <Navigate to="/dashboard" replace /> : <Auth onLoginSuccess={() => setIsAuthenticated(true)} />
-              } 
-            />
+            {/* --- Routes Invités (Login) --- */}
+            <Route element={<GuestRoute />}>
+              <Route 
+                path="/login" 
+                element={<Auth onLoginSuccess={() => setIsAuthenticated(true)} />} 
+              />
+            </Route>
 
-            {/* Dashboard Client Protégé */}
-            <Route 
-              path="/dashboard" 
-              element={
-                isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />
-              } 
-            />
-
-            {/* --- SECTION ADMIN --- */}
-            {/* CORRECTION 2 : On passe isAuthenticated au ProtectedRoute (si votre composant le gère) */}
-            {/* Note : Si ProtectedRoute utilise un contexte, pas besoin de passer la prop. Sinon, adaptez ProtectedRoute. */}
-            <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
+            {/* --- Routes Privées (Clients) --- */}
+            <Route element={<PrivateRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/checkout" element={<Checkout cartItems={cart} onClearCart={clearCart} data={data} />} />
               
-              <Route path="/admin" element={
-                <AppLayout title="Tableau de bord">
-                  <DashboardView />
-                </AppLayout>
-              } />
+              {/* Route de retour Paystack */}
+              <Route path="/payment/callback" element={<PaymentCallback />} />
               
-              <Route path="/admin/products" element={
-                <AppLayout title="Inventaire Produits">
-                  <ProductView />
-                </AppLayout>
-              } />
-              
-              <Route path="/admin/orders" element={
-                <AppLayout title="Gestion des Ventes">
-                  <OrderView />
-                </AppLayout>
-              } />
-              
-              <Route path="/admin/customers" element={
-                <AppLayout title="Gestion Clients">
-                  <CustomerView />
-                </AppLayout>
-              } />
-
-              <Route path="/admin/collections" element={
-                <AppLayout title="Gestion des  collections">
-                  <CollectionView />
-                </AppLayout>
-              } />
+              <Route path="/order-confirmed" element={<OrderConfirmed /> } />
+            </Route>
+            
+            {/* --- Routes Admin --- */}
+            <Route element={<AdminRoute />}> 
+              <Route path="/admin" element={<AppLayout title="Tableau de bord"><DashboardView /></AppLayout>} />
+              <Route path="/admin/products" element={<AppLayout title="Inventaire Produits"><ProductView /></AppLayout>} />
+              <Route path="/admin/orders" element={<AppLayout title="Gestion des Ventes"><OrderView /></AppLayout>} />
+              <Route path="/admin/orders/:id" element={<AppLayout title="Gestion des details de ventes"><OrderDetailView /></AppLayout>} />
+              <Route path="/admin/customers" element={<AppLayout title="Gestion Clients"><CustomerView /></AppLayout>} />
+              <Route path="/admin/collections" element={<AppLayout title="Gestion des collections"><CollectionView /></AppLayout>} />
+              <Route path="/admin/categories" element={<AppLayout title="Gestion des Catégories"><CategoryView /></AppLayout>} />
+              <Route path="/admin/deliveries" element={<AppLayout title="Gestion des livraisons"><DeliveryView /></AppLayout>} />
 
             </Route> 
-            {/* Fin de la section Admin - CORRECTION 3 : J'ai supprimé le </Route> en trop ici */}
 
-
-            {/* Checkout */}
-            <Route path="/checkout" element={<Checkout cartItems={cart} onClearCart={clearCart} />} />
-
+            {/* 404 */}
             <Route path="*" element={<NotFound />} /> 
           </Routes>
         </main>
@@ -153,10 +246,7 @@ const App: React.FC = () => {
           items={cart}
           onUpdateQuantity={updateQuantity}
           onRemove={removeFromCart}
-          onCheckout={() => {
-            setIsCartOpen(false);
-            // window.location.hash = '/checkout';
-          }}
+          onCheckout={() => setIsCartOpen(false)}
         />
       </div>
     </Router>

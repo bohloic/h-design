@@ -1,0 +1,1 @@
+export const FONTS = ['Arial', 'Verdana', 'Helvetica', 'Times New Roman', 'Courier New', 'Georgia', 'Impact', 'Comic Sans MS'];

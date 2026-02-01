@@ -1,18 +1,18 @@
-// src/Auth.jsx
 import React, { useState } from 'react';
-import './../src/styles/Auth.css'; // On importe le CSS
-import { useNavigate } from 'react-router-dom';
+import { authFetch } from '../src/utils/apiClient';
+import { useLocation, useNavigate } from 'react-router-dom';
+// Ajout d'icônes pour un look pro
+import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 function Auth({ onLoginSuccess }) {
 
-    const navigate = useNavigate(); // <--- Hook pour la redirection
+    const navigate = useNavigate();
+    const location = useLocation();
+    
+    // --- STATES ---
+    const [isLoginMode, setIsLoginMode] = useState(true); // Par défaut sur Connexion
+    const [isLoading, setIsLoading] = useState(false); // État de chargement visuel
 
-
-    // --- STATES (États) ---
-    // 1. Basculer entre Connexion (true) et Inscription (false)
-    const [isLoginMode, setIsLoginMode] = useState(false);
-
-    // 2. Stocker les données du formulaire
     const [formData, setFormData] = useState({
         nom: '',
         prenom: '',
@@ -20,45 +20,37 @@ function Auth({ onLoginSuccess }) {
         password: ''
     });
 
-    // 3. Gérer les messages de succès ou d'erreur
     const [status, setStatus] = useState({ type: '', message: '' });
 
-    // ADRESSE DU BACKEND (Vérifiez votre port !)
-    const API_BASE_URL = "http://localhost:205/api";
+    const API_BASE_URL = "/api";
 
+    // --- HANDLERS ---
 
-    // --- HANDLERS (Fonctions) ---
-
-    // Gère le changement dans les inputs
     const handleChange = (e) => {
         setFormData({
-            ...formData, // On garde les autres champs
-            [e.target.name]: e.target.value // On met à jour celui qui change
+            ...formData,
+            [e.target.name]: e.target.value
         });
     };
 
-    // Gère la soumission du formulaire
     const handleSubmit = async (e) => {
-        e.preventDefault(); // Empêche le rechargement de la page
-        setStatus({ type: '', message: '' }); // Reset des messages
+        e.preventDefault(); 
+        setStatus({ type: '', message: '' }); 
+        setIsLoading(true);
 
-        // Détermination de l'URL et du Body selon le mode
         let url = '';
         let bodyData = {};
 
         if (isLoginMode) {
-            // --- MODE CONNEXION ---
-            url = `${API_BASE_URL}/login`; // TODO: Créer cette route côté backend !
+            url = `${API_BASE_URL}/login`;
             bodyData = { email: formData.email, password: formData.password };
         } else {
-            // --- MODE INSCRIPTION ---
-            url = `${API_BASE_URL}/register`; // C'est la route qu'on a créée ensemble (POST)
-            // Pour l'inscription, on envoie tout (nom, email, password)
+            url = `${API_BASE_URL}/register`;
             bodyData = formData; 
         }
 
         try {
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyData)
@@ -66,124 +58,198 @@ function Auth({ onLoginSuccess }) {
 
             const data = await response.json();
 
-            if (isLoginMode) {
-                // A. Stocker le token
-                localStorage.setItem('token', data.token);
-
-                // B. Prévenir App.tsx que c'est connecté !
-                if (onLoginSuccess) {
-                    onLoginSuccess();
-                }
-
-                // C. Rediriger vers le dashboard
-                navigate('/dashboard');
-                setIsLoginMode(!isLoginMode)
-            } else{
-                 navigate('/login');
-            }
-
             if (!response.ok) {
-                // Si le serveur renvoie une erreur (ex: 400, 404, 500)
                 throw new Error(data.message || "Une erreur est survenue");
             }
 
-            // Succès !
-            setStatus({ type: 'success', message: isLoginMode ? "Connexion réussie !" : "Inscription réussie !" });
-            console.log("Réponse du serveur:", data);
+            // SUCCÈS
+            if (isLoginMode) {
+                // Gestion du Token
+                if (data.token) localStorage.setItem('token', data.token);
+                if (data.user && data.user.role) localStorage.setItem('role', data.user.role);
+                
+                setStatus({ type: 'success', message: "Connexion réussie !" });
+                
+                // Callback parent
+                if (onLoginSuccess) onLoginSuccess();
 
-            //vider le formulaire 
-            e.target.reset();
-            // TODO: Si connexion réussie, stocker le token reçu ici (ex: localStorage)
+                // Redirection (petit délai pour voir le message de succès)
+                setTimeout(() => {
+                    const from = location.state?.from?.pathname || "/dashboard";
+                    // Si admin, on force vers admin, sinon dashboard ou page précédente
+                    if (data.user && data.user.role === 'admin') {
+                        navigate('/admin');
+                    } else {
+                        navigate(from);
+                    }
+                }, 500);
+
+            } else {
+                // Inscription réussie -> On passe au login
+                setStatus({ type: 'success', message: "Compte créé avec succès ! Connectez-vous." });
+                setTimeout(() => {
+                    toggleMode();
+                }, 1500);
+            }
 
         } catch (error) {
+            console.error("Erreur Auth:", error);
             setStatus({ type: 'error', message: error.message });
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    // Fonction pour basculer de mode et nettoyer le formulaire
     const toggleMode = () => {
         setIsLoginMode(!isLoginMode);
         setStatus({ type: '', message: '' });
-        setFormData({ nom: '',prenom: '', email: '', password: '' });
+        // On ne vide pas l'email pour l'UX, mais on vide le reste
+        setFormData(prev => ({ ...prev, nom: '', prenom: '', password: '' }));
     };
 
-
-    // --- RENDER (Affichage HTML) ---
+    // --- RENDER ---
     return (
-        <div className="auth-container">
-            <div className="auth-box">
-                <h2>{isLoginMode ? 'Connexion' : 'Inscription'}</h2>
-
-                {/* Zone de message (succès/erreur) */}
-                {status.message && (
-                    <div className={`message ${status.type}`}>
-                        {status.message}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit}>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">
+            
+            {/* Carte principale responsive */}
+            <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 animate-fade-in-up">
+                
+                {/* En-tête */}
+                <div className="bg-red-600 p-8 text-center relative overflow-hidden">
+                    {/* Décoration d'arrière-plan */}
+                    <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white/20 to-transparent opacity-50"></div>
                     
-                    {/* Le champ NOM ne s'affiche que si on n'est PAS en mode connexion */}
-                    {!isLoginMode && (
-                        <div>
-                            <div className="form-group">
-                                <input
-                                    type="text"
-                                    name="nom"
-                                    placeholder="Votre nom"
-                                    value={formData.nom}
-                                    onChange={handleChange}
-                                    required={!isLoginMode} // Requis seulement en inscription
-                                />
-                            </div>
-                            <div className="form-group">
-                                <input
-                                    type="text"
-                                    name="prenom"
-                                    placeholder="Votre prenom"
-                                    value={formData.prenom}
-                                    onChange={handleChange}
-                                    required={!isLoginMode} // Requis seulement en inscription
-                                />
-                            </div>
-                            
+                    <h2 className="text-3xl font-bold text-white relative z-10">
+                        {isLoginMode ? 'Bon retour !' : 'Rejoignez-nous'}
+                    </h2>
+                    <p className="text-red-100 mt-2 text-sm relative z-10">
+                        {isLoginMode 
+                            ? "Connectez-vous pour gérer vos commandes" 
+                            : "Créez votre compte pour commencer"}
+                    </p>
+                </div>
 
+                <div className="p-8">
+                    {/* Zone de message (Alertes) */}
+                    {status.message && (
+                        <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 text-sm font-medium ${
+                            status.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'
+                        }`}>
+                            {status.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+                            <span>{status.message}</span>
                         </div>
                     )}
 
-                    <div className="form-group">
-                        <input
-                            type="email"
-                            name="email"
-                            placeholder="Votre email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-                    <div className="form-group">
-                        <input
-                            type="password"
-                            name="password"
-                            placeholder="Votre mot de passe"
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        
+                        {/* Champs Inscription uniquement */}
+                        {!isLoginMode && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Nom</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                            <User size={18} />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            name="nom"
+                                            placeholder="Nom"
+                                            value={formData.nom}
+                                            onChange={handleChange}
+                                            required={!isLoginMode}
+                                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-slate-500 ml-1">Prénom</label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                            <User size={18} />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            name="prenom"
+                                            placeholder="Prénom"
+                                            value={formData.prenom}
+                                            onChange={handleChange}
+                                            required={!isLoginMode}
+                                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
-                    <button type="submit" className="btn-submit">
-                        {isLoginMode ? 'Se connecter' : "S'inscrire"}
-                    </button>
-                </form>
+                        {/* Email */}
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-slate-500 ml-1">Email</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <Mail size={18} />
+                                </div>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="exemple@email.com"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-sm"
+                                />
+                            </div>
+                        </div>
 
-                {/* Bouton pour changer de mode */}
-                <p className="toggle-text">
-                    {isLoginMode ? "Pas encore de compte ?" : "Déjà inscrit ?"}
-                    <button onClick={toggleMode} className="toggle-btn">
-                        {isLoginMode ? "Créer un compte" : "Se connecter"}
-                    </button>
-                </p>
+                        {/* Mot de passe */}
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-slate-500 ml-1">Mot de passe</label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <Lock size={18} />
+                                </div>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    placeholder="••••••••"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Bouton Submit */}
+                        <button 
+                            type="submit" 
+                            disabled={isLoading}
+                            className="w-full bg-red-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-red-200 hover:bg-red-700 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+                        >
+                            {isLoading ? (
+                                <Loader2 className="animate-spin" />
+                            ) : (
+                                <>
+                                    {isLoginMode ? 'Se connecter' : "S'inscrire"}
+                                    <ArrowRight size={20} />
+                                </>
+                            )}
+                        </button>
+                    </form>
+
+                    {/* Footer / Toggle */}
+                    <div className="mt-8 text-center">
+                        <p className="text-slate-500 text-sm">
+                            {isLoginMode ? "Pas encore de compte ?" : "Déjà inscrit ?"}
+                        </p>
+                        <button 
+                            onClick={toggleMode} 
+                            className="text-red-600 font-bold hover:underline mt-1 transition-colors"
+                        >
+                            {isLoginMode ? "Créer un compte maintenant" : "Se connecter"}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
