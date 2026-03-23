@@ -56,15 +56,17 @@ const GenderCategorySection = ({ categoryId, title }) => {
             <div className="flex bg-slate-100 p-1 rounded-xl whitespace-nowrap min-w-min">
             {GENDERS.map((gender) => (
                 <button
-                key={gender.value}
-                onClick={() => setActiveGender(gender.value)}
-                className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 ${
-                    activeGender === gender.value
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
+                  key={gender.value}
+                  onClick={() => setActiveGender(gender.value)}
+                  // 🪄 COULEUR DYNAMIQUE POUR L'ONGLET ACTIF
+                  style={activeGender === gender.value ? { color: 'var(--theme-primary)' } : {}}
+                  className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 ${
+                      activeGender === gender.value
+                      ? 'bg-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700 hover-theme-text'
+                  }`}
                 >
-                {gender.label}
+                  {gender.label}
                 </button>
             ))}
             </div>
@@ -74,7 +76,11 @@ const GenderCategorySection = ({ categoryId, title }) => {
       {/* --- Contenu : Loading ou Carousel --- */}
       {loading ? (
         <div className="h-64 md:h-80 flex items-center justify-center bg-slate-50 rounded-2xl">
-           <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-slate-900"></div>
+            {/* 🪄 LOADER DYNAMIQUE */}
+           <div 
+              className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-slate-200"
+              style={{ borderBottomColor: 'var(--theme-primary)' }}
+           ></div>
         </div>
       ) : products.length > 0 ? (
         <Swiper
@@ -82,6 +88,11 @@ const GenderCategorySection = ({ categoryId, title }) => {
             spaceBetween={12} // Espace réduit sur mobile
             slidesPerView={2.15} // ✅ Affiche 2 produits + un morceau du 3ème sur Mobile
             navigation
+            // 🪄 NAVIGATION SWIPER DYNAMIQUE + FIX TYPESCRIPT
+            style={{
+              '--swiper-navigation-color': 'var(--theme-primary)',
+              '--swiper-pagination-color': 'var(--theme-primary)',
+            } as React.CSSProperties}
             breakpoints={{
                 640: { slidesPerView: 2.5, spaceBetween: 20 },
                 768: { slidesPerView: 3, spaceBetween: 20 },
@@ -91,16 +102,28 @@ const GenderCategorySection = ({ categoryId, title }) => {
         >
           {products.map((product) => (
             <SwiperSlide key={product.id}>
-               {/* Carte Produit */}
-              <ProductCard product={product} />
+               {/* Carte Produit avec fix TypeScript pour onAddToCart */}
+              <ProductCard 
+                product={product} 
+                onAddToCart={() => console.log("Ajout au panier depuis la section genre")} 
+              />
             </SwiperSlide>
           ))}
         </Swiper>
       ) : (
         <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-            <p className="text-slate-400 font-medium text-sm">Aucun produit trouvé pour <span className="text-slate-900 font-bold capitalize">{activeGender}</span> dans cette catégorie.</p>
+            <p className="text-slate-400 font-medium text-sm">
+                Aucun produit trouvé pour <span className="font-bold capitalize" style={{ color: 'var(--theme-primary)' }}>{activeGender}</span> dans cette catégorie.
+            </p>
         </div>
       )}
+
+      {/* 🪄 STYLES DYNAMIQUES */}
+      <style>{`
+        .hover-theme-text:hover {
+            color: var(--theme-primary) !important;
+        }
+      `}</style>
     </section>
   );
 };

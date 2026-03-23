@@ -147,7 +147,7 @@ const TShirtDesigner = ({ baseImage, onSaveDesign }) => {
       {/* --- OUTILS DE PERSONNALISATION --- */}
       <div className="flex-1 space-y-6">
         <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2">
-            <Save className="text-red-600" /> Studio de Création
+            <Save style={{ color: 'var(--theme-primary)' }} /> Studio de Création
         </h3>
 
         {/* 1. Upload Image */}
@@ -159,14 +159,14 @@ const TShirtDesigner = ({ baseImage, onSaveDesign }) => {
                 type="file" 
                 accept="image/*" 
                 onChange={handleImageUpload}
-                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold transition-all theme-file-input cursor-pointer"
             />
             {uploadedImage && (
                 <div className="flex gap-2 text-xs mt-2">
-                    <button onClick={() => setLogoPos(p => ({...p, scale: p.scale + 0.1}))} className="bg-white border px-2 py-1 rounded">Agrandir</button>
-                    <button onClick={() => setLogoPos(p => ({...p, scale: Math.max(0.2, p.scale - 0.1)}))} className="bg-white border px-2 py-1 rounded">Rétrécir</button>
-                    <button onClick={() => setLogoPos(p => ({...p, y: p.y + 5}))} className="bg-white border px-2 py-1 rounded">Descendre</button>
-                    <button onClick={() => setLogoPos(p => ({...p, y: p.y - 5}))} className="bg-white border px-2 py-1 rounded">Monter</button>
+                    <button onClick={() => setLogoPos(p => ({...p, scale: p.scale + 0.1}))} className="bg-white border px-2 py-1 rounded transition-colors hover-theme-control">Agrandir</button>
+                    <button onClick={() => setLogoPos(p => ({...p, scale: Math.max(0.2, p.scale - 0.1)}))} className="bg-white border px-2 py-1 rounded transition-colors hover-theme-control">Rétrécir</button>
+                    <button onClick={() => setLogoPos(p => ({...p, y: p.y + 5}))} className="bg-white border px-2 py-1 rounded transition-colors hover-theme-control">Descendre</button>
+                    <button onClick={() => setLogoPos(p => ({...p, y: p.y - 5}))} className="bg-white border px-2 py-1 rounded transition-colors hover-theme-control">Monter</button>
                 </div>
             )}
         </div>
@@ -181,7 +181,7 @@ const TShirtDesigner = ({ baseImage, onSaveDesign }) => {
                 placeholder="Votre texte ici..."
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
-                className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-red-600 outline-none"
+                className="w-full px-4 py-2 border rounded-xl focus:outline-none transition-all theme-input-ring"
             />
              <div className="flex items-center gap-2 mt-2">
                 <label className="text-xs font-bold text-slate-500">Couleur :</label>
@@ -198,7 +198,8 @@ const TShirtDesigner = ({ baseImage, onSaveDesign }) => {
         <div className="pt-4 border-t border-slate-100">
             <button 
                 onClick={generateFinalImage}
-                className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all"
+                style={{ backgroundColor: 'var(--theme-primary)' }}
+                className="w-full py-3 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg opacity-95 hover:opacity-100 active:scale-95 transition-all"
             >
                 <Check size={18} /> Valider ce design
             </button>
@@ -211,6 +212,27 @@ const TShirtDesigner = ({ baseImage, onSaveDesign }) => {
         <canvas ref={canvasRef} className="hidden" />
         
       </div>
+
+      {/* 🪄 STYLES DYNAMIQUES */}
+      <style>{`
+        .theme-input-ring:focus {
+            border-color: var(--theme-primary) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+        }
+        .theme-file-input::file-selector-button {
+            color: var(--theme-primary) !important;
+            background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
+            transition: background-color 0.2s;
+        }
+        .theme-file-input:hover::file-selector-button {
+            background-color: color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+        }
+        .hover-theme-control:hover {
+            color: var(--theme-primary) !important;
+            border-color: var(--theme-primary) !important;
+            background-color: color-mix(in srgb, var(--theme-primary) 5%, transparent) !important;
+        }
+      `}</style>
     </div>
   );
 };

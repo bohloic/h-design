@@ -82,7 +82,6 @@ export const CategoryView = () => {
         });
 
         if (response.ok) {
-            alert(editingId ? "Catégorie mise à jour !" : "Catégorie créée !");
             fetchCategories();
             resetForm();
         } else {
@@ -129,7 +128,11 @@ export const CategoryView = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div>
           <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <span className="bg-red-100 p-2 rounded-lg text-red-600">
+            <span 
+                className="p-2 rounded-lg"
+                // 🪄 FOND AVEC TRANSPARENCE ET COULEUR DU THEME
+                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)', color: 'var(--theme-primary)' }}
+            >
                 <LayoutGrid size={24} />
             </span>
             Catégories
@@ -138,7 +141,8 @@ export const CategoryView = () => {
         </div>
         <button 
           onClick={() => { resetForm(); setIsModalOpen(true); }}
-          className="w-full sm:w-auto bg-red-600 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700 transition-all shadow-lg shadow-red-100 active:scale-95"
+          style={{ backgroundColor: 'var(--theme-primary)' }}
+          className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-opacity shadow-lg active:scale-95"
         >
           <Plus size={20} /> <span className="hidden sm:inline">Nouvelle Catégorie</span><span className="sm:hidden">Ajouter</span>
         </button>
@@ -149,7 +153,10 @@ export const CategoryView = () => {
         
         {loading ? (
           <div className="p-12 text-center text-slate-400 flex flex-col items-center">
-             <div className="animate-spin w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full mb-4"></div>
+             <div 
+                className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4"
+                style={{ borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)', borderTopColor: 'var(--theme-primary)' }}
+             ></div>
              Chargement...
           </div>
         ) : categories.length === 0 ? (
@@ -159,7 +166,7 @@ export const CategoryView = () => {
           </div>
         ) : (
           <>
-            {/* --- TABLEAU DESKTOP (Caché sur mobile) --- */}
+            {/* --- TABLEAU DESKTOP --- */}
             <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                 <thead>
@@ -178,7 +185,14 @@ export const CategoryView = () => {
                         </td>
                         <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center font-bold text-lg border border-red-100">
+                                <div 
+                                    className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg border"
+                                    style={{ 
+                                        backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', 
+                                        color: 'var(--theme-primary)',
+                                        borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)'
+                                    }}
+                                >
                                     {cat.name.charAt(0).toUpperCase()}
                                 </div>
                                 <span className="font-bold text-slate-700">{cat.name}</span>
@@ -192,10 +206,10 @@ export const CategoryView = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                             <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => handleEditClick(cat)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Modifier">
+                                <button onClick={() => handleEditClick(cat)} className="p-2 text-slate-400 hover:text-slate-900 bg-white hover:bg-slate-100 rounded-lg transition-all border border-transparent hover:border-slate-200" title="Modifier">
                                     <Edit size={18} />
                                 </button>
-                                <button onClick={() => handleDelete(cat.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Supprimer">
+                                <button onClick={() => handleDelete(cat.id)} className="p-2 text-slate-400 hover:text-red-600 bg-white hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100" title="Supprimer">
                                     <Trash2 size={18} />
                                 </button>
                             </div>
@@ -206,13 +220,19 @@ export const CategoryView = () => {
                 </table>
             </div>
 
-            {/* --- LISTE MOBILE (Cartes) --- */}
+            {/* --- LISTE MOBILE --- */}
             <div className="md:hidden divide-y divide-slate-100">
                 {categories.map(cat => (
                     <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-slate-50 active:bg-slate-100 transition-colors">
                         <div className="flex items-center gap-4">
-                             {/* Avatar Lettre */}
-                            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-xl border border-red-100 shadow-sm flex-shrink-0">
+                            <div 
+                                className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl border shadow-sm flex-shrink-0"
+                                style={{ 
+                                    backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', 
+                                    color: 'var(--theme-primary)',
+                                    borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)'
+                                }}
+                            >
                                 {cat.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -223,11 +243,10 @@ export const CategoryView = () => {
                             </div>
                         </div>
                         
-                        {/* Actions Rapides Mobile */}
                         <div className="flex gap-1">
                             <button 
                                 onClick={() => handleEditClick(cat)}
-                                className="p-3 text-slate-400 bg-white border border-slate-100 rounded-xl hover:text-red-600 active:scale-95 shadow-sm"
+                                className="p-3 text-slate-400 bg-white border border-slate-100 rounded-xl hover:text-slate-900 active:scale-95 shadow-sm"
                             >
                                 <Edit size={18} />
                             </button>
@@ -250,10 +269,12 @@ export const CategoryView = () => {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
             
-            {/* Header Modal */}
             <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                {editingId ? <Edit size={20} className="text-red-600"/> : <Plus size={20} className="text-red-600"/>}
+                {editingId 
+                    ? <Edit size={20} style={{ color: 'var(--theme-primary)' }}/> 
+                    : <Plus size={20} style={{ color: 'var(--theme-primary)' }}/>
+                }
                 {editingId ? 'Modifier' : 'Nouvelle Catégorie'}
               </h3>
               <button onClick={resetForm} className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
@@ -261,7 +282,6 @@ export const CategoryView = () => {
               </button>
             </div>
             
-            {/* Formulaire */}
             <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
               <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Nom de la catégorie</label>
@@ -270,7 +290,8 @@ export const CategoryView = () => {
                     value={formData.name} 
                     required 
                     onChange={handleChange} 
-                    className="w-full px-4 py-4 bg-slate-50 border-2 border-transparent rounded-xl focus:border-red-600 focus:bg-white transition-all outline-none font-medium text-lg placeholder-slate-400" 
+                    style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
+                    className="w-full px-4 py-4 bg-slate-50 border-2 border-transparent rounded-xl outline-none font-medium text-lg placeholder-slate-400 transition-all focus:bg-white focus:ring-2" 
                     placeholder="Ex: Robes" 
                     autoFocus
                   />
@@ -278,7 +299,8 @@ export const CategoryView = () => {
 
               <button 
                 type="submit" 
-                className="w-full py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-xl shadow-red-100 flex items-center justify-center gap-2 active:scale-95"
+                style={{ backgroundColor: 'var(--theme-primary)' }}
+                className="w-full py-4 text-white font-bold rounded-xl opacity-95 hover:opacity-100 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95"
               >
                 <Check size={20} />
                 {editingId ? 'Sauvegarder' : 'Créer'}

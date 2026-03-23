@@ -33,26 +33,38 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
   // NOUVEAU : État pour savoir quel texte est en cours d'édition
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // EXPORT IMAGE
+  // EXPORT IMAGE (CORRIGÉ POUR ÉVITER LE DÉCALAGE)
   useImperativeHandle(ref, () => ({
     exportAsImage: async () => {
       if (containerRef.current) {
         try {
+          // 1. Désélectionner tout pour ne pas avoir les bordures
           onSelectElement(null);
-          setEditingId(null); // On ferme l'édition si ouverte
-          await new Promise(r => setTimeout(r, 50));
+          setEditingId(null);
+          await new Promise(r => setTimeout(r, 100)); // Petite pause pour le rendu
 
+          // 2. Configuration STRICTE de html2canvas
           const canvas = await html2canvas(containerRef.current, {
-            useCORS: true,
-            scale: 2,
-            backgroundColor: null,
-            logging: false
+            useCORS: true,       // Important pour les images externes
+            scale: 3,            // Haute résolution (x3)
+            backgroundColor: null, // Fond transparent
+            logging: false,
+            // ✨ C'est ici que la magie opère : On force le calcul
+            scrollX: 0,
+            scrollY: 0,
+            width: containerRef.current.offsetWidth, 
+            height: containerRef.current.offsetHeight,
+            onclone: (clonedDoc) => {
+                // Astuce : On force l'élément cloné à être visible et propre
+                const clonedDiv = clonedDoc.querySelector('.canvas-container');
+                if(clonedDiv) (clonedDiv as HTMLElement).style.transform = 'none';
+            }
           });
           
           return new Promise<Blob | null>((resolve) => {
             canvas.toBlob((blob) => {
               resolve(blob);
-            }, 'image/png');
+            }, 'image/png', 1.0); // Qualité max
           });
         } catch (error) {
           console.error("Erreur génération image:", error);
@@ -62,6 +74,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
       return null;
     }
   }));
+
 
   // LOGIQUE DE DÉPLACEMENT
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent, el: DesignElement) => {
@@ -151,7 +164,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleEnd);
     window.addEventListener('touchmove', handleMove, { passive: false });
-    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('touchmove', handleEnd);
   };
 
   // LOGIQUE ROTATION
@@ -244,8 +257,8 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
 
               className={`absolute cursor-move select-none touch-none group ${
                 activeElementId === el.id && editingId !== el.id // On cache la bordure si on édite
-                ? 'z-50 ring-2 ring-blue-500 ring-offset-2 ring-offset-transparent' 
-                : 'z-10 hover:ring-1 hover:ring-blue-300' 
+                ? 'z-50 ring-2 ring-offset-2 ring-offset-transparent' 
+                : 'z-10 hover:ring-1 hover:ring-slate-300' 
               }`}
               style={{
                 left: `${el.x}px`,
@@ -253,6 +266,8 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
                 width: `${el.width}px`,
                 height: el.type === 'text' ? 'auto' : `${el.height}px`,
                 transform: `rotate(${el.rotation}deg)`,
+                // 🪄 COULEUR DE LA BORDURE DE SÉLECTION DYNAMIQUE
+                ...(activeElementId === el.id && editingId !== el.id ? { '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties : {})
               }}
             >
               {el.type === 'text' ? (
@@ -294,6 +309,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
               {activeElementId === el.id && editingId !== el.id && (
                 <div data-html2canvas-ignore="true"> 
                   
+                  {/* Le bouton X (Supprimer) reste rouge pour l'action de suppression */}
                   <div 
                     onClick={(e) => {
                         e.stopPropagation(); 
@@ -308,7 +324,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
                   <div 
                     onMouseDown={(e) => handleResizeStart(e, el)}
                     onTouchStart={(e) => handleResizeStart(e, el)}
-                    className="absolute -bottom-3 -right-3 w-6 h-6 bg-white border border-slate-200 text-slate-700 rounded-full flex items-center justify-center shadow-md md:w-7 md:h-7 cursor-nwse-resize hover:bg-blue-50"
+                    className="absolute -bottom-3 -right-3 w-6 h-6 bg-white border border-slate-200 text-slate-700 rounded-full flex items-center justify-center shadow-md md:w-7 md:h-7 cursor-nwse-resize hover:bg-slate-50"
                   >
                     <Maximize2 size={12} />
                   </div>
@@ -316,7 +332,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
                   <div 
                     onMouseDown={(e) => handleRotateStart(e, el)}
                     onTouchStart={(e) => handleRotateStart(e, el)}
-                    className="absolute -bottom-3 -left-3 w-6 h-6 bg-white border border-slate-200 text-slate-700 rounded-full flex items-center justify-center shadow-md md:w-7 md:h-7 cursor-ew-resize hover:bg-blue-50"
+                    className="absolute -bottom-3 -left-3 w-6 h-6 bg-white border border-slate-200 text-slate-700 rounded-full flex items-center justify-center shadow-md md:w-7 md:h-7 cursor-ew-resize hover:bg-slate-50"
                   >
                     <RotateCcw size={12} />
                   </div>

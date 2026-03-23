@@ -1,67 +1,64 @@
-import { authFetch } from '../../src/utils/apiClient';
-import { formatCurrency } from "@/constants"
-import { DecodedToken } from "@/types";
-import { jwtDecode } from "jwt-decode";
-import { Gift, Package, Star, Calendar, CreditCard, ChevronRight } from "lucide-react"
-import React, { useEffect, useState } from 'react';
+import { formatCurrency } from "@/constants";
+import { Gift, Package, Star, Calendar, CreditCard, ChevronRight } from "lucide-react";
+import React, { useState } from 'react';
+import { OrderDetails } from './OrderDetails'; // 🪄 Assure-toi que le fichier est bien au même endroit
 
-export const Commande = () => {
-    const token = localStorage.getItem('token')
-      
-    const[user, setUser] = useState({})
-    const[order, setOrder] = useState([])
-    const[loading, setLoading] = useState(true)
+// On ajoute une interface pour dire que ce composant reçoit "orders"
+interface CommandeProps {
+    orders: any[];
+}
 
-    useEffect(() => {
-        if(token){
-            const getUser = async () => {
-                try {
-                    setLoading(true)
-                    const decodedToken = jwtDecode<DecodedToken>(token);
-                    const userId = decodedToken.userId
-                    
-                    const [responseUser, responseOrder] = await Promise.all([
-                        authFetch(`/api/users/${userId}`),
-                        authFetch(`/api/orders/my-orders/${userId}`, {
-                            method: 'GET',
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        })
-                    ])
+export const Commande: React.FC<CommandeProps> = ({ orders }) => {
+    // 🪄 ÉTAT POUR L'AFFICHAGE DES DÉTAILS
+    const [selectedOrderId, setSelectedOrderId] = useState<string | number | null>(null);
 
-                    const users = await responseUser.json()
-                    const orders = await responseOrder.json()
-                    
-                    setUser(users)
-                    setOrder(orders)
-                } catch(error){
-                    console.error(error)
-                } finally {
-                    setLoading(false)
-                }
-            } 
-            getUser()
+    let total = 0;
+    orders?.forEach((o: any) => {
+        // Remplacement de parseInt par parseFloat au cas où tu as des centimes
+        total += Number.parseFloat(o.total_amount) || 0;
+    });
+
+    // 🪄 FONCTIONS POUR TRADUIRE ET COLORER LES STATUTS
+    const translateStatus = (status: string) => {
+        const s = status?.toLowerCase() || '';
+        if (s.includes('pending') || s.includes('attente')) return 'En attente';
+        if (s.includes('validation')) return 'Validation Design';
+        if (s.includes('paid') || s.includes('payé')) return 'Payé';
+        if (s.includes('processing') || s.includes('préparation')) return 'En préparation';
+        if (s.includes('shipped') || s.includes('expédié')) return 'Expédié';
+        if (s.includes('delivered') || s.includes('livré')) return 'Livré';
+        if (s.includes('cancelled') || s.includes('annulé')) return 'Annulé';
+        return status || 'Inconnu';
+    };
+
+    const getStatusStyle = (status: string) => {
+        const translated = translateStatus(status);
+        switch (translated) {
+            case 'En attente': return 'bg-amber-100 text-amber-700';
+            case 'Payé': return 'bg-emerald-100 text-emerald-700';
+            case 'En préparation': return 'bg-blue-100 text-blue-700';
+            case 'Expédié': return 'bg-purple-100 text-purple-700';
+            case 'Livré': return 'bg-green-100 text-green-700';
+            case 'Annulé': return 'bg-red-100 text-red-700';
+            default: return 'bg-slate-100 text-slate-700';
         }
-    },[token])
+    };
 
-
-    let total = 0
-    order?.forEach((o: any) => {
-        total += Number.parseInt(o.total_amount) || 0
-    })
-    
-    if (loading) {
-        return <div className="p-8 text-center text-slate-400">Chargement de vos commandes...</div>
+    // 🪄 SI ON A CLIQUÉ SUR UNE COMMANDE, ON AFFICHE LES DÉTAILS
+    if (selectedOrderId) {
+        return <OrderDetails orderId={selectedOrderId} onBack={() => setSelectedOrderId(null)} />;
     }
 
+    // SINON, ON AFFICHE LA LISTE NORMALE
     return(
         <div>
-            {/* Main Content */}
-            <main className="flex-1 space-y-6 lg:space-y-8">
-                
+            <main className="flex-1 space-y-6 lg:space-y-8 animate-in fade-in duration-300">
                 {/* --- STATISTIQUES (Cards) --- */}
-                {/* Mobile: 1 col / Desktop: 3 cols */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    <div className="bg-gradient-to-br from-red-600 to-red-700 p-6 md:p-8 rounded-3xl text-white shadow-xl shadow-red-200 relative overflow-hidden">
+                    <div 
+                        className="p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden"
+                        style={{ backgroundColor: 'var(--theme-primary)' }}
+                    >
                         <Package className="w-8 h-8 mb-4 opacity-50 absolute right-4 top-4" />
                         <p className="text-white/70 text-xs md:text-sm font-bold uppercase tracking-widest">Total Dépensé</p>
                         <h3 className="text-2xl md:text-3xl font-black mt-1">{formatCurrency(total)}</h3>
@@ -90,11 +87,11 @@ export const Commande = () => {
                         <h3 className="text-xl md:text-2xl font-bold">Historique des commandes</h3>
                     </div>
                     
-                    {order.length === 0 ? (
+                    {(!orders || orders.length === 0) ? (
                         <div className="p-8 text-center text-slate-500">Aucune commande pour le moment.</div>
                     ) : (
                         <>
-                            {/* --- TABLEAU DESKTOP (Caché sur mobile) --- */}
+                            {/* TABLEAU DESKTOP */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-left">
                                     <thead className="bg-slate-50">
@@ -107,21 +104,28 @@ export const Commande = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {order?.map((ord: any) => (
+                                        {orders.map((ord: any) => (
                                             <tr key={ord.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-8 py-6 font-bold text-slate-800">#{ord.id}</td>
-                                                <td className="px-8 py-6 text-slate-500">{new Date(ord.created_at).toLocaleDateString()}</td>
-                                                <td className="px-8 py-6 font-black text-red-600">{formatCurrency(ord.total_amount)}</td>
+                                                <td className="px-8 py-6 font-bold text-slate-800">#HD-{String(ord.id).padStart(5, '0')}</td>
+                                                <td className="px-8 py-6 text-slate-500">{new Date(ord.created_at).toLocaleDateString('fr-FR')}</td>
+                                                <td className="px-8 py-6 font-black" style={{ color: 'var(--theme-primary)' }}>
+                                                    {formatCurrency(ord.total_amount)}
+                                                </td>
                                                 <td className="px-8 py-6">
-                                                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                                                        ord.status === 'Payé' ? 'bg-green-100 text-green-700' : 
-                                                        ord.status === 'En attente' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                                                    }`}>
-                                                        {ord.status}
+                                                    {/* 🪄 STATUT TRADUIT ET COLORÉ */}
+                                                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusStyle(ord.status)}`}>
+                                                        {translateStatus(ord.status)}
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-6">
-                                                    <button className="text-red-600 font-bold hover:underline text-sm">Détails</button>
+                                                    {/* 🪄 BOUTON POUR VOIR LES DÉTAILS */}
+                                                    <button 
+                                                        onClick={() => setSelectedOrderId(ord.id)}
+                                                        className="font-bold hover:underline text-sm transition-all" 
+                                                        style={{ color: 'var(--theme-primary)' }}
+                                                    >
+                                                        Détails
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -129,39 +133,37 @@ export const Commande = () => {
                                 </table>
                             </div>
 
-                            {/* --- LISTE MOBILE (Cartes empilées) --- */}
+                            {/* LISTE MOBILE */}
                             <div className="md:hidden divide-y divide-slate-100">
-                                {order?.map((ord: any) => (
+                                {orders.map((ord: any) => (
                                     <div key={ord.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50 transition-colors">
-                                        
-                                        {/* En-tête de la carte : ID et Date */}
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <span className="text-xs font-bold text-slate-400 uppercase">Commande</span>
-                                                <p className="font-bold text-slate-800">#{ord.id}</p>
+                                                <p className="font-bold text-slate-800">#HD-{String(ord.id).padStart(5, '0')}</p>
                                             </div>
                                             <div className="flex items-center text-slate-500 text-sm">
                                                 <Calendar size={14} className="mr-1" />
-                                                {new Date(ord.created_at).toLocaleDateString()}
+                                                {new Date(ord.created_at).toLocaleDateString('fr-FR')}
                                             </div>
                                         </div>
-
-                                        {/* Corps : Montant et Statut */}
                                         <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl">
                                             <div className="flex items-center gap-2">
                                                 <CreditCard size={16} className="text-slate-400" />
-                                                <span className="font-black text-red-600">{formatCurrency(ord.total_amount)}</span>
+                                                <span className="font-black" style={{ color: 'var(--theme-primary)' }}>
+                                                    {formatCurrency(ord.total_amount)}
+                                                </span>
                                             </div>
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                                ord.status === 'Payé' ? 'bg-green-100 text-green-700' : 
-                                                ord.status === 'En attente' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                                            }`}>
-                                                {ord.status}
+                                            {/* 🪄 STATUT TRADUIT ET COLORÉ (MOBILE) */}
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(ord.status)}`}>
+                                                {translateStatus(ord.status)}
                                             </span>
                                         </div>
-
-                                        {/* Pied : Bouton Détails */}
-                                        <button className="w-full flex items-center justify-between text-sm font-bold text-slate-600 hover:text-red-600 pt-1">
+                                        {/* 🪄 BOUTON POUR VOIR LES DÉTAILS (MOBILE) */}
+                                        <button 
+                                            onClick={() => setSelectedOrderId(ord.id)}
+                                            className="w-full flex items-center justify-between text-sm font-bold text-slate-600 pt-1 hover-theme-text transition-colors"
+                                        >
                                             <span>Voir les détails</span>
                                             <ChevronRight size={16} />
                                         </button>
@@ -172,6 +174,13 @@ export const Commande = () => {
                     )}
                 </div>
             </main>
+
+            {/* 🪄 STYLE POUR LE HOVER MOBILE */}
+            <style>{`
+                .hover-theme-text:hover {
+                    color: var(--theme-primary) !important;
+                }
+            `}</style>
         </div>
     )
 }

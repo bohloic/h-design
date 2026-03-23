@@ -1,44 +1,28 @@
-
-import styled from 'styled-components'
-import colors from '../../utils/style/colors.js'
-import { useTheme } from '../../utils/hooks/index.jsx'
-import ErrorIllustration from '../../assets/404.svg'
-
-const ErrorWrapper = styled.div`
-  margin: 30px;
-  display: flex;
-  flex-direction: column;
-  background-color: ${({ theme }) =>
-    theme === 'light' ? colors.backgroundLight : colors.backgroundDark};
-  align-items: center;
-`
-
-const ErrorTitle = styled.h1`
-  color: ${({ theme }) => (theme === 'light' ? '#000000' : '#ffffff')};
-  font-weight: 300;
-`
-
-const ErrorSubtitle = styled.h2`
-  color: ${({ theme }) => (theme === 'light' ? colors.secondary : '#ffffff')};
-  font-weight: 300;
-`
-
-const Illustration = styled.img`
-  max-width: 800px;
-`
+import React from 'react';
+import { useTheme } from '../../utils/hooks/index.jsx';
+import ErrorIllustration from '../../assets/404.svg';
 
 function Error() {
-  const { theme } = useTheme()
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
 
   return (
-    <ErrorWrapper theme={theme}>
-      <ErrorTitle theme={theme}>Oups...</ErrorTitle>
-      <Illustration src={ErrorIllustration} />
-      <ErrorSubtitle theme={theme}>
+    <div className={`m-8 flex flex-col items-center ${isLight ? 'bg-slate-50' : 'bg-slate-900'}`}>
+      <h1 className={`text-3xl font-light ${isLight ? 'text-black' : 'text-white'}`}>
+        Oups...
+      </h1>
+      
+      <img src={ErrorIllustration} className="max-w-[800px] my-6" alt="Erreur 404" />
+      
+      {/* 🪄 LE TEXTE PREND LA COULEUR DU THÈME EN MODE CLAIR */}
+      <h2 
+        className="text-xl font-light"
+        style={{ color: isLight ? 'var(--theme-primary)' : '#ffffff' }}
+      >
         Il semblerait que la page que vous cherchez n’existe pas
-      </ErrorSubtitle>
-    </ErrorWrapper>
-  )
+      </h2>
+    </div>
+  );
 }
 
-export default Error
+export default Error;

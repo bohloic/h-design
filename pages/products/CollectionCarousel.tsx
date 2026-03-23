@@ -6,7 +6,6 @@ import ProductCard from '../../src/components/product/ProductCard';
 // Import des styles Swiper
 import 'swiper/css';
 import 'swiper/css/navigation';
-// import 'swiper/css/pagination'; // Plus besoin de ça
 import '../../src/styles/Carousel.css';
 
 const CollectionCarousel = ({ data , targetCollection , overrideTitle }) => {
@@ -22,15 +21,21 @@ const CollectionCarousel = ({ data , targetCollection , overrideTitle }) => {
   return (
     <section className="carousel-section my-4"> 
       
-      {overrideTitle && <h2 className="text-2xl font-bold mb-4 px-2">{overrideTitle}</h2>}
+      {/* 🪄 TITRE DYNAMIQUE */}
+      {overrideTitle && (
+        <h2 className="text-2xl font-bold mb-4 px-2" style={{ color: 'var(--theme-primary)' }}>
+            {overrideTitle}
+        </h2>
+      )}
 
       <Swiper
-        // On ne charge que le module Navigation
         modules={[Navigation]} 
         navigation
-        // Plus de pagination ici
+        // 🪄 NAVIGATION DYNAMIQUE + FIX TYPESCRIPT
+        style={{
+          '--swiper-navigation-color': 'var(--theme-primary)',
+        } as React.CSSProperties}
         
-        // On a retiré le padding-bottom (!pb-x) car plus de points en bas
         className="mySwiper" 
         
         breakpoints={{
@@ -43,7 +48,7 @@ const CollectionCarousel = ({ data , targetCollection , overrideTitle }) => {
         {Array.isArray(filteredProducts) && filteredProducts.length > 0 ? (
           filteredProducts.map((product: any) => (
             <SwiperSlide key={product.id}>
-              <ProductCard product={product} /> 
+              <ProductCard product={product} onAddToCart={() => {}} /> 
             </SwiperSlide>
           ))
         ) : (

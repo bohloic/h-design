@@ -1,9 +1,9 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Import nécessaire
+import { useNavigate } from 'react-router-dom'; 
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingCart } from 'lucide-react';
-import { CartItem } from '../../types';
-import { formatCurrency } from '../../constants';
-import { BASE_IMG_URL } from './images/VoirImage';
+import { CartItem } from '../../../types';
+import { formatCurrency } from '../../../constants';
+import { BASE_IMG_URL } from '../images/VoirImage';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -11,23 +11,20 @@ interface CartDrawerProps {
   items: CartItem[];
   onUpdateQuantity: (id: string, delta: number) => void;
   onRemove: (id: string) => void;
-  // onCheckout n'est plus strictement nécessaire pour la navigation, 
-  // mais on le garde pour la compatibilité si tu veux faire d'autres actions
   onCheckout?: () => void; 
 }
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdateQuantity, onRemove, onCheckout }) => {
-  const navigate = useNavigate(); // 2. Initialisation du hook
+  const navigate = useNavigate(); 
   
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   if (!isOpen) return null;
 
-  // 3. Nouvelle fonction pour gérer le clic
   const handleCheckoutClick = () => {
-    onClose(); // On ferme le tiroir
-    navigate('/checkout'); // On navigue proprement sans le '#'
-    if (onCheckout) onCheckout(); // On appelle l'ancienne prop au cas où
+    onClose(); 
+    navigate('/checkout'); 
+    if (onCheckout) onCheckout(); 
   };
 
   return (
@@ -36,7 +33,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
       <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in-right">
         <div className="p-6 border-b flex items-center justify-between">
           <h2 className="text-xl font-bold flex items-center">
-            Mon Panier de Noël <span className="ml-2">🎁</span>
+            Mon Panier <span className="ml-2">🛍️</span>
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
             <X className="w-6 h-6" />
@@ -45,12 +42,13 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-4">
+            <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-4 text-center">
               <ShoppingCart size={64} className="opacity-20" />
-              <p className="text-lg">Votre panier est vide comme une nuit sans neige.</p>
+              <p className="text-lg">Votre panier est vide comme une nuit sans étoiles.</p>
               <button 
                 onClick={onClose}
-                className="bg-red-600 text-white px-6 py-2 rounded-full font-medium hover:bg-red-700 transition-colors"
+                style={{ backgroundColor: 'var(--theme-primary)' }}
+                className="text-white px-8 py-3 rounded-full font-bold shadow-lg hover:opacity-90 transition-all active:scale-95"
               >
                 Commencer mes achats
               </button>
@@ -58,29 +56,42 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
           ) : (
             items.map((item) => (
               <div key={item.id} className="flex space-x-4 animate-fade-in">
-                <img src={BASE_IMG_URL + item.image} alt={item.name} className="w-20 h-24 object-cover rounded-lg" />
+                {/* 🪄 FIX 1 : On vérifie image_url ou image, et on s'assure que c'est une string */}
+                <img 
+                    src={BASE_IMG_URL + (item.image_url || (item as any).image)} 
+                    alt={item.name} 
+                    className="w-20 h-24 object-cover rounded-lg border border-slate-100" 
+                />
+                
                 <div className="flex-1">
                   <h3 className="font-semibold text-slate-800">{item.name}</h3>
                   <p className="text-sm text-slate-500 mb-2">{formatCurrency(item.price)}</p>
+                  
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2 border rounded-full px-2 py-1">
+                    <div className="flex items-center space-x-2 border border-slate-200 rounded-full px-2 py-1">
                       <button 
-                        onClick={() => onUpdateQuantity(item.id, -1)}
-                        className="p-1 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-30"
+                        // 🪄 FIX 2 : Conversion de l'ID en String
+                        onClick={() => onUpdateQuantity(String(item.id), -1)}
+                        className="p-1 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-30 theme-cart-btn"
                         disabled={item.quantity <= 1}
                       >
                         <Minus className="w-4 h-4" />
                       </button>
+                      
                       <span className="w-8 text-center font-medium">{item.quantity}</span>
+                      
                       <button 
-                        onClick={() => onUpdateQuantity(item.id, 1)}
-                        className="p-1 hover:bg-slate-100 rounded-full transition-colors"
+                        // 🪄 FIX 3 : Conversion de l'ID en String
+                        onClick={() => onUpdateQuantity(String(item.id), 1)}
+                        className="p-1 hover:bg-slate-100 rounded-full transition-colors theme-cart-btn"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
+                    
                     <button 
-                      onClick={() => onRemove(item.id)}
+                      // 🪄 FIX 4 : Conversion de l'ID en String
+                      onClick={() => onRemove(String(item.id))}
                       className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -96,15 +107,16 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
           <div className="p-6 bg-slate-50 border-t space-y-4">
             <div className="flex justify-between items-center text-lg font-bold">
               <span>Total</span>
-              <span className="text-red-600">{formatCurrency(total)}</span>
+              <span style={{ color: 'var(--theme-primary)' }}>{formatCurrency(total)}</span>
             </div>
             <p className="text-xs text-slate-500 text-center italic">
-              Livraison gratuite à partir de 50 000 FCFA d'achats festifs !
+              Livraison gratuite disponible selon votre zone !
             </p>
-            {/* 4. On utilise la nouvelle fonction ici */}
+            
             <button 
               onClick={handleCheckoutClick} 
-              className="w-full bg-green-600 text-white py-4 rounded-xl font-bold flex items-center justify-center space-x-2 hover:bg-green-700 transition-transform active:scale-[0.98]"
+              style={{ backgroundColor: 'var(--theme-primary)' }}
+              className="w-full text-white py-4 rounded-xl font-bold flex items-center justify-center space-x-2 shadow-lg hover:opacity-95 transition-all active:scale-[0.98]"
             >
               <span>Finaliser ma commande</span>
               <ArrowRight className="w-5 h-5" />
@@ -112,6 +124,12 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
           </div>
         )}
       </div>
+
+      <style>{`
+        .theme-cart-btn:hover {
+            color: var(--theme-primary) !important;
+        }
+      `}</style>
     </div>
   );
 };

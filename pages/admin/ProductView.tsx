@@ -34,7 +34,8 @@ export const ProductView = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [variants, setVariants] = useState([
+  // Typage explicite pour éviter les erreurs TypeScript
+  const [variants, setVariants] = useState<{ colorName: string, colorCode: string, stockQuantity: number | string, files: File[] }[]>([
     { colorName: TEXTILE_COLORS[0].name, colorCode: TEXTILE_COLORS[0].hex, stockQuantity: 0, files: [] }
   ]);
   
@@ -72,9 +73,19 @@ export const ProductView = () => {
           authFetch('/api/categories')
       ]);
       
-      setProducts(await productsRes.json());
-      setCollections(await collectionsRes.json());
-      setCategories(await categoriesRes.json());
+      // 1. On extrait les données
+      const rawProducts = await productsRes.json();
+      const rawCollections = await collectionsRes.json();
+      const rawCategories = await categoriesRes.json();
+
+      // 🔄 2. LE TRI MAGIQUE : Du plus récent au plus ancien (basé sur l'ID)
+      const sortedProducts = rawProducts.sort((a: any, b: any) => b.id - a.id);
+
+      // 3. On sauvegarde dans les states
+      setProducts(sortedProducts);
+      setCollections(rawCollections);
+      setCategories(rawCategories);
+
     } catch (error) {
       console.error("Erreur chargement", error);
     } finally {
@@ -112,7 +123,6 @@ export const ProductView = () => {
   const handleVariantFileChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files) {
           const newVariants = [...variants];
-          // @ts-ignore
           newVariants[index].files = Array.from(e.target.files); 
           setVariants(newVariants);
       }
@@ -192,7 +202,6 @@ export const ProductView = () => {
         }
 
         const variantsWithBase64 = await Promise.all(variants.map(async (v) => {
-            // @ts-ignore
             const filesBase64 = await Promise.all(v.files.map(f => fileToBase64(f)));
             return {
                 colorName: v.colorName,
@@ -230,7 +239,6 @@ export const ProductView = () => {
         });
 
         if (response.ok) {
-            alert(editingId ? "Produit mis à jour !" : "Produit créé !");
             fetchData();
             resetForm();
         } else {
@@ -258,14 +266,16 @@ export const ProductView = () => {
   };
 
   return (
-    // ✅ CORRECTION MAJEURE ICI : Ajout de 'overflow-x-hidden' et 'max-w-full' pour empêcher le scroll horizontal
     <div className="p-4 md:p-8 space-y-6 w-full max-w-[100vw] overflow-x-hidden">
       
       {/* HEADER RESPONSIVE */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm w-full">
         <div>
           <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-             <span className="bg-red-100 p-2 rounded-lg text-red-600">
+             <span 
+                 className="p-2 rounded-lg"
+                 style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)', color: 'var(--theme-primary)' }}
+             >
                 <Tag size={24} />
              </span>
              Inventaire
@@ -274,7 +284,8 @@ export const ProductView = () => {
         </div>
         <button 
           onClick={() => { resetForm(); setIsModalOpen(true); }}
-          className="w-full sm:w-auto bg-red-600 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700 transition-all shadow-lg shadow-red-100 active:scale-95"
+          style={{ backgroundColor: 'var(--theme-primary)' }}
+          className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-all shadow-lg active:scale-95"
         >
           <Plus size={20} /> <span className="hidden sm:inline">Nouveau Produit</span><span className="sm:hidden">Ajouter</span>
         </button>
@@ -284,7 +295,10 @@ export const ProductView = () => {
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden w-full">
         {loading ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center">
-                <div className="animate-spin w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full mb-4"></div>
+                <div 
+                    className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4"
+                    style={{ borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)', borderTopColor: 'var(--theme-primary)' }}
+                ></div>
                 Chargement...
             </div>
         ) : products.length === 0 ? (
@@ -324,7 +338,7 @@ export const ProductView = () => {
                                 </span>
                             </td>
                             <td className="px-6 py-4 text-slate-500 capitalize">{product.category_name || product.category}</td>
-                            <td className="px-6 py-4 font-bold text-slate-900">{product.price} FCFA</td>
+                            <td className="px-6 py-4 font-bold text-slate-900">{parseFloat(product.price).toLocaleString('fr-FR')} FCFA</td>
                             <td className="px-6 py-4">
                                 <span className={`px-2 py-1 rounded text-xs font-bold ${product.stock_quantity > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                     {product.stock_quantity}
@@ -332,8 +346,8 @@ export const ProductView = () => {
                             </td>
                             <td className="px-6 py-4 text-right">
                                 <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => handleEditClick(product)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Edit size={18}/></button>
-                                    <button onClick={() => handleDelete(product.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={18}/></button>
+                                    <button onClick={() => handleEditClick(product)} className="p-2 text-slate-400 hover:text-slate-900 bg-white hover:bg-slate-100 rounded-lg transition-all border border-transparent hover:border-slate-200"><Edit size={18}/></button>
+                                    <button onClick={() => handleDelete(product.id)} className="p-2 text-slate-400 hover:text-red-600 bg-white hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100"><Trash2 size={18}/></button>
                                 </div>
                             </td>
                         </tr>
@@ -342,21 +356,19 @@ export const ProductView = () => {
                     </table>
                 </div>
 
-                {/* 2. VUE CARTES (MOBILE SEULEMENT - Alignement fixé) */}
+                {/* 2. VUE CARTES (MOBILE SEULEMENT) */}
                 <div className="md:hidden divide-y divide-slate-100 bg-slate-50/50 w-full">
                     {products.map((product: any) => (
                         <div key={product.id} className="p-4 bg-white mb-2 shadow-sm first:mt-0 last:mb-0 w-full">
                              
                              {/* En-tête Carte */}
                              <div className="flex justify-between items-start mb-3">
-                                {/* 'min-w-0' est crucial pour empêcher le flex de déborder */}
                                 <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
                                     <div className="w-12 h-14 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0">
                                         <img src={BASE_IMG_URL + product.image_url} alt="" className="w-full h-full object-cover" />
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Produit</span>
-                                        {/* truncate est important ici */}
                                         <h4 className="font-bold text-slate-800 text-sm truncate">{product.name}</h4>
                                         <div className="text-xs text-slate-500 capitalize truncate">{product.category_name || product.category}</div>
                                     </div>
@@ -374,7 +386,7 @@ export const ProductView = () => {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-500 flex items-center gap-1"><Tag size={14}/> Prix</span>
-                                    <span className="font-black text-slate-900">{product.price} FCFA</span>
+                                    <span className="font-black text-slate-900">{parseFloat(product.price).toLocaleString('fr-FR')} FCFA</span>
                                 </div>
                              </div>
 
@@ -382,7 +394,7 @@ export const ProductView = () => {
                              <div className="flex gap-2">
                                 <button 
                                     onClick={() => handleEditClick(product)} 
-                                    className="flex-1 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 font-bold text-sm hover:border-red-300 hover:text-red-600 transition-colors shadow-sm"
+                                    className="flex-1 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl flex items-center justify-center gap-2 font-bold text-sm hover:bg-slate-50 transition-colors shadow-sm"
                                 >
                                     <Edit size={16}/> Modifier
                                 </button>
@@ -403,11 +415,15 @@ export const ProductView = () => {
       {/* --- MODAL FORMULAIRE --- */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
             
-            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
+            {/* Header Modal (Fixe) */}
+            <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center rounded-t-3xl flex-shrink-0">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                  {editingId ? <Edit size={20} className="text-red-600"/> : <Plus size={20} className="text-red-600"/>}
+                  {editingId 
+                      ? <Edit size={20} style={{ color: 'var(--theme-primary)' }}/> 
+                      : <Plus size={20} style={{ color: 'var(--theme-primary)' }}/>
+                  }
                   {editingId ? 'Modifier' : 'Nouveau Produit'}
               </h3>
               <button onClick={resetForm} className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
@@ -415,28 +431,41 @@ export const ProductView = () => {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
+            {/* Contenu Modal (Scrollable) */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-grow custom-scrollbar">
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Nom du produit</label>
-                    <input name="name" value={formData.name} onChange={handleChange} placeholder="T-shirt Vintage..." className="input-field" required/>
+                    <input 
+                        name="name" value={formData.name} onChange={handleChange} 
+                        placeholder="T-shirt Vintage..." className="input-field" required
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Prix (FCFA)</label>
-                    <input name="price" type="number" value={formData.price} onChange={handleChange} placeholder="5000" className="input-field" required/>
+                    <input 
+                        name="price" type="number" value={formData.price} onChange={handleChange} 
+                        placeholder="5000" className="input-field" required
+                    />
                   </div>
               </div>
 
               <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Description</label>
-                  <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description détaillée..." className="input-field h-20 resize-none" required/>
+                  <textarea 
+                      name="description" value={formData.description} onChange={handleChange} 
+                      placeholder="Description détaillée..." className="input-field h-20 resize-none" required
+                  />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Stock Global</label>
-                    <input name="stock_quantity" type="number" value={formData.stock_quantity} onChange={handleChange} className="input-field" required/>
+                    <input 
+                        name="stock_quantity" type="number" value={formData.stock_quantity} 
+                        onChange={handleChange} className="input-field" required
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Genre / Cible</label>
@@ -446,8 +475,11 @@ export const ProductView = () => {
                                 key={cat}
                                 type="button"
                                 onClick={() => setFormData(prev => ({...prev, category: cat}))}
+                                style={formData.category === cat ? { backgroundColor: 'var(--theme-primary)' } : {}}
                                 className={`flex-1 py-2 text-xs font-bold rounded-lg capitalize transition-all ${
-                                    formData.category === cat ? 'bg-white text-red-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                                    formData.category === cat 
+                                    ? 'text-white shadow-sm' 
+                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'
                                 }`}
                             >
                                 {cat}
@@ -460,14 +492,14 @@ export const ProductView = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Collection</label>
-                    <select name="collection_id" onChange={handleChange} value={formData.collection_id} required className="input-field appearance-none">
+                    <select name="collection_id" onChange={handleChange} value={formData.collection_id} required className="input-field appearance-none cursor-pointer">
                         <option value="">Choisir...</option>
                         {collections.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Coupe (Catégorie)</label>
-                    <select name="category_id" onChange={handleChange} value={formData.category_id} required className="input-field appearance-none">
+                    <select name="category_id" onChange={handleChange} value={formData.category_id} required className="input-field appearance-none cursor-pointer">
                         <option value="">Choisir...</option>
                         {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
@@ -484,8 +516,11 @@ export const ProductView = () => {
                               type="button"
                               key={size}
                               onClick={() => toggleSize(size)}
+                              style={selectedSizes.includes(size) ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
                               className={`w-10 h-10 rounded-lg font-bold text-sm transition-all border ${
-                                  selectedSizes.includes(size) ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200'
+                                  selectedSizes.includes(size) 
+                                  ? 'text-white shadow-sm opacity-90 hover:opacity-100' 
+                                  : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                               }`}
                           >
                               {size}
@@ -499,7 +534,12 @@ export const ProductView = () => {
                       <label className="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-2">
                           <ImageIcon size={14}/> Image Principale
                       </label>
-                      <input type="file" onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])} className="input-field text-sm" accept="image/*"/>
+                      <input 
+                          type="file" 
+                          onChange={(e) => e.target.files && setSelectedFile(e.target.files[0])} 
+                          className="input-field text-sm cursor-pointer file-theme" 
+                          accept="image/*"
+                      />
                   </div>
                   
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -512,13 +552,14 @@ export const ProductView = () => {
                                   key={color.name}
                                   type="button"
                                   onClick={() => setFormData(prev => ({ ...prev, color: color.name }))}
+                                  style={formData.color === color.name ? { borderColor: 'var(--theme-primary)', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)' } : {}}
                                   className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all flex items-center gap-2 ${
                                       formData.color === color.name 
-                                      ? 'bg-white border-slate-900 ring-1 ring-slate-900 shadow-sm' 
+                                      ? 'bg-white' 
                                       : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'
                                   }`}
                               >
-                                  <div className={`w-3 h-3 rounded-full border border-black/10`} style={{ backgroundColor: color.hex }}></div>
+                                  <div className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: color.hex }}></div>
                                   {color.name}
                               </button>
                           ))}
@@ -529,7 +570,14 @@ export const ProductView = () => {
               <div className="space-y-4 pt-4 border-t border-slate-100">
                   <div className="flex justify-between items-center">
                       <h4 className="font-bold text-slate-800 flex items-center gap-2"><Palette size={18}/> Variantes (Autres Couleurs)</h4>
-                      <button type="button" onClick={addVariant} className="text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors">+ Ajouter variante</button>
+                      <button 
+                          type="button" 
+                          onClick={addVariant} 
+                          className="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors border"
+                          style={{ color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)' }}
+                      >
+                          + Ajouter variante
+                      </button>
                   </div>
                   
                   {variants.map((v, i) => (
@@ -540,17 +588,20 @@ export const ProductView = () => {
                                   <div className="flex flex-wrap gap-2">
                                       {TEXTILE_COLORS.map((color) => (
                                           <button
-                                              key={color.name}
-                                              type="button"
-                                              onClick={() => setVariantColor(i, color)}
-                                              title={color.name}
-                                              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110 ${
-                                                  v.colorName === color.name 
-                                                  ? 'ring-2 ring-offset-2 ring-slate-900 scale-110 border-slate-900' 
-                                                  : 'border-slate-300'
-                                              }`}
-                                              style={{ backgroundColor: color.hex }}
-                                          >
+                                                key={color.name}
+                                                type="button"
+                                                onClick={() => setVariantColor(i, color)}
+                                                title={color.name}
+                                                className={`w-8 h-8 rounded-full border flex items-center justify-center transition-transform hover:scale-110 ${
+                                                    v.colorName === color.name 
+                                                    ? 'ring-2 ring-offset-2 scale-110 border-transparent' 
+                                                    : 'border-slate-300'
+                                                }`}
+                                                style={{ 
+                                                    backgroundColor: color.hex, 
+                                                    ...(v.colorName === color.name ? { '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties : {}) 
+                                                }}
+                                           >
                                               {v.colorName === color.name && (
                                                   <Check size={14} className={color.name === 'Blanc' || color.name === 'Jaune' ? 'text-black' : 'text-white'} />
                                               )}
@@ -574,26 +625,45 @@ export const ProductView = () => {
                                   </div>
                                   <div>
                                       <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Images (Face/Dos)</label>
-                                      <input type="file" multiple onChange={e => handleVariantFileChange(i, e)} className="text-xs w-full text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                                      <input 
+                                          type="file" multiple 
+                                          onChange={e => handleVariantFileChange(i, e)} 
+                                          className="text-xs w-full text-slate-500 cursor-pointer file-theme"
+                                      />
                                   </div>
                               </div>
                           </div>
                           {variants.length > 1 && (
-                              <button type="button" onClick={() => removeVariant(i)} className="absolute top-2 right-2 bg-white text-red-500 rounded-full p-1.5 shadow-md border border-slate-200 hover:bg-red-50 transition-colors"><XCircle size={18}/></button>
+                              <button 
+                                  type="button" 
+                                  onClick={() => removeVariant(i)} 
+                                  className="absolute top-2 right-2 bg-white text-red-500 rounded-full p-1.5 shadow-md border border-slate-200 hover:bg-red-50 transition-colors"
+                              >
+                                  <XCircle size={18}/>
+                              </button>
                           )}
                       </div>
                   ))}
               </div>
 
-              <button type="submit" className="w-full py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all shadow-xl shadow-red-100 flex items-center justify-center gap-2 active:scale-95">
-                <Check size={20} />
-                {editingId ? 'Sauvegarder les modifications' : 'Créer le produit'}
-              </button>
+              {/* Bouton de soumission (Fixe en bas) */}
+              <div className="pt-4 pb-2 sticky bottom-0 bg-white z-10 border-t border-slate-100 mt-4">
+                  <button 
+                      type="submit" 
+                      style={{ backgroundColor: 'var(--theme-primary)' }}
+                      className="w-full py-4 text-white font-bold rounded-xl opacity-95 hover:opacity-100 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95"
+                  >
+                    <Check size={20} />
+                    {editingId ? 'Sauvegarder les modifications' : 'Créer le produit'}
+                  </button>
+              </div>
+
             </form>
           </div>
         </div>
       )}
 
+      {/* 🪄 STYLE MAGIQUE POUR LES INPUTS ET BOUTONS FICHIER */}
       <style>{`
         .input-field {
             width: 100%;
@@ -605,8 +675,41 @@ export const ProductView = () => {
             transition: all 0.2s;
         }
         .input-field:focus {
-            border-color: #dc2626;
-            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.1);
+            border-color: var(--theme-primary);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary) 15%, transparent);
+        }
+        
+        /* Personnalisation du bouton "Choisir un fichier" */
+        .file-theme::file-selector-button {
+            margin-right: 16px;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+            color: var(--theme-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .file-theme::file-selector-button:hover {
+            background-color: color-mix(in srgb, var(--theme-primary) 20%, transparent);
+        }
+
+        /* Scrollbar personnalisée pour la modale */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
       `}</style>
     </div>

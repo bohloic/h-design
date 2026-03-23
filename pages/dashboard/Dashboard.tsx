@@ -5,6 +5,7 @@ import { DecodedToken } from '../../types.js';
 import { Commande } from './Commande.js';
 import DashboardSidebar from './DashboardSidebar'; 
 import { Menu, User } from 'lucide-react'; // Import des icônes pour le header mobile
+import { LoyaltyTab } from './LoyaltyPage.js';
 
 const Dashboard: React.FC = () => {
   const token = localStorage.getItem('token');
@@ -50,10 +51,11 @@ const Dashboard: React.FC = () => {
 
     switch (activeTab) {
         case 'orders': return <Commande orders={order} />;
+        case 'loyalty': return <LoyaltyTab />;
         case 'wishlist': return <div className="p-8 text-center bg-white rounded-3xl">Bientôt disponible</div>;
         case 'payments': return <div className="p-8 text-center bg-white rounded-3xl">Paiements</div>;
         case 'settings': return <div className="p-8 text-center bg-white rounded-3xl">Paramètres</div>;
-        default: return <Commande orders={order} />;
+        default: return <Commande orders={order}  />;
     }
   };
 
@@ -63,8 +65,14 @@ const Dashboard: React.FC = () => {
       {/* --- HEADER MOBILE (Visible uniquement sur mobile) --- */}
       <div className="lg:hidden flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-3">
-             {/* Petit Avatar */}
-             <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-red-600">
+             {/* Petit Avatar - 🪄 COULEURS DYNAMIQUES ICI */}
+             <div 
+                className="w-10 h-10 rounded-full flex items-center justify-center"
+                style={{ 
+                    backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', 
+                    color: 'var(--theme-primary)' 
+                }}
+             >
                 <User size={20} />
              </div>
              <div>
@@ -76,7 +84,7 @@ const Dashboard: React.FC = () => {
         {/* BOUTON MENU */}
         <button 
             onClick={() => setIsMobileMenuOpen(true)}
-            className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200"
+            className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors"
         >
             <Menu size={24} />
         </button>

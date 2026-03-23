@@ -5,17 +5,17 @@ import { CartItem, DecodedToken, Product } from './types';
 import { jwtDecode } from 'jwt-decode';
 
 // Components
-import Navbar from './src/components/Navbar.tsx';
-import CartDrawer from './src/components/CartDrawer.tsx';
-import Snowfall from './src/components/Snowfall.tsx';
-import Footer from './src/components/Footer.tsx';
-import ScrollToTop from './src/components/ScrollToTop.tsx';
-import ChatWidget from './src/components/ChatWidget.jsx';
+import Navbar from './src/components/elements/Navbar.tsx';
+import CartDrawer from './src/components/cart/CartDrawer.tsx';
+import Snowfall from './src/components/tools/Snowfall.tsx';
+import Footer from './src/components/elements/Footer.tsx';
+import ScrollToTop from './src/components/tools/ScrollToTop.tsx';
+import ChatWidget from './src/components/chatbot/ChatWidget.jsx';
 
 // Routes Guards
-import AdminRoute from './src/components/AdminRoute.jsx';
-import PrivateRoute from './src/components/PrivateRoute.tsx';
-import GuestRoute from './src/components/GuestRoute.tsx';
+import AdminRoute from './src/components/routes/AdminRoute.jsx';
+import PrivateRoute from './src/components/routes/PrivateRoute.tsx';
+import GuestRoute from './src/components/routes/GuestRoute.tsx';
 
 // Pages
 import Home from './pages/Home';
@@ -39,6 +39,10 @@ import { CategoryView } from './pages/admin/CategoryView.tsx';
 import { DeliveryView } from './pages/admin/DeliveryView.tsx';
 import { OrderDetailView } from './pages/admin/OrderDetailView.tsx';
 import PaymentCallback from './pages/PaymentCallback.tsx';
+import { AdminVIPScanner } from './pages/admin/AdminVIPScanner.tsx';
+import ResetPassword from './pages/ResetPassword.tsx';
+import { ThemeProvider } from './src/utils/context/ThemeContext.tsx';
+import { AdminValidationDesigns } from './src/components/admin/AdminValidationDesigns.tsx';
 
 
 const App: React.FC = () => {
@@ -152,104 +156,119 @@ const App: React.FC = () => {
     window.location.href = '/'; 
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: any) => {
     setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
+      const existing = prev.find(item => String(item.id) === String(product.id));
+      
+      // On récupère la quantité envoyée par la page produit (ou 1 par défaut)
+      const quantityToAdd = product.quantity || 1;
+
       if (existing) {
+        // Si le t-shirt est déjà dans le panier, on ADDITIONNE les quantités
         return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          String(item.id) === String(product.id) 
+            ? { ...item, quantity: item.quantity + quantityToAdd } 
+            : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      
+      // Si c'est un nouveau t-shirt, on l'ajoute avec la BONNE quantité
+      return [...prev, { ...product, quantity: quantityToAdd }];
     });
+    
     setIsCartOpen(true);
   };
 
   const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(item => 
-      item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
+      String(item.id) === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
     ));
   };
 
   const removeFromCart = (id: string) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+    setCart(prev => prev.filter(item => String(item.id) !== id));
   };
 
   const clearCart = () => setCart([]);
 
   
   return (
-    <Router>
-      <ScrollToTop />
-      <div className="min-h-screen flex flex-col">
-        <Snowfall />
-        
-        <Navbar 
-          cartCount={cart.reduce((sum, i) => sum + i.quantity, 0)} 
-          onOpenCart={() => setIsCartOpen(true)} 
-          isAuthenticated={isAuthenticated}
-          onLogout={handleLogout}
-        />
-        
-        <ChatWidget />
-        
-        <main className="flex-grow">
-          <Routes>
-            {/* --- Routes Publiques --- */}
-            <Route path="/" element={<Home onAddToCart={addToCart} />} />
-            <Route path="/boutique" element={<Shop onAddToCart={addToCart} />} />
-            <Route path="/boutique/produit/:slug" element={<ProductDetails onAddToCart={addToCart} />} />
-            <Route path="/personnaliser/mon-design" element={<ProductCustomizer onAddToCart={addToCart} />} />
-            
-            {/* --- Routes Invités (Login) --- */}
-            <Route element={<GuestRoute />}>
-              <Route 
-                path="/login" 
-                element={<Auth onLoginSuccess={() => setIsAuthenticated(true)} />} 
-              />
-            </Route>
-
-            {/* --- Routes Privées (Clients) --- */}
-            <Route element={<PrivateRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/checkout" element={<Checkout cartItems={cart} onClearCart={clearCart} data={data} />} />
+    <ThemeProvider>
+      <Router>
+        <ScrollToTop />
+        <div className="min-h-screen flex flex-col">
+          <Snowfall />
+          
+          <Navbar 
+            cartCount={cart.reduce((sum, i) => sum + i.quantity, 0)} 
+            onOpenCart={() => setIsCartOpen(true)} 
+            isAuthenticated={isAuthenticated}
+            onLogout={handleLogout}
+          />
+          
+          <ChatWidget />
+          
+          <main className="flex-grow">
+            <Routes>
+              {/* --- Routes Publiques --- */}
+              <Route path="/" element={<Home onAddToCart={addToCart} />} />
+              <Route path="/boutique" element={<Shop onAddToCart={addToCart} />} />
+              <Route path="/boutique/produit/:slug" element={<ProductDetails onAddToCart={addToCart} />} />
+              <Route path="/personnaliser/mon-design" element={<ProductCustomizer onAddToCart={addToCart} />} />
               
-              {/* Route de retour Paystack */}
-              <Route path="/payment/callback" element={<PaymentCallback />} />
+              {/* --- Routes Invités (Login) --- */}
+              <Route element={<GuestRoute />}>
+                <Route 
+                  path="/login" 
+                  element={<Auth onLoginSuccess={() => setIsAuthenticated(true)} />} 
+                />
+                <Route path="/reset-password" element={<ResetPassword />} />
+              </Route>
+
+              {/* --- Routes Privées (Clients) --- */}
+              <Route element={<PrivateRoute />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/checkout" element={<Checkout cartItems={cart} onClearCart={clearCart} data={data} />} />
+                
+                {/* Route de retour Paystack */}
+                <Route path="/payment/callback" element={<PaymentCallback />} />
+                
+                <Route path="/order-confirmed" element={<OrderConfirmed /> } />
+              </Route>
               
-              <Route path="/order-confirmed" element={<OrderConfirmed /> } />
-            </Route>
-            
-            {/* --- Routes Admin --- */}
-            <Route element={<AdminRoute />}> 
-              <Route path="/admin" element={<AppLayout title="Tableau de bord"><DashboardView /></AppLayout>} />
-              <Route path="/admin/products" element={<AppLayout title="Inventaire Produits"><ProductView /></AppLayout>} />
-              <Route path="/admin/orders" element={<AppLayout title="Gestion des Ventes"><OrderView /></AppLayout>} />
-              <Route path="/admin/orders/:id" element={<AppLayout title="Gestion des details de ventes"><OrderDetailView /></AppLayout>} />
-              <Route path="/admin/customers" element={<AppLayout title="Gestion Clients"><CustomerView /></AppLayout>} />
-              <Route path="/admin/collections" element={<AppLayout title="Gestion des collections"><CollectionView /></AppLayout>} />
-              <Route path="/admin/categories" element={<AppLayout title="Gestion des Catégories"><CategoryView /></AppLayout>} />
-              <Route path="/admin/deliveries" element={<AppLayout title="Gestion des livraisons"><DeliveryView /></AppLayout>} />
+              {/* --- Routes Admin --- */}
+              <Route element={<AdminRoute />}> 
+                <Route path="/admin" element={<AppLayout title="Tableau de bord"><DashboardView /></AppLayout>} />
+                <Route path="/admin/products" element={<AppLayout title="Inventaire Produits"><ProductView /></AppLayout>} />
+                <Route path="/admin/orders" element={<AppLayout title="Gestion des Ventes"><OrderView /></AppLayout>} />
+                <Route path="/admin/orders/:id" element={<AppLayout title="Gestion des details de ventes"><OrderDetailView /></AppLayout>} />
+                <Route path="/admin/validations" element={<AppLayout title="Gestion des validations"><AdminValidationDesigns /></AppLayout>} />
+                <Route path="/admin/customers" element={<AppLayout title="Gestion Clients"><CustomerView /></AppLayout>} />
+                <Route path='/admin/vip-scanner' element={<AppLayout title='Gestion des fidélisations'><AdminVIPScanner /></AppLayout>} />
+                <Route path="/admin/collections" element={<AppLayout title="Gestion des collections"><CollectionView /></AppLayout>} />
+                <Route path="/admin/categories" element={<AppLayout title="Gestion des Catégories"><CategoryView /></AppLayout>} />
+                <Route path="/admin/deliveries" element={<AppLayout title="Gestion des livraisons"><DeliveryView /></AppLayout>} />
 
-            </Route> 
+              </Route> 
 
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} /> 
-          </Routes>
-        </main>
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} /> 
+            </Routes>
+          </main>
 
-        <Footer />
+          <Footer />
 
-        <CartDrawer 
-          isOpen={isCartOpen} 
-          onClose={() => setIsCartOpen(false)}
-          items={cart}
-          onUpdateQuantity={updateQuantity}
-          onRemove={removeFromCart}
-          onCheckout={() => setIsCartOpen(false)}
-        />
-      </div>
-    </Router>
+          <CartDrawer 
+            isOpen={isCartOpen} 
+            onClose={() => setIsCartOpen(false)}
+            items={cart}
+            onUpdateQuantity={updateQuantity}
+            onRemove={removeFromCart}
+            onCheckout={() => setIsCartOpen(false)}
+          />
+        </div>
+      </Router>
+    </ThemeProvider>
   );
 };
 

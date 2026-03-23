@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../src/utils/apiClient';
-import { CreditCard, MapPin, CheckCircle2, ArrowRight, Wallet, Lock, Truck, Loader2 } from 'lucide-react';
-import { CartItem } from '../types';
+import { CreditCard, MapPin, CheckCircle2, ArrowRight, Wallet, Lock, Truck, Loader2, Star, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../constants';
 import { Link, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 
-// On a supprimé l'import de PaymentButton ici car on ne l'utilise plus !
+export interface CartItem {
+  id: string | number;
+  product_id?: string | number;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+  options?: {
+    size?: string;
+    color?: string;
+    variant_id?: string | number | null;
+    customization?: any;
+  };
+}
 
 interface UserData {
   id?: string | number;
@@ -31,14 +43,17 @@ interface MonTokenCustom {
   role: string;
   exp: number;
 }
-
 const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  // On accepte 'Mobile Money', 'Carte' ou 'Espèces'
   const [paymentMethod, setPaymentMethod] = useState<'Carte' | 'Espèces' | 'Mobile Money' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
+
+  const [userPoints, setUserPoints] = useState<number>(0);
+  const [useLoyaltyPoints, setUseLoyaltyPoints] = useState<boolean>(false);
+  
+  const [stockErrors, setStockErrors] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     userId: data?.id || '',
@@ -50,11 +65,14 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
     city: data?.city || ''
   });
 
+  const pointsRequired = 200;
+  const canUsePoints = userPoints >= pointsRequired;
+  const discountAmount = useLoyaltyPoints && cartItems.length > 0 ? cartItems[0].price : 0;
+  
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal > 50000 ? 0 : 3000;
-  const total = subtotal + shipping;
+  const total = subtotal + shipping - discountAmount;
 
-  // --- NAVIGATION ---
   const handleNext = () => {
     if (step === 1) {
       if (!formData.nom || !formData.prenom || !formData.address || !formData.phone || !formData.city) {
@@ -66,9 +84,11 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleBack = () => setStep(step - 1);
+  const handleBack = () => {
+    setStockErrors([]); 
+    setStep(step - 1);
+  };
 
-  // --- LOGIQUE PRINCIPALE DE COMMANDE & PAIEMENT ---
   const handleFinish = async () => {
     const token = localStorage.getItem('token');
     
@@ -78,10 +98,23 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         return;
     }
 
+    let finalUserId = formData.userId;
+    try {
+        const decoded = jwtDecode<MonTokenCustom>(token);
+        finalUserId = decoded.userId; 
+    } catch (err) {
+        console.error("Erreur décodage token", err);
+    }
+
+    if (!finalUserId) {
+        alert("Erreur d'authentification. Veuillez vous reconnecter.");
+        return;
+    }
+
     setIsLoading(true);
+    setStockErrors([]); 
 
     try {
-        // 1. CRÉATION DE LA COMMANDE (Avant le paiement)
         const URL_ORDER = '/api/orders'; 
         const orderResponse = await authFetch(URL_ORDER, {
             method: 'POST',
@@ -90,11 +123,12 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                userId: formData.userId, // Ajout explicite pour éviter l'erreur 500
+                userId: finalUserId,
                 cartItems: cartItems,
                 shippingDetails: formData,
                 paymentMethod: paymentMethod, 
-                totalAmount: total
+                totalAmount: total,
+                useLoyaltyPoints: useLoyaltyPoints
             })
         });
 
@@ -104,17 +138,14 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
             throw new Error(orderData.message || "Erreur lors de la création de la commande");
         }
 
-        const newOrderId = orderData.orderId; // L'ID de la commande créée par la BDD
+        const newOrderId = orderData.orderId;
 
-        // 2. GESTION DU PAIEMENT
         if (paymentMethod === 'Espèces') {
-            // CAS A : Paiement à la livraison
-            alert("Commande confirmée ! Un lutin livreur est en route 🎅");
+            alert("Commande confirmée ! Un livreur est en route 🚚");
             onClearCart();
             navigate('/order-confirmed', { state: { orderId: newOrderId } });
 
         } else {
-            // CAS B : Paiement Électronique (Paystack)
             const paymentResponse = await authFetch('/api/payment/initialize', {
                 method: 'POST',
                 headers: {
@@ -124,14 +155,22 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                 body: JSON.stringify({
                     email: formData.email,
                     amount: total,
-                    orderId: newOrderId // On passe l'ID de commande à Paystack
+                    orderId: newOrderId
                 })
             });
 
             const paymentData = await paymentResponse.json();
 
+            if (!paymentResponse.ok) {
+                if (paymentData.errorType === 'STOCK_ERROR') {
+                    setStockErrors(paymentData.details);
+                    setIsLoading(false);
+                    return; 
+                }
+                throw new Error(paymentData.message || "Impossible d'initialiser le paiement Paystack");
+            }
+
             if (paymentData.authorization_url) {
-                // Redirection vers la page de paiement Paystack
                 window.location.href = paymentData.authorization_url;
             } else {
                 throw new Error("Impossible d'initialiser le paiement Paystack");
@@ -146,7 +185,6 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
     }
   };
 
-  // --- CHARGEMENT PROFIL ---
   const fetchUserProfile = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -164,7 +202,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         const userData = await response.json();
         setFormData(prev => ({
           ...prev,
-          userId: userData.id || userData._id || userIdFromToken, // Fallback sur le token si pas d'ID
+          userId: userData.id || userData._id || userIdFromToken,
           nom: userData.nom || '',
           prenom: userData.prenom || '',
           email: userData.email || '',
@@ -179,18 +217,38 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
     }
   };
 
+  const fetchUserPoints = async () => {
+    try {
+        const response = await authFetch('/api/loyalty/my-card');
+        const data = await response.json();
+        if (data.success) {
+            setUserPoints(data.user.points);
+        }
+    } catch (error) {
+        console.error("Erreur de chargement des points", error);
+    }
+  };
+
   useEffect(() => {
     fetchUserProfile();
+    fetchUserPoints(); 
   }, []); 
 
   if (cartItems.length === 0 && step !== 3) {
     return (
       <div className="max-w-md mx-auto py-20 px-4 text-center space-y-6">
-        <div className="w-20 h-20 md:w-24 md:h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
+        <div 
+            className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto"
+            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' }}
+        >
           <Truck size={40} className="md:w-12 md:h-12" />
         </div>
-        <h2 className="text-xl md:text-2xl font-bold">Votre traineau est vide !</h2>
-        <Link to="/" className="inline-block bg-red-600 text-white px-6 py-3 md:px-8 md:py-3 rounded-full font-bold hover:bg-red-700 transition">
+        <h2 className="text-xl md:text-2xl font-bold">Votre panier est vide !</h2>
+        <Link 
+            to="/" 
+            style={{ backgroundColor: 'var(--theme-primary)' }}
+            className="inline-block text-white px-6 py-3 md:px-8 md:py-3 rounded-full font-bold opacity-90 hover:opacity-100 transition shadow-lg"
+        >
           Retour à la boutique
         </Link>
       </div>
@@ -204,13 +262,19 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
       <div className="flex items-center justify-center mb-8 md:mb-16 space-x-2 md:space-x-4">
         {[1, 2, 3].map((s) => (
           <div key={s} className="flex items-center">
-            <div className={`w-8 h-8 md:w-10 md:h-10 text-sm md:text-base rounded-full flex items-center justify-center font-bold border-2 transition-all ${
-              step >= s ? 'bg-red-600 border-red-600 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-300'
-            }`}>
+            <div 
+                className={`w-8 h-8 md:w-10 md:h-10 text-sm md:text-base rounded-full flex items-center justify-center font-bold border-2 transition-all ${
+                    step >= s ? 'text-white shadow-lg' : 'bg-white border-slate-200 text-slate-300'
+                }`}
+                style={step >= s ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
+            >
               {s}
             </div>
             {s < 3 && (
-              <div className={`w-8 sm:w-16 md:w-32 h-1 mx-1 md:mx-2 rounded ${step > s ? 'bg-red-600' : 'bg-slate-200'}`} />
+              <div 
+                  className={`w-8 sm:w-16 md:w-32 h-1 mx-1 md:mx-2 rounded transition-colors ${step > s ? '' : 'bg-slate-200'}`} 
+                  style={step > s ? { backgroundColor: 'var(--theme-primary)' } : {}}
+              />
             )}
           </div>
         ))}
@@ -223,44 +287,48 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
           {step === 1 && (
             <div className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 animate-fade-in">
               <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center">
-                <MapPin className="mr-2 text-red-600 w-5 h-5 md:w-6 md:h-6" /> Informations de livraison
+                <MapPin className="mr-2 w-5 h-5 md:w-6 md:h-6" style={{ color: 'var(--theme-primary)' }} /> Informations de livraison
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-600">Nom</label>
-                  <input type="text" className="w-full px-4 py-3 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-red-600 outline-none text-sm md:text-base" 
+                  <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-2xl outline-none text-sm md:text-base transition-all theme-input" 
                     value={formData.nom} onChange={(e) => setFormData({...formData, nom: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-600">Prénom</label>
-                  <input type="text" className="w-full px-4 py-3 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-red-600 outline-none text-sm md:text-base" 
+                  <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-2xl outline-none text-sm md:text-base transition-all theme-input" 
                     value={formData.prenom} onChange={(e) => setFormData({...formData, prenom: e.target.value})} />
                 </div>
 
                 <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-600">Ville</label>
                    <input type="text" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} 
-                   className="w-full px-4 py-3 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-red-600 outline-none text-sm md:text-base"/>
+                   className="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-2xl outline-none text-sm md:text-base transition-all theme-input"/>
                 </div>
                  <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-600">Adresse</label>
+                   <label className="text-sm font-bold text-slate-600">Adresse complète</label>
                    <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} 
-                   className="w-full px-4 py-3 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-red-600 outline-none text-sm md:text-base"/>
+                   className="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-2xl outline-none text-sm md:text-base transition-all theme-input"/>
                 </div>
                  <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-600">Téléphone</label>
                    <input type="text" inputMode="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                   className="w-full px-4 py-3 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-red-600 outline-none text-sm md:text-base"/>
+                   className="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-2xl outline-none text-sm md:text-base transition-all theme-input"/>
                 </div>
                  <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-600">Email</label>
                    <input type="email" inputMode="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                   className="w-full px-4 py-3 bg-slate-50 rounded-2xl focus:ring-2 focus:ring-red-600 outline-none text-sm md:text-base" readOnly={isAuth}/>
+                   className="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-2xl outline-none text-sm md:text-base transition-all theme-input" readOnly={isAuth}/>
                 </div>
 
               </div>
-              <button onClick={handleNext} className="mt-8 w-full bg-red-600 text-white py-3 md:py-4 rounded-2xl font-bold flex items-center justify-center space-x-2 hover:bg-red-700 transition-all shadow-xl shadow-red-100 active:scale-95">
+              <button 
+                onClick={handleNext} 
+                style={{ backgroundColor: 'var(--theme-primary)' }}
+                className="mt-8 w-full text-white py-3 md:py-4 rounded-2xl font-bold flex items-center justify-center space-x-2 opacity-95 hover:opacity-100 transition-all shadow-xl active:scale-95"
+              >
                 <span>Continuer vers le paiement</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
@@ -271,43 +339,108 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
           {step === 2 && (
             <div className="bg-white p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 animate-fade-in">
               <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center">
-                <CreditCard className="mr-2 text-red-600 w-5 h-5 md:w-6 md:h-6" /> Mode de Paiement
+                <CreditCard className="mr-2 w-5 h-5 md:w-6 md:h-6" style={{ color: 'var(--theme-primary)' }} /> Mode de Paiement
               </h2>
               <div className="space-y-3 md:space-y-4">
                 
                 {/* Option Paystack (Mobile Money / Carte) */}
                 <button 
                     onClick={() => setPaymentMethod('Mobile Money')}
+                    style={paymentMethod === 'Mobile Money' ? { borderColor: 'var(--theme-primary)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)' } : {}}
                     className={`w-full p-4 md:p-6 border-2 rounded-3xl flex items-center justify-between transition-all ${
-                    paymentMethod === 'Mobile Money' ? 'border-red-600 bg-red-50' : 'border-slate-100 hover:border-slate-200'
+                        paymentMethod === 'Mobile Money' ? '' : 'border-slate-100 hover:border-slate-200'
                     }`}
                 >
                     <div className="flex flex-col items-start">
                         <span className="font-bold text-sm md:text-base">Paiement en ligne</span>
                         <span className="text-xs text-slate-500">Mobile Money (Orange, MTN, Moov, Wave) & Carte</span>
                     </div>
-                    <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 ${paymentMethod === 'Mobile Money' ? 'bg-red-600 border-red-600' : 'border-slate-300'}`} />
+                    <div 
+                        className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 ${paymentMethod === 'Mobile Money' ? '' : 'border-slate-300'}`} 
+                        style={paymentMethod === 'Mobile Money' ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
+                    />
                 </button>
 
                 {/* Option Espèces */}
                 <button 
                     onClick={() => setPaymentMethod('Espèces')}
+                    style={paymentMethod === 'Espèces' ? { borderColor: 'var(--theme-primary)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)' } : {}}
                     className={`w-full p-4 md:p-6 border-2 rounded-3xl flex items-center justify-between transition-all ${
-                    paymentMethod === 'Espèces' ? 'border-red-600 bg-red-50' : 'border-slate-100 hover:border-slate-200'
+                        paymentMethod === 'Espèces' ? '' : 'border-slate-100 hover:border-slate-200'
                     }`}
                 >
                     <div className="flex flex-col items-start">
                         <span className="font-bold text-sm md:text-base">Paiement à la livraison</span>
                         <span className="text-xs text-slate-500">Payer en espèces à la réception</span>
                     </div>
-                    <div className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 ${paymentMethod === 'Espèces' ? 'bg-red-600 border-red-600' : 'border-slate-300'}`} />
+                    <div 
+                        className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 ${paymentMethod === 'Espèces' ? '' : 'border-slate-300'}`} 
+                        style={paymentMethod === 'Espèces' ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
+                    />
                 </button>
 
               </div>
 
+              {/* --- MODULE RÉCOMPENSE VIP H-DESIGNER --- */}
+              <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6 mt-6">
+                  <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 bg-slate-900 text-amber-400 rounded-xl">
+                          <Star size={24} className="fill-amber-400" />
+                      </div>
+                      <div>
+                          <h3 className="font-black text-slate-900">Club Privilège H-Designer</h3>
+                          <p className="text-sm text-slate-500">Votre solde : <strong className="text-slate-900">{userPoints} points</strong></p>
+                      </div>
+                  </div>
+
+                  {canUsePoints ? (
+                      <div 
+                          className="p-4 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4"
+                          style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' }}
+                      >
+                          <div>
+                              <p className="font-bold flex items-center gap-1" style={{ color: 'var(--theme-primary)' }}>🎁 T-Shirt Offert Débloqué !</p>
+                              <p className="text-xs mt-1" style={{ color: 'var(--theme-primary)', opacity: 0.8 }}>Utilisez 200 points pour déduire {discountAmount.toLocaleString()} FCFA de cette commande.</p>
+                          </div>
+                          
+                          <button 
+                              type="button"
+                              onClick={() => setUseLoyaltyPoints(!useLoyaltyPoints)}
+                              style={useLoyaltyPoints ? { backgroundColor: 'var(--theme-primary)', color: 'white' } : { backgroundColor: 'white', color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' }}
+                              className={`px-4 py-2 rounded-xl font-bold transition-all whitespace-nowrap shadow-sm border ${
+                                  useLoyaltyPoints 
+                                  ? '' 
+                                  : 'hover:bg-slate-50'
+                              }`}
+                          >
+                              {useLoyaltyPoints ? 'Récompense Appliquée ✓' : 'Appliquer mes points'}
+                          </button>
+                      </div>
+                  ) : (
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                          <p className="text-sm text-slate-500 flex items-center gap-2">
+                              Il vous manque <strong className="text-slate-800">{pointsRequired - userPoints} points</strong> pour obtenir un article gratuit.
+                          </p>
+                          <div className="w-full bg-slate-200 h-2 rounded-full mt-3 overflow-hidden">
+                              <div 
+                                  className="h-full rounded-full transition-all duration-1000" 
+                                  style={{ width: `${Math.min(100, (userPoints / pointsRequired) * 100)}%`, backgroundColor: 'var(--theme-primary)' }}
+                              ></div>
+                          </div>
+                      </div>
+                  )}
+              </div>
+
               <div className="flex gap-3 md:gap-4 mt-8">
-                <button onClick={handleBack} className="flex-1 bg-slate-100 text-slate-600 py-3 md:py-4 rounded-2xl font-bold hover:bg-slate-200">Retour</button>
-                <button onClick={handleNext} disabled={!paymentMethod} className="flex-[2] bg-red-600 text-white py-3 md:py-4 rounded-2xl font-bold disabled:opacity-50 active:scale-95 transition-transform">Confirmer</button>
+                <button onClick={handleBack} disabled={isLoading} className="flex-1 bg-slate-100 text-slate-600 py-3 md:py-4 rounded-2xl font-bold hover:bg-slate-200 transition-colors">Retour</button>
+                <button 
+                    onClick={handleNext} 
+                    disabled={!paymentMethod} 
+                    style={paymentMethod ? { backgroundColor: 'var(--theme-primary)' } : {}}
+                    className={`flex-[2] text-white py-3 md:py-4 rounded-2xl font-bold transition-transform ${paymentMethod ? 'opacity-95 hover:opacity-100 active:scale-95 shadow-lg' : 'bg-slate-300 cursor-not-allowed'}`}
+                >
+                    Confirmer
+                </button>
               </div>
             </div>
           )}
@@ -315,7 +448,10 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
           {/* ÉTAPE 3 : RÉSUMÉ & VALIDATION */}
           {step === 3 && (
             <div className="bg-white p-6 md:p-12 rounded-3xl shadow-xl border border-slate-100 text-center space-y-6 md:space-y-8 animate-bounce-in">
-              <div className="w-16 h-16 md:w-24 md:h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-green-100">
+              <div 
+                  className="w-16 h-16 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto shadow-lg"
+                  style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' }}
+              >
                 <CheckCircle2 size={40} className="md:w-16 md:h-16" />
               </div>
               
@@ -330,25 +466,54 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 font-bold uppercase text-xs">Paiement</span>
-                  <span className="font-bold text-red-600">{paymentMethod === 'Mobile Money' ? 'Mobile Money / Carte' : paymentMethod}</span>
+                  <span className="font-bold" style={{ color: 'var(--theme-primary)' }}>{paymentMethod === 'Mobile Money' ? 'Mobile Money / Carte' : paymentMethod}</span>
                 </div>
               </div>
+
+              {stockErrors.length > 0 && (
+                  <div className="bg-red-50 border border-red-200 p-5 rounded-2xl text-left animate-fade-in shadow-inner">
+                      <div className="flex items-center gap-2 text-red-800 font-bold mb-3">
+                          <AlertCircle size={20} />
+                          <h4>Mise à jour de votre panier requise</h4>
+                      </div>
+                      <p className="text-red-600 text-sm mb-3 font-medium">
+                          Pendant que vous faisiez vos achats, un autre client a dévalisé notre stock :
+                      </p>
+                      <ul className="list-disc pl-6 text-red-700 text-sm space-y-2">
+                          {stockErrors.map((err, idx) => (
+                              <li key={idx}>
+                                  <strong className="underline">{err.name}</strong><br/>
+                                  {err.available === 0 
+                                      ? "Définitivement épuisé 😭" 
+                                      : `Vous en vouliez ${err.requested}, il n'en reste que ${err.available}.`}
+                              </li>
+                          ))}
+                      </ul>
+                      <button 
+                          onClick={() => { navigate('/cart'); }} 
+                          className="mt-4 w-full bg-red-600 text-white py-2 rounded-xl text-sm font-bold hover:bg-red-700 transition-colors"
+                      >
+                          Modifier mon panier
+                      </button>
+                  </div>
+              )}
               
               <div className="flex flex-col-reverse md:flex-row gap-4">
-                  <button onClick={handleBack} disabled={isLoading} className="w-full md:flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200">
+                  <button onClick={handleBack} disabled={isLoading} className="w-full md:flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-colors">
                     Retour
                   </button>
                   
                   <div className="w-full md:flex-[2]">
+                    {/* Le bouton Payer final reste volontairement en vert pour la sémantique de validation */}
                     <button 
                         onClick={handleFinish}
-                        disabled={isLoading}
-                        className="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg md:text-xl hover:bg-green-700 transition-all flex items-center justify-center gap-3 active:scale-95"
+                        disabled={isLoading || stockErrors.length > 0} 
+                        className="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg md:text-xl hover:bg-green-700 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading ? (
                             <>
                                 <Loader2 className="animate-spin" /> 
-                                {paymentMethod === 'Mobile Money' ? 'Redirection Paystack...' : 'Validation...'}
+                                {paymentMethod === 'Mobile Money' ? 'Vérification...' : 'Validation...'}
                             </>
                         ) : (
                             `Payer ${formatCurrency(total)}`
@@ -364,7 +529,10 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         <aside className="space-y-6">
           <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 relative lg:sticky lg:top-6">
             <h3 className="text-lg font-bold mb-4 md:mb-6 flex items-center gap-2">
-              <span className="bg-red-100 text-red-600 p-2 rounded-lg">
+              <span 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' }}
+              >
                 <Wallet size={18} />
               </span>
               Résumé de la commande
@@ -423,16 +591,25 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
             {/* TOTAL FINAL */}
             <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-100">
               <span className="text-base md:text-lg font-bold text-slate-900">Total à payer</span>
-              <span className="text-xl md:text-2xl font-black text-red-600">{formatCurrency(total)}</span>
+              <span className="text-xl md:text-2xl font-black" style={{ color: 'var(--theme-primary)' }}>{formatCurrency(total)}</span>
             </div>
 
-            <div className="mt-6 flex items-center justify-center gap-2 text-[10px] md:text-xs text-slate-400 bg-slate-50 py-3 rounded-xl">
+            <div className="mt-6 flex items-center justify-center gap-2 text-[10px] md:text-xs text-slate-400 bg-slate-50 py-3 rounded-xl border border-slate-100">
               <Lock size={12} />
               Paiement 100% sécurisé par Paystack
             </div>
           </div>
         </aside>
       </div>
+
+      {/* 🪄 STYLES MAGIQUES POUR LES INPUTS */}
+      <style>{`
+        .theme-input:focus {
+            background-color: white !important;
+            border-color: var(--theme-primary) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary) 15%, transparent) !important;
+        }
+      `}</style>
     </div>
   );
 };

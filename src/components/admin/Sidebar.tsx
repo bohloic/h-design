@@ -6,10 +6,12 @@ import {
   Users, 
   Layers, // Pour Collection
   Tag,    // Pour Categorie
-  Truck   // Pour Livraison
+  Truck,   // Pour Livraison
+  ScanBarcode,
+  Palette
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import LogoutButton from "../logoutButton";
+import LogoutButton from "../tools/logoutButton";
 
 export const Sidebar = () => {
   const location = useLocation();
@@ -18,6 +20,8 @@ export const Sidebar = () => {
     { name: 'Tableau de bord', path: '/admin', icon: LayoutDashboard },
     { name: 'Produit', path: '/admin/products', icon: Package },
     { name: 'Commande', path: '/admin/orders', icon: ShoppingBag },
+    { name: 'Validations Design', path: '/admin/validations', icon: Palette },
+    { name: 'Fidélité & Scan', path: '/admin/vip-scanner', icon: ScanBarcode },
     { name: 'Utilisateur', path: '/admin/customers', icon: Users },
     
     // --- ICONES MISES À JOUR ICI ---
@@ -30,7 +34,8 @@ export const Sidebar = () => {
     <div className="w-64 bg-slate-900 text-slate-300 h-screen fixed left-0 top-0 overflow-y-auto flex flex-col">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <ShoppingBag className="text-indigo-500" /> H-Design
+          {/* 🪄 LOGO DYNAMIQUE */}
+          <ShoppingBag style={{ color: 'var(--theme-primary)' }} /> H-Design
         </h1>
       </div>
       
@@ -41,8 +46,15 @@ export const Sidebar = () => {
             <Link
               key={item.path}
               to={item.path}
+              // 🪄 ONGLET ACTIF DYNAMIQUE (Fond + Ombre)
+              style={isActive ? { 
+                  backgroundColor: 'var(--theme-primary)',
+                  boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--theme-primary) 40%, transparent)'
+              } : {}}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-all ${
-                isActive ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50' : 'hover:bg-slate-800 hover:text-white'
+                isActive 
+                    ? 'text-white font-bold' 
+                    : 'hover:bg-slate-800 hover:text-white'
               }`}
             >
               <item.icon size={20} />
@@ -58,7 +70,7 @@ export const Sidebar = () => {
         {/* J'ai ajouté une marge top (mt-4) pour séparer le bouton logout de la card pro */}
         <div className="bg-slate-800 rounded-xl p-4 mt-4">
           <p className="text-xs text-slate-400 mb-2">Version Pro</p>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center text-white">
             <span className="text-sm font-semibold">Support 24/7</span>
             <ChevronRight size={16} />
           </div>

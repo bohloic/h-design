@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Edit, Trash2, UserPlus, Gift, Mail, Search, XCircle, Check } from 'lucide-react';
+import { authFetch } from '../../src/utils/apiClient';
+import { Edit, Trash2, UserPlus, Gift, Mail, Phone, XCircle, Shield, User as UserIcon, ChevronDown, CheckCircle2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export const CustomerView = () => {
   const [users, setUsers] = useState([]);
@@ -10,12 +10,19 @@ export const CustomerView = () => {
   const [showModal, setShowModal] = useState(false); 
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+  
+  // Gestion des erreurs et affichage mot de passe
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     nom: '',
     prenom: '',
     email: '',
+    phone: '',
     password: '',
+    confirmPassword: '', // Nouveau champ
     loyalty_points: 0
   });
 
@@ -26,8 +33,10 @@ export const CustomerView = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/users');
-      setUsers(response.data);
+      const response = await authFetch('/api/users');
+      if (!response.ok) throw new Error("Erreur serveur");
+      const data = await response.json();
+      setUsers(data);
     } catch (error) {
       console.error("Erreur chargement", error);
     } finally {
@@ -35,12 +44,34 @@ export const CustomerView = () => {
     }
   }; 
 
+  // --- GESTION DES RÔLES ---
+  const handleRoleChange = async (userId: number, newRole: string) => {
+    const oldUsers = [...users];
+    setUsers(users.map((u: any) => u.id === userId ? { ...u, role: newRole } : u));
+
+    try {
+      const response = await authFetch(`/api/users/${userId}/role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole })
+      });
+      if (!response.ok) throw new Error('Erreur lors du changement de rôle');
+    } catch (error) {
+      console.error("Erreur rôle:", error);
+      setUsers(oldUsers);
+      alert("Erreur lors de la modification du rôle.");
+    }
+  };
+
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const openCreateModal = () => {
-    setFormData({ nom: '', prenom: '', email: '', password: '', loyalty_points: 0 });
+    setFormData({ nom: '', prenom: '', email: '', phone: '', password: '', confirmPassword: '', loyalty_points: 0 });
+    setError('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setIsEditing(false);
     setShowModal(true);
   };
@@ -50,38 +81,66 @@ export const CustomerView = () => {
       nom: user.nom,
       prenom: user.prenom,
       email: user.email,
+      phone: user.phone || '',
       password: '', 
-      loyalty_points: user.loyalty_points
+      confirmPassword: '',
+      loyalty_points: user.loyalty_points || 0
     });
     setCurrentId(user.id);
+    setError('');
     setIsEditing(true);
     setShowModal(true);
   };
 
-  const closeModal = () => setShowModal(false);
+  const closeModal = () => {
+    setShowModal(false);
+    setError('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); 
+
+    // Vérification des mots de passe à la création
+    if (!isEditing && formData.password !== formData.confirmPassword) {
+        setError("Les mots de passe ne correspondent pas.");
+        return;
+    }
+
     try {
-      if (isEditing) {
-        await axios.put(`/api/users/${currentId}`, formData);
-      } else {
-        await axios.post('/api/users', formData);
+      const url = isEditing ? `/api/users/${currentId}` : '/api/users';
+      const method = isEditing ? 'PUT' : 'POST';
+      
+      const { confirmPassword, ...dataToSend } = formData;
+
+      const response = await authFetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dataToSend)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Cet email est peut-être déjà utilisé ou une erreur est survenue.");
       }
+      
       fetchUsers();
       closeModal();
-    } catch (error) {
-      alert("Erreur lors de l'opération");
+    } catch (err: any) {
+      setError(err.message); 
     }
   };
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Supprimer définitivement cet utilisateur ?")) {
       try {
-        await axios.delete(`/api/users/${id}`);
+        const response = await authFetch(`/api/users/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error("Erreur");
         fetchUsers();
       } catch (error) {
         console.error("Erreur suppression", error);
+        alert("Impossible de supprimer l'utilisateur.");
       }
     }
   };
@@ -93,16 +152,20 @@ export const CustomerView = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div>
           <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <span className="bg-red-100 p-2 rounded-lg text-red-600">
+            <span 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)', color: 'var(--theme-primary)' }}
+            >
                 <UserPlus size={24} />
             </span>
             Gestion des Utilisateurs
           </h3>
-          <p className="text-slate-500 text-sm mt-1">Gérez vos clients et leur fidélité.</p>
+          <p className="text-slate-500 text-sm mt-1">Gérez vos clients, votre équipe et leur fidélité.</p>
         </div>
         <button 
           onClick={openCreateModal}
-          className="w-full sm:w-auto bg-red-600 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700 transition-all shadow-lg shadow-red-100 active:scale-95"
+          style={{ backgroundColor: 'var(--theme-primary)' }}
+          className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-all shadow-lg active:scale-95"
         >
           <UserPlus size={20} /> <span className="hidden sm:inline">Ajouter un membre</span><span className="sm:hidden">Ajouter</span>
         </button>
@@ -110,41 +173,81 @@ export const CustomerView = () => {
 
       {/* Contenu : Grille Responsive */}
       {loading ? (
-          <div className="p-12 text-center text-slate-400">Chargement...</div>
+          <div className="p-12 text-center text-slate-400 flex flex-col items-center">
+              <div 
+                  className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4"
+                  style={{ borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)', borderTopColor: 'var(--theme-primary)' }}
+              ></div>
+              Chargement...
+          </div>
       ) : users.length === 0 ? (
           <div className="p-12 text-center text-slate-400">Aucun utilisateur trouvé.</div>
       ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {users.map((user: any) => (
-              <div key={user.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+              <div key={user.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
                 
-                {/* Header Carte */}
+                {/* Header Carte : Identité & Rôle */}
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-lg border border-slate-200">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-lg border ${user.role === 'admin' ? 'bg-amber-100 text-amber-600 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
                             {user.prenom ? user.prenom.charAt(0).toUpperCase() : 'U'}
                         </div>
                         <div>
-                            <h4 className="font-bold text-slate-800 text-lg leading-tight">
+                            <h4 className="font-bold text-slate-800 text-lg leading-tight flex items-center gap-2">
                                 {user.prenom} {user.nom}
+                                {user.is_verified && (
+                                    <span title="Email vérifié">
+                                        <CheckCircle2 size={14} className="text-green-500" />
+                                    </span>
+                                )}
                             </h4>
-                            <div className="flex items-center gap-1 text-xs text-slate-400 mt-1">
-                                <Mail size={12} /> {user.email}
+                            <div className="flex flex-col text-xs text-slate-400 mt-1 space-y-1">
+                                <span className="flex items-center gap-1"><Mail size={12} /> {user.email}</span>
+                                {user.phone && <span className="flex items-center gap-1"><Phone size={12} /> {user.phone}</span>}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Badges & Stats */}
-                <div className="bg-slate-50 rounded-xl p-3 mb-4 flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fidélité</span>
-                    <span className="flex items-center gap-1 text-red-600 font-black">
-                        <Gift size={16} /> {user.loyalty_points} pts
-                    </span>
+                {/* Section Sécurité & Rôle */}
+                <div className="bg-slate-50 rounded-xl p-3 mb-4 space-y-3">
+                    
+                    <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1"><Gift size={14}/> Fidélité</span>
+                        <span className="font-black" style={{ color: 'var(--theme-primary)' }}>{user.loyalty_points || 0} pts</span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                            {user.role === 'admin' ? <Shield size={14} className="text-amber-500" /> : <UserIcon size={14} />} 
+                            Rôle Actuel
+                        </span>
+                        
+                        <div className="relative inline-block">
+                            <select 
+                                value={user.role}
+                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                className={`appearance-none text-xs font-bold py-1.5 pl-3 pr-8 rounded-lg outline-none transition-colors cursor-pointer border ${
+                                    user.role === 'admin' 
+                                    ? 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100' 
+                                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                                }`}
+                            >
+                                <option value="client">Client</option>
+                                <option value="admin">Administrateur</option>
+                            </select>
+                            <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${user.role === 'admin' ? 'text-amber-600' : 'text-slate-400'}`}>
+                                <ChevronDown size={14} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
+                <div className="flex-grow"></div>
+
                 {/* Actions */}
-                <div className="flex gap-2 pt-2 border-t border-slate-50">
+                <div className="flex gap-2 mt-auto">
                     <button 
                         onClick={() => openEditModal(user)}
                         className="flex-1 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 transition-colors"
@@ -153,7 +256,9 @@ export const CustomerView = () => {
                     </button>
                     <button 
                         onClick={() => handleDelete(user.id)}
-                        className="flex-1 py-2 text-sm font-bold text-red-600 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 flex items-center justify-center gap-2 transition-colors"
+                        className="flex-none px-4 py-2 text-sm font-bold border rounded-xl hover:bg-red-50 flex items-center justify-center transition-colors"
+                        style={{ color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' }}
+                        title="Supprimer"
                     >
                         <Trash2 size={16} />
                     </button>
@@ -177,6 +282,14 @@ export const CustomerView = () => {
                 <XCircle size={20} />
               </button>
             </div>
+
+            {/* AFFICHEUR D'ERREURS */}
+            {error && (
+                <div className="mx-6 mt-6 p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 font-medium text-sm border border-red-100">
+                    <AlertCircle size={18} />
+                    {error}
+                </div>
+            )}
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               
@@ -196,11 +309,33 @@ export const CustomerView = () => {
                   <input className="input-field" type="email" name="email" value={formData.email} onChange={handleChange} required />
               </div>
 
+              <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500">Téléphone</label>
+                  <input className="input-field" type="tel" name="phone" value={formData.phone} onChange={handleChange} />
+              </div>
+
               {!isEditing && (
-                  <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500">Mot de passe</label>
-                      <input className="input-field" type="password" name="password" value={formData.password} onChange={handleChange} required />
-                  </div>
+                  <>
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500">Mot de passe</label>
+                          <div className="relative">
+                              <input className="input-field pr-12" type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} required />
+                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+                                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                          </div>
+                      </div>
+                      
+                      <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-500">Confirmez le mot de passe</label>
+                          <div className="relative">
+                              <input className="input-field pr-12" type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
+                              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+                                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                          </div>
+                      </div>
+                  </>
               )}
 
               <div className="space-y-1">
@@ -210,7 +345,11 @@ export const CustomerView = () => {
 
               <div className="pt-4 flex gap-3">
                   <button type="button" onClick={closeModal} className="flex-1 py-3 text-slate-600 font-bold bg-slate-100 rounded-xl hover:bg-slate-200">Annuler</button>
-                  <button type="submit" className="flex-[2] py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-lg shadow-red-100">
+                  <button 
+                    type="submit" 
+                    style={{ backgroundColor: 'var(--theme-primary)' }}
+                    className="flex-[2] py-3 text-white font-bold rounded-xl opacity-95 hover:opacity-100 shadow-lg"
+                  >
                     {isEditing ? 'Mettre à jour' : 'Enregistrer'}
                   </button>
               </div>
@@ -220,7 +359,7 @@ export const CustomerView = () => {
         </div>
       )}
 
-      {/* Style local pour les inputs (ou à mettre dans ton index.css) */}
+      {/* Style local pour les inputs avec variables CSS */}
       <style>{`
         .input-field {
             width: 100%;
@@ -234,7 +373,7 @@ export const CustomerView = () => {
         }
         .input-field:focus {
             background-color: white;
-            border-color: #dc2626;
+            border-color: var(--theme-primary, #dc2626);
         }
       `}</style>
     </div>

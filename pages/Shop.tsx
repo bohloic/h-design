@@ -8,7 +8,6 @@ interface ShopProps {
   onAddToCart: (product: Product) => void;
 }
 
-// 🎨 PALETTE STANDARD
 const TEXTILE_COLORS = [
   { name: "Blanc", hex: "#FFFFFF", border: true },
   { name: "Noir", hex: "#000000" },
@@ -30,12 +29,10 @@ const TEXTILE_COLORS = [
 
 const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
   
-  // ==================== 1. ÉTATS ====================
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  // ==================== 2. FILTRES DISPO ====================
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<typeof TEXTILE_COLORS>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]); 
@@ -43,7 +40,6 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
   
   const genders = ['Tous', 'Homme', 'Femme', 'Enfant', 'Unisexe'];
 
-  // ==================== 3. FILTRES ACTIFS ====================
   const [activeCollection, setActiveCollection] = useState<string>('Toutes');
   const [activeGender, setActiveGender] = useState<string>('Tous');
   const [activeCategory, setActiveCategory] = useState<string>('Toutes');
@@ -52,9 +48,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc'>('default');
 
-  // ==================== 4. CHARGEMENT ====================
   useEffect(() => {
-    // Bloquer le scroll du body quand le filtre mobile est ouvert
     if (isMobileFilterOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -138,7 +132,6 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
     fetchData();
   }, []);
 
-  // ==================== 5. FILTRAGE ====================
   const filteredProducts = useMemo(() => {
     return products
       .filter(p => {
@@ -173,7 +166,10 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
   if (loading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-white">
-        <div className="w-16 h-16 border-4 border-slate-100 border-t-red-600 rounded-full animate-spin mb-4"></div>
+        <div 
+            className="w-16 h-16 border-4 border-slate-100 rounded-full animate-spin mb-4"
+            style={{ borderTopColor: 'var(--theme-primary)' }}
+        ></div>
         <p className="text-slate-500 font-medium tracking-widest uppercase text-sm">Chargement...</p>
       </div>
     );
@@ -186,13 +182,13 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2 uppercase tracking-tight">La Boutique</h1>
-          <p className="text-slate-500 text-lg">Trouvez le T-shirt parfait pour votre style.</p>
+          <p className="text-slate-500 text-lg">Trouvez la pièce parfaite pour votre style.</p>
         </div>
         <div className="relative w-full md:w-80">
           <input 
             type="text" placeholder="Rechercher..." 
             value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-full focus:outline-none focus:ring-2 focus:ring-red-600/20 focus:border-red-600 transition-all shadow-sm"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-full focus:outline-none transition-all shadow-sm theme-search-input"
           />
           <Search className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
         </div>
@@ -221,8 +217,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
       <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 relative">
         
-        {/* SIDEBAR (Desktop: Static, Mobile: Fixed Flex Column) */}
-        {/* Cette structure 'flex-col' empêche le scroll derrière le header */}
+        {/* SIDEBAR */}
         <aside className={`
             fixed inset-0 z-[60] bg-white transition-transform duration-300
             flex flex-col h-full
@@ -230,7 +225,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             ${isMobileFilterOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
           
-          {/* Header Sidebar Mobile (Fixe, ne scrolle pas) */}
+          {/* Header Sidebar Mobile */}
           <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white lg:hidden">
             <h2 className="text-xl font-black text-slate-900 uppercase">Filtres</h2>
             <button 
@@ -241,7 +236,6 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             </button>
           </div>
 
-          {/* CONTENU FILTRES (C'est lui qui scrolle) */}
           <div className="flex-1 overflow-y-auto p-6 lg:p-0 lg:overflow-visible">
             
             {/* Tri (Desktop) */}
@@ -255,15 +249,16 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             </div>
 
             {/* GENRE */}
-            <div className="mb-8">
+            <div className="mb-8 mt-6 lg:mt-8">
               <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2"><Users size={14} /> Genre</h3>
               <div className="flex flex-wrap gap-2">
                 {genders.map(gender => (
                   <button 
                     key={gender} onClick={() => setActiveGender(gender)} 
+                    style={activeGender === gender ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
                     className={`px-3 py-2 rounded-lg text-sm font-bold transition-all border ${
                         activeGender === gender 
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
+                        ? 'text-white shadow-md' 
                         : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400 hover:bg-slate-50'
                     }`}
                   >
@@ -280,9 +275,10 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
                 {availableCategories.map(cat => (
                   <button 
                     key={cat} onClick={() => setActiveCategory(cat)} 
+                    style={activeCategory === cat ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)', color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' } : {}}
                     className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                         activeCategory === cat 
-                        ? 'bg-red-50 text-red-600 border border-red-200 shadow-sm' 
+                        ? 'shadow-sm border' 
                         : 'text-slate-600 hover:bg-slate-50 border border-transparent'
                     }`}
                   >
@@ -299,9 +295,10 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
                 {availableSizes.map(size => (
                   <button 
                     key={size} onClick={() => setActiveSize(size)} 
+                    style={activeSize === size ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
                     className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-bold transition-all border ${
                         activeSize === size 
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
+                        ? 'text-white shadow-md' 
                         : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
                     }`}
                   >
@@ -319,9 +316,12 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
                   <button 
                     key={idx} onClick={() => setActiveColor(col.name)} title={col.name}
                     className={`w-9 h-9 rounded-full border shadow-sm transition-transform flex items-center justify-center ${
-                        activeColor === col.name ? 'ring-2 ring-offset-2 ring-slate-900 scale-110' : 'hover:scale-110'
+                        activeColor === col.name ? 'ring-2 ring-offset-2 scale-110 border-transparent' : 'hover:scale-110'
                     }`}
-                    style={{ backgroundColor: col.name === 'Toutes' ? 'transparent' : col.hex }}
+                    style={{ 
+                        backgroundColor: col.name === 'Toutes' ? 'transparent' : col.hex,
+                        ...(activeColor === col.name ? { '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties : {})
+                    }}
                   >
                      {col.name === 'Toutes' && <span className="text-[10px] font-bold text-slate-500">All</span>}
                      {activeColor === col.name && col.name !== 'Toutes' && <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${col.name === 'Blanc' || col.name === 'Jaune' ? 'bg-slate-900' : 'bg-white'}`}/>}
@@ -337,9 +337,10 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
                 {collections.map(col => (
                   <button 
                     key={col} onClick={() => { setActiveCollection(col); setIsMobileFilterOpen(false); }} 
+                    style={activeCollection === col ? { backgroundColor: 'var(--theme-primary)' } : {}}
                     className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                         activeCollection === col 
-                        ? 'bg-slate-900 text-white shadow-lg' 
+                        ? 'text-white shadow-lg' 
                         : 'text-slate-600 hover:bg-slate-50'
                     }`}
                   >
@@ -352,7 +353,6 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
           </div>
         </aside>
 
-        {/* Overlay Mobile */}
         {isMobileFilterOpen && <div className="fixed inset-0 bg-black/60 z-50 lg:hidden backdrop-blur-sm" onClick={() => setIsMobileFilterOpen(false)} />}
 
         {/* MAIN */}
@@ -364,7 +364,11 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">Aucun résultat trouvé</h3>
               <p className="text-slate-500 mb-8 max-w-xs mx-auto">Essayez de modifier vos filtres ou cherchez un autre terme.</p>
-              <button onClick={resetFilters} className="px-8 py-3 bg-slate-900 text-white rounded-full font-bold hover:bg-slate-800 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+              <button 
+                onClick={resetFilters} 
+                style={{ backgroundColor: 'var(--theme-primary)' }}
+                className="px-8 py-3 text-white rounded-full font-bold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 opacity-95 hover:opacity-100"
+              >
                 Tout réinitialiser
               </button>
             </div>
@@ -395,6 +399,14 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
           )}
         </main>
       </div>
+      
+      {/* 🪄 STYLE MAGIQUE POUR L'INPUT */}
+      <style>{`
+        .theme-search-input:focus {
+            border-color: var(--theme-primary) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+        }
+      `}</style>
     </div>
   );
 };

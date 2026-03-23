@@ -13,9 +13,9 @@ import CollectionCarousel from '../pages/products/CollectionCarousel';
 import TrendingSection from '@/src/components/product/TrendingProducts';
 
 // Images (Assurez-vous que ces imports fonctionnent, sinon remplacez par vos chemins)
-import imageHome from '@/src/assets/image1.png'; // Image pour la section perso
-import imageHome2 from '@/src/assets/image2.jpg'; // Hero background
-import imageHome3 from '@/src/assets/image3.jpg'; // AI image
+import imageHome from '@/src/assets/image1.png'; 
+import imageHome2 from '@/src/assets/image2.jpg'; 
+import imageHome3 from '@/src/assets/image3.jpg'; 
 
 interface HomeProps {
   onAddToCart: (product: Product) => void;
@@ -33,7 +33,6 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
   const [aiResponse, setAiResponse] = useState('');
   const [isLoadingAi, setIsLoadingAi] = useState(false);
 
-  // Fonction de nettoyage (identique à celle qu'on a validée)
   const formatProducts = (data: any[]) => {
       if (!Array.isArray(data)) return [];
       return data.map((p: any) => {
@@ -60,7 +59,7 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
     const loadData = async () => {
       try {
         setIsPageLoading(true);
-        const collectionRes = await authFetch('/api/products/collection/3'); // ID Collection "Vedette"
+        const collectionRes = await authFetch('/api/products/collection/3'); 
         const collectionData = await collectionRes.json();
         setProductsCollection(formatProducts(collectionData));
       } catch (error) {
@@ -85,7 +84,7 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
   if (isPageLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-white">
-        <Loader2 className="w-16 h-16 text-red-600 animate-spin mb-4" />
+        <Loader2 className="w-16 h-16 animate-spin mb-4" style={{ color: 'var(--theme-primary)' }} />
         <p className="text-slate-900 font-bold text-lg tracking-widest uppercase">Chargement...</p>
       </div>
     );
@@ -94,27 +93,34 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
   return (
     <div className="overflow-x-hidden bg-white animate-in fade-in duration-700 font-sans">
       
-      {/* ================= HERO SECTION (Style Spreadshirt) ================= */}
+      {/* ================= HERO SECTION ================= */}
       <section className="relative h-[85vh] flex items-center overflow-hidden">
-        {/* Background Image avec un overlay subtil */}
         <div className="absolute inset-0 z-0">
           <img 
             src={imageHome2} 
             alt="Hero Fashion" 
             className="w-full h-full object-cover object-center animate-slow-zoom" 
           />
-          {/* Gradient noir léger pour lisibilité */}
           <div className="absolute inset-0 bg-black/30" />
         </div>
         
-        {/* Content Box - Style "Card" flottante */}
         <div className="relative z-10 container mx-auto px-4 md:px-8">
           <div className="max-w-3xl bg-white/10 backdrop-blur-md border border-white/20 p-8 md:p-12 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-10 duration-1000">
-            <span className="inline-block py-1 px-3 rounded-full bg-red-600 text-white text-xs font-bold uppercase tracking-widest mb-6">
+            <span 
+                className="inline-block py-1 px-3 rounded-full text-white text-xs font-bold uppercase tracking-widest mb-6"
+                style={{ backgroundColor: 'var(--theme-primary)' }}
+            >
               Nouvelle Collection
             </span>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white leading-tight mb-6 drop-shadow-lg">
-              IMPRIMEZ <br/> VOTRE <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-400">STYLE</span>
+              IMPRIMEZ <br/> VOTRE 
+              {/* 🪄 DÉGRADÉ MAGIQUE (On combine le thème avec du jaune) */}
+              <span 
+                className="text-transparent bg-clip-text ml-4"
+                style={{ backgroundImage: 'linear-gradient(to right, var(--theme-primary), #facc15)' }}
+              >
+                 STYLE
+              </span>
             </h1>
             <p className="text-lg md:text-xl text-white/90 mb-8 font-medium max-w-xl leading-relaxed">
               Créez des vêtements uniques ou découvrez des designs originaux créés par des artistes indépendants.
@@ -125,7 +131,7 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
                 onClick={() => navigate('/personnaliser/mon-design')}
                 className="group bg-white text-slate-900 px-8 py-4 rounded-full font-black text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2"
               >
-                <Palette className="w-5 h-5 text-red-600 group-hover:rotate-12 transition-transform" />
+                <Palette className="w-5 h-5 group-hover:rotate-12 transition-transform" style={{ color: 'var(--theme-primary)' }} />
                 Je personnalise
               </button>
               <button 
@@ -140,12 +146,15 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
         </div>
       </section>
 
-      {/* ================= CATEGORIES RAPIDES (Nouveau) ================= */}
+      {/* ================= CATEGORIES RAPIDES ================= */}
       <section className="py-16 bg-slate-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Que cherchez-vous ?</h2>
-            <div className="w-20 h-1 bg-red-600 mx-auto mt-4 rounded-full"></div>
+            <div 
+                className="w-20 h-1 mx-auto mt-4 rounded-full"
+                style={{ backgroundColor: 'var(--theme-primary)' }}
+            ></div>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -157,13 +166,14 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
             ].map((cat, idx) => (
               <div 
                 key={idx} 
-                onClick={() => navigate('/boutique')} // Tu pourras filtrer par catégorie plus tard
+                onClick={() => navigate('/boutique')}
+                style={{ '--tw-border-opacity': 1, '--hover-border-color': 'var(--theme-primary)' } as React.CSSProperties}
                 className="group relative h-64 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-500"
               >
                 <img src={cat.img} alt={cat.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
                 <div className="absolute bottom-6 left-0 right-0 text-center">
-                  <span className="text-white font-bold text-xl uppercase tracking-widest border-b-2 border-transparent group-hover:border-red-500 pb-1 transition-all">
+                  <span className="text-white font-bold text-xl uppercase tracking-widest border-b-2 border-transparent group-hover:border-[color:var(--hover-border-color)] pb-1 transition-all">
                     {cat.label}
                   </span>
                 </div>
@@ -174,22 +184,20 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
       </section>
 
       {/* ================= TRENDING SECTION ================= */}
-      {/* On enlève le bg-slate-50 car la section catégorie l'a déjà, on alterne Blanc/Gris */}
       <div className="bg-white pt-16 pb-8">
         <TrendingSection />
       </div>
 
-      {/* ================= COMMENT ÇA MARCHE (Step by Step) ================= */}
+      {/* ================= COMMENT ÇA MARCHE ================= */}
       <section className="py-20 bg-slate-900 text-white overflow-hidden relative">
-        {/* Décoration d'arrière plan */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
-            <div className="absolute -top-20 -left-20 w-96 h-96 bg-red-600 rounded-full blur-[100px]"></div>
+            <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full blur-[100px]" style={{ backgroundColor: 'var(--theme-primary)' }}></div>
             <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-600 rounded-full blur-[100px]"></div>
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-16">
-            <span className="text-red-500 font-bold uppercase tracking-widest text-sm">Simple & Rapide</span>
+            <span className="font-bold uppercase tracking-widest text-sm" style={{ color: 'var(--theme-primary)' }}>Simple & Rapide</span>
             <h2 className="text-4xl md:text-5xl font-black mt-2">CRÉEZ VOTRE STYLE</h2>
           </div>
 
@@ -200,7 +208,9 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
               { icon: <Truck size={48} />, title: "3. Recevez", desc: "Nous imprimons et expédions votre création en temps record." }
             ].map((step, idx) => (
               <div key={idx} className="flex flex-col items-center space-y-6 group">
-                <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center text-white border border-white/20 group-hover:bg-red-600 group-hover:border-red-600 group-hover:scale-110 transition-all duration-300 shadow-[0_0_30px_rgba(220,38,38,0.2)]">
+                <div 
+                    className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center text-white border border-white/20 transition-all duration-300 group-hover-theme shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                >
                   {step.icon}
                 </div>
                 <div>
@@ -214,7 +224,7 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
           <div className="text-center mt-16">
             <button 
                 onClick={() => navigate('/personnaliser/mon-design')}
-                className="bg-white text-slate-900 px-10 py-4 rounded-full font-black text-lg shadow-xl hover:bg-red-50 transition-colors"
+                className="bg-white text-slate-900 hover:!text-white px-10 py-4 rounded-full font-black text-lg shadow-xl transition-colors hover-theme-bg"
             >
                 Commencer la création
             </button>
@@ -234,7 +244,8 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
             </div>
             <button 
                 onClick={() => navigate('/boutique')}
-                className="hidden md:flex items-center gap-2 text-slate-900 font-bold border-b-2 border-red-600 pb-1 hover:text-red-600 transition-colors"
+                className="hidden md:flex items-center gap-2 text-slate-900 font-bold border-b-2 pb-1 transition-colors hover-theme-text-border"
+                style={{ borderColor: 'var(--theme-primary)' }}
             >
                 Tout voir <ArrowRight size={18}/>
             </button>
@@ -243,7 +254,11 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
           <CollectionCarousel data={productsCollection} targetCollection="" overrideTitle="" />
           
           <div className="mt-8 text-center md:hidden">
-            <button onClick={() => navigate('/boutique')} className="text-red-600 font-bold border-2 border-red-600 px-6 py-2 rounded-full">
+            <button 
+                onClick={() => navigate('/boutique')} 
+                className="font-bold border-2 px-6 py-2 rounded-full"
+                style={{ color: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' }}
+            >
                 Voir toute la boutique
             </button>
           </div>
@@ -259,7 +274,10 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
             { icon: <Star className="w-8 h-8" />, title: "Qualité Garantie", txt: "Satisfait ou remboursé" }
           ].map((feat, i) => (
             <div key={i} className="flex items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-red-50 text-red-600 rounded-full flex items-center justify-center shrink-0">
+              <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' }}
+              >
                 {feat.icon}
               </div>
               <div>
@@ -273,9 +291,12 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
 
       {/* ================= AI ASSISTANT BANNER ================= */}
       <section className="container mx-auto px-4 my-16">
-        <div className="bg-gradient-to-r from-red-600 to-rose-600 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10">
+        {/* 🪄 BANNIERE IA DYNAMIQUE */}
+        <div 
+            className="rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10"
+            style={{ backgroundImage: 'linear-gradient(to right, var(--theme-primary), color-mix(in srgb, var(--theme-primary) 60%, black))' }}
+        >
           
-          {/* Déco */}
           <Sparkles className="absolute top-10 left-10 text-white/20 w-32 h-32 animate-pulse" />
           <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
 
@@ -304,7 +325,6 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
                 </button>
             </div>
 
-            {/* Réponse IA */}
             {aiResponse && (
                 <div className="mt-6 p-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 animate-in fade-in slide-in-from-bottom-2">
                     <p className="text-sm font-medium leading-relaxed">💡 {aiResponse}</p>
@@ -321,6 +341,23 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
           </div>
         </div>
       </section>
+
+      {/* 🪄 STYLE MAGIQUE POUR LES HOVERS COMPLEXES */}
+      <style>{`
+        .group:hover .group-hover-theme {
+            background-color: var(--theme-primary) !important;
+            border-color: var(--theme-primary) !important;
+            transform: scale(1.1);
+        }
+        .hover-theme-bg:hover {
+            background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
+            color: white !important;
+        }
+        .hover-theme-text-border:hover {
+            color: var(--theme-primary) !important;
+            border-color: color-mix(in srgb, var(--theme-primary) 50%, transparent) !important;
+        }
+      `}</style>
 
     </div>
   );

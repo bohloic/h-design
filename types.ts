@@ -15,6 +15,8 @@ export interface Product {
   category_name: string; // Vient de ta requête SQL
   collection_name?: string;
   variants: ProductVariant[]; // La liste des couleurs disponibles
+    sizes?: string[];     
+    colors?: string[];
 }
 
 export interface Category {

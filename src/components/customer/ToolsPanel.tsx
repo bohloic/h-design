@@ -9,7 +9,6 @@ interface ToolsPanelProps {
   onAddImage: (url: string) => void;
   onUpdateElement: (id: string, updates: Partial<DesignElement>) => void;
   onDeleteElement: (id: string) => void;
-  // La fonction doit maintenant retourner une Promise avec l'URL (string) ou null
   onAIGenerate: (prompt: string) => Promise<string | null>; 
   activeElement: DesignElement | null;
   colors: ProductColor[];
@@ -39,7 +38,6 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   
-  // NOUVEAU : On stocke l'image générée ici pour l'aperçu
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
@@ -53,16 +51,14 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
     finally { setIsAiLoading(false); }
   };
 
-  // --- LOGIQUE IMAGE ---
   const handleAiImageGen = async () => {
     if (!aiPrompt.trim()) return;
     setIsAiLoading(true);
-    setGeneratedImageUrl(null); // Reset précédent
+    setGeneratedImageUrl(null); 
     try {
-      // On attend la réponse du parent
       const url = await onAIGenerate(aiPrompt);
       if (url) {
-          setGeneratedImageUrl(url); // On affiche l'aperçu
+          setGeneratedImageUrl(url); 
       }
     } catch (error) {
       console.error(error);
@@ -89,7 +85,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
   ];
 
   return (
-    <div className="w-full h-full bg-white flex flex-col">
+    <div className="w-full h-full bg-white flex flex-col relative">
       
       {/* TABS */}
       <div className="flex border-b border-gray-100 bg-white sticky top-0 z-10">
@@ -97,8 +93,9 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabType)}
+            style={activeTab === tab.id ? { color: 'var(--theme-primary)', borderBottomColor: 'var(--theme-primary)' } : {}}
             className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-all active:bg-gray-50 ${
-              activeTab === tab.id ? 'text-red-600 border-b-2 border-red-600' : 'text-gray-400 hover:text-gray-600'
+              activeTab === tab.id ? 'border-b-2' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
             {tab.icon}
@@ -115,17 +112,20 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div>
               <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <Palette size={16} className="text-red-500"/> Couleur du produit
+                  <Palette size={16} style={{ color: 'var(--theme-primary)' }}/> Couleur du produit
               </h3>
               <div className="grid grid-cols-5 gap-3">
                 {colors.map((color) => (
                   <button
                     key={color.hex}
                     onClick={() => onSelectColor(color)}
+                    style={{ 
+                        backgroundColor: color.hex,
+                        ...(selectedColor.hex === color.hex ? { borderColor: 'var(--theme-primary)', '--tw-ring-color': 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' } as React.CSSProperties : {})
+                    }}
                     className={`aspect-square rounded-full border-2 transition-all shadow-sm relative group ${
-                      selectedColor.hex === color.hex ? 'border-red-600 scale-110 ring-2 ring-red-100' : 'border-gray-200'
+                      selectedColor.hex === color.hex ? 'scale-110 ring-2' : 'border-gray-200'
                     }`}
-                    style={{ backgroundColor: color.hex }}
                     title={color.name}
                   >
                       {selectedColor.hex === color.hex && (
@@ -149,7 +149,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Votre message ici..."
-                className="w-full p-4 border border-gray-200 rounded-2xl text-base focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none h-28 outline-none bg-gray-50 focus:bg-white transition-colors"
+                className="w-full p-4 border border-gray-200 rounded-2xl text-base resize-none h-28 outline-none bg-gray-50 focus:bg-white transition-all theme-input-ring"
               />
               <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                 {FONTS.map(font => (
@@ -157,9 +157,12 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     key={font}
                     onClick={() => setSelectedFont(font)}
                     className={`shrink-0 px-4 py-2 rounded-xl border text-sm font-medium whitespace-nowrap transition-all ${
-                      selectedFont === font ? 'bg-red-600 text-white border-red-600 shadow-md transform scale-105' : 'bg-white text-gray-600 border-gray-200'
+                      selectedFont === font ? 'shadow-md transform scale-105' : 'bg-white text-gray-600 border-gray-200'
                     }`}
-                    style={{ fontFamily: font }}
+                    style={{ 
+                        fontFamily: font, 
+                        ...(selectedFont === font ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)', color: 'white' } : {}) 
+                    }}
                   >
                     Aa {font}
                   </button>
@@ -203,7 +206,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
             <h3 className="text-sm font-bold text-gray-800">Vos Images</h3>
             <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-gray-100 active:bg-gray-200 cursor-pointer transition-colors group">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <div className="w-14 h-14 bg-white rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-400 mb-3 group-hover:text-red-600 group-hover:border-red-100 transition-all">
+                <div className="w-14 h-14 bg-white rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-400 mb-3 transition-all group-hover-theme-icon">
                   <ImageIcon size={28} />
                 </div>
                 <p className="mb-1 text-sm text-gray-700 font-bold">Toucher pour importer</p>
@@ -213,9 +216,9 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
             </label>
              {activeElement?.type === 'image' && (
               <div className="pt-6 border-t border-gray-100">
-                <div className="bg-red-50 p-4 rounded-xl flex items-center justify-between">
-                  <span className="text-sm font-bold text-red-700">Image sélectionnée</span>
-                  <button onClick={() => onDeleteElement(activeElement.id)} className="flex items-center gap-2 text-red-600 bg-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm border border-red-100">
+                <div className="bg-slate-50 p-4 rounded-xl flex items-center justify-between border border-slate-100">
+                  <span className="text-sm font-bold text-slate-700">Image sélectionnée</span>
+                  <button onClick={() => onDeleteElement(activeElement.id)} className="flex items-center gap-2 text-red-600 bg-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm border border-red-100 hover:bg-red-50 transition-colors">
                     <Trash2 size={14} /> Supprimer
                   </button>
                 </div>
@@ -230,20 +233,25 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
             <div className="flex bg-gray-100 rounded-xl p-1">
               <button 
                 onClick={() => setAiSubTab('text')}
-                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'text' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'}`}
+                style={aiSubTab === 'text' ? { color: 'var(--theme-primary)' } : {}}
+                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'text' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
               >
                 SLOGANS
               </button>
               <button 
                 onClick={() => setAiSubTab('image')}
-                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'image' ? 'bg-white shadow-sm text-indigo-600' : 'text-gray-500'}`}
+                style={aiSubTab === 'image' ? { color: 'var(--theme-primary)' } : {}}
+                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'image' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
               >
                 IMAGES IA
               </button>
             </div>
 
-            <div className="p-5 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100">
-              <div className="flex items-center gap-2 text-indigo-700 font-bold text-sm mb-4">
+            <div 
+                className="p-5 rounded-2xl border"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)', borderColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)' }}
+            >
+              <div className="flex items-center gap-2 font-bold text-sm mb-4" style={{ color: 'var(--theme-primary)' }}>
                 <Sparkles size={18} />
                 {aiSubTab === 'text' ? 'Générateur de Slogans' : 'Artiste IA (DALL-E)'}
               </div>
@@ -254,12 +262,13 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   placeholder={aiSubTab === 'text' ? "Ex: Passion foot..." : "Ex: Lion géométrique..."}
-                  className="w-full px-4 py-3 bg-white border border-indigo-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                  className="w-full px-4 py-3 bg-white border border-transparent rounded-xl text-sm outline-none transition-all theme-input-ring shadow-sm"
                 />
                 <button
                   onClick={aiSubTab === 'text' ? handleAiTextSearch : handleAiImageGen}
                   disabled={isAiLoading || !aiPrompt}
-                  className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold text-sm shadow-md border border-indigo-100 hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95"
+                  style={{ backgroundColor: 'var(--theme-primary)' }}
+                  className="w-full text-white py-3 rounded-xl font-bold text-sm shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95 opacity-95 hover:opacity-100"
                 >
                   {isAiLoading ? <RefreshCw className="animate-spin" size={18}/> : (aiSubTab === 'text' ? 'Trouver des idées' : 'Générer l\'image')}
                 </button>
@@ -275,7 +284,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     <button
                         key={idx}
                         onClick={() => onAddText(s, 'Inter')}
-                        className="w-full text-left p-4 rounded-xl border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all text-sm font-medium text-gray-700 shadow-sm bg-white active:scale-95"
+                        className="w-full text-left p-4 rounded-xl border border-gray-100 transition-all text-sm font-medium text-gray-700 shadow-sm bg-white active:scale-95 hover-theme-suggestion"
                     >
                         "{s}"
                     </button>
@@ -284,30 +293,45 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
               </div>
             )}
 
-            {/* --- APERÇU DE L'IMAGE GÉNÉRÉE (Ce que vous vouliez) --- */}
+            {/* APERÇU DE L'IMAGE GÉNÉRÉE */}
             {aiSubTab === 'image' && generatedImageUrl && !isAiLoading && (
               <div className="space-y-3 animate-in fade-in zoom-in duration-300">
                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Résultat</h4>
                 <div className="relative group rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm aspect-square">
-                  {/* L'image s'affiche ici */}
                   <img src={generatedImageUrl} alt="Generated" className="w-full h-full object-contain p-4" />
                   
-                  {/* Bouton Ajouter au survol */}
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
                     <button 
                       onClick={() => onAddImage(generatedImageUrl)}
-                      className="bg-white text-indigo-600 px-6 py-3 rounded-full font-bold text-sm flex items-center gap-2 shadow-xl transform hover:scale-105 transition-transform"
+                      style={{ color: 'var(--theme-primary)' }}
+                      className="bg-white px-6 py-3 rounded-full font-bold text-sm flex items-center gap-2 shadow-xl transform hover:scale-105 transition-transform"
                     >
                       <Plus size={18} /> Ajouter au T-shirt
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-center text-gray-400">Cliquez sur l'image pour l'ajouter</p>
+                <p className="text-xs text-center text-gray-400">Survolez et cliquez pour l'ajouter</p>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* 🪄 STYLES DYNAMIQUES */}
+      <style>{`
+        .theme-input-ring:focus {
+            border-color: var(--theme-primary) !important;
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+        }
+        .group:hover .group-hover-theme-icon {
+            color: var(--theme-primary) !important;
+            border-color: color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+        }
+        .hover-theme-suggestion:hover {
+            border-color: color-mix(in srgb, var(--theme-primary) 30%, transparent) !important;
+            background-color: color-mix(in srgb, var(--theme-primary) 5%, transparent) !important;
+        }
+      `}</style>
     </div>
   );
 };

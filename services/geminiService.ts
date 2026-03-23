@@ -1,16 +1,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
-
 import { Product, Order } from "../typesAdmin";
-// import { Type } from "lucide-react";
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+// 1. On récupère la clé avec la bonne syntaxe Vite
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// 2. On crée une seule instance globale avec la BONNE variable
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 export const getGiftAdvice = async (prompt: string): Promise<string> => {
   try {
-    // Fixed: Always use a named parameter for apiKey and obtain it exclusively from process.env.API_KEY
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Plus besoin de recréer l'instance "ai" ici
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Tu es le Lutin Assistant de la boutique de Noël. Réponds en français de manière chaleureuse et festive. L'utilisateur cherche un conseil cadeau ou un look de Noël. Voici sa demande : ${prompt}. Propose 2-3 idées précises.`,
@@ -26,12 +25,7 @@ export const getGiftAdvice = async (prompt: string): Promise<string> => {
   }
 };
 
-/**
- * Analyses sales data using Gemini AI to provide strategic tips.
- * Compliant with @google/genai latest SDK standards.
- */
 export const analyzeSales = async (orders: Order[], products: Product[]) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const prompt = `
     En tant qu'analyste de boutique de vêtements, analyse les données suivantes:
     Produits: ${JSON.stringify(products.map(p => ({ name: p.name, stock: p.stock })))}
@@ -41,6 +35,7 @@ export const analyzeSales = async (orders: Order[], products: Product[]) => {
   `;
 
   try {
+    // Plus besoin de recréer l'instance "ai" ici non plus
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
@@ -60,7 +55,6 @@ export const analyzeSales = async (orders: Order[], products: Product[]) => {
       }
     });
     
-    // Access .text property directly (it's a getter, not a method)
     const text = response.text;
     if (!text) {
       return ["Optimisez vos stocks sur les best-sellers.", "Lancez une promotion sur les articles à faible rotation.", "Améliorez le suivi des commandes clients."];
@@ -74,73 +68,7 @@ export const analyzeSales = async (orders: Order[], products: Product[]) => {
   }
 };
 
-
-// export const getDesignSuggestions = async (prompt: string) => {
-//   try {
-//     const response = await ai.models.generateContent({
-//       model: 'gemini-3-flash-preview',
-//       contents: `L'utilisateur veut un design pour un produit personnalisé sur le thème suivant : "${prompt}". 
-//       Suggère 3 phrases d'accroche ou slogans courts et stylés en français. 
-//       Réponds uniquement au format JSON.`,
-//       config: {
-//         responseMimeType: "application/json",
-//         responseSchema: {
-//           type: Type.OBJECT,
-//           properties: {
-//             suggestions: {
-//               type: Type.ARRAY,
-//               items: { type: Type.STRING }
-//             }
-//           }
-//         }
-//       }
-//     });
-
-//     return JSON.parse(response.text).suggestions as string[];
-//   } catch (error) {
-//     console.error("Gemini Error:", error);
-//     return ["Inspiré par le futur", "Design Unique", "Création Libre"];
-//   }
-// };
-
-
-
-// export const generateDesignImage = async (prompt: string): Promise<string | null> => {
-//   try {
-//     const fullPrompt = `Isolated sticker style graphic of: ${prompt}. Pure white background, high contrast, clean edges, professional illustration, digital art style, no shadows, no text unless requested. Perfect for a t-shirt print.`;
-    
-//     const response = await ai.models.generateContent({
-//       model: 'gemini-2.5-flash-image',
-//       contents: {
-//         parts: [
-//           { text: fullPrompt }
-//         ]
-//       },
-//       config: {
-//         imageConfig: {
-//           aspectRatio: "1:1"
-//         }
-//       }
-//     });
-
-//     for (const part of response.candidates[0].content.parts) {
-//       if (part.inlineData) {
-//         return `data:image/png;base64,${part.inlineData.data}`;
-//       }
-//     }
-//     return null;
-//   } catch (error) {
-//     console.error("Gemini Image Gen Error:", error);
-//     return null;
-//   }
-// };
-
-
-
-
-
-
-// Simulation simple pour l'instant (mock)
+// ... Garde tes mocks en dessous sans les modifier ...
 export const getDesignSuggestions = async (prompt: string): Promise<string[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -157,7 +85,6 @@ export const getDesignSuggestions = async (prompt: string): Promise<string[]> =>
 export const generateDesignImage = async (prompt: string): Promise<string> => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      // Retourne une image placeholder pour tester
       resolve(`https://source.unsplash.com/random/500x500/?${encodeURIComponent(prompt)}`);
     }, 1500);
   });

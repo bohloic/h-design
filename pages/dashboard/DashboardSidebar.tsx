@@ -1,6 +1,7 @@
 import React from 'react';
-import { User, Package, Heart, Settings, CreditCard, ChevronRight, Gift, X } from 'lucide-react';
-import LogoutButton from '../../src/components/logoutButton.jsx';
+import { User, Package, Heart, Settings, CreditCard, ChevronRight, Gift, X, Award } from 'lucide-react';
+import LogoutButton from '../../src/components/tools/logoutButton.jsx';
+import { LoyaltyCard } from '@/src/components/dashboard/LoyaltyCard.js';
 
 interface DashboardSidebarProps {
   user: any;
@@ -15,6 +16,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, activeTab, se
   
   const MENU_ITEMS = [
     { id: 'orders', label: 'Commandes', icon: Package },
+    { id: 'loyalty', label: 'Club VIP', icon: Award },
     { id: 'wishlist', label: 'Envies', icon: Heart },
     { id: 'payments', label: 'Paiement', icon: CreditCard },
     { id: 'settings', label: 'Paramètres', icon: Settings },
@@ -53,9 +55,20 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, activeTab, se
         <div className="space-y-4 lg:space-y-6">
             {/* CARTE PROFIL */}
             <div className="bg-white p-5 lg:p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col items-center text-center relative overflow-hidden">
-                <div className="absolute top-0 w-full h-16 bg-red-50"></div>
+                {/* 🪄 BANDEAU DYNAMIQUE EN HAUT */}
+                <div 
+                    className="absolute top-0 w-full h-16"
+                    style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)' }}
+                ></div>
                 
-                <div className="relative z-10 w-20 h-20 lg:w-24 lg:h-24 bg-red-100 rounded-full flex items-center justify-center mb-3 text-red-600 border-4 border-white shadow-lg">
+                {/* 🪄 AVATAR DYNAMIQUE */}
+                <div 
+                    className="relative z-10 w-20 h-20 lg:w-24 lg:h-24 rounded-full flex items-center justify-center mb-3 border-4 border-white shadow-lg"
+                    style={{ 
+                        backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)',
+                        color: 'var(--theme-primary)'
+                    }}
+                >
                 <User size={40} className="lg:w-12 lg:h-12" />
                 </div>
                 
@@ -67,15 +80,16 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, activeTab, se
                 </p>
                 
                 <div className="w-full bg-slate-50 rounded-2xl p-3 lg:p-4 flex justify-between items-center border border-slate-100">
-                <div className="text-left">
-                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Fidélité</p>
-                    <p className="text-base lg:text-lg font-black text-red-600">
-                        {user?.loyalty_points || 0} pts
-                    </p>
-                </div>
-                <div className="bg-white p-2 rounded-full shadow-sm">
-                    <Gift className="text-amber-400 w-5 h-5 lg:w-6 lg:h-6" />
-                </div>
+                    <div className="text-left">
+                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Fidélité</p>
+                        {/* 🪄 TEXTE DYNAMIQUE (POINTS) */}
+                        <p className="text-base lg:text-lg font-black" style={{ color: 'var(--theme-primary)' }}>
+                            {user?.loyalty_points || 0} pts
+                        </p>
+                    </div>
+                    <div className="bg-white p-2 rounded-full shadow-sm">
+                        <Gift className="text-amber-400 w-5 h-5 lg:w-6 lg:h-6" />
+                    </div>                    
                 </div>
             </div>
 
@@ -91,9 +105,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, activeTab, se
                     onClick={() => handleItemClick(item.id)}
                     className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${
                         isActive 
-                        ? 'bg-red-600 text-white shadow-lg shadow-red-200 font-bold' 
+                        ? 'text-white font-bold' 
                         : 'bg-white text-slate-600 border border-slate-100 hover:bg-slate-50' 
                     }`}
+                    // 🪄 BOUTON DYNAMIQUE (Actif)
+                    style={isActive ? { 
+                        backgroundColor: 'var(--theme-primary)',
+                        boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--theme-primary) 30%, transparent)'
+                    } : {}}
                     >
                     <div className="flex items-center space-x-3">
                         <Icon className="w-5 h-5" />

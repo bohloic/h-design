@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { authFetch } from '../../utils/apiClient';
 import CollectionCarousel from '../../../pages/products/CollectionCarousel';
+import { Loader2 } from 'lucide-react'; // 🪄 Ajout de l'icône de chargement
 
 const TrendingSection = () => {
-    const [products, setProducts] = useState([]);
+    // 🪄 Typage direct du state pour éviter les "as any" plus bas
+    const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Fonction de nettoyage (identique à Home)
@@ -36,19 +38,44 @@ const TrendingSection = () => {
             .then(data => {
                 // On applique le formatage ici
                 const cleanData = formatProducts(data);
-                setProducts(cleanData as any); // Cast any pour éviter erreur TS rapide
+                setProducts(cleanData); 
                 setLoading(false);
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                console.error(err);
+                setLoading(false);
+            });
     }, []);
 
-    if (loading) return <div className="py-6 text-center text-slate-400">Chargement des tendances...</div>;
+    // 🪄 LOADER DYNAMIQUE PLUS PROPRE
+    if (loading) {
+        return (
+            <div className="py-16 bg-slate-50 flex flex-col items-center justify-center">
+                <Loader2 
+                    className="animate-spin mb-3" 
+                    size={32} 
+                    style={{ color: 'var(--theme-primary)' }} 
+                />
+                <p className="text-slate-400 font-medium">Chargement des tendances...</p>
+            </div>
+        );
+    }
+
+    // On ne rend rien s'il n'y a pas de produits tendance
+    if (products.length === 0) return null;
 
     return (
-        <div className="py-6 bg-slate-50">
+        <div className="py-8 bg-slate-50">
             <div className="max-w-7xl mx-auto px-4 ">
-                <h2 className="text-3xl font-bold mb-2">🔥 Les Plus Populaires</h2>
-                <p className="text-slate-500 mb-8">Les articles que tout le monde s'arrache en ce moment.</p>
+                <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                    {/* 🪄 DÉCORATION DU TITRE DYNAMIQUE (Cohérence avec le ProductCarousel) */}
+                    <span 
+                        className="w-2 h-8 rounded-full" 
+                        style={{ backgroundColor: 'var(--theme-primary)' }}
+                    ></span>
+                    🔥 Les Plus Populaires
+                </h2>
+                <p className="text-slate-500 mb-8 ml-5">Les articles que tout le monde s'arrache en ce moment.</p>
                 
                 <CollectionCarousel 
                     data={products} 

@@ -45,7 +45,14 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ title, endpoint, stat
 
   return (
     <section className="py-6 border-t border-slate-100 mt-8">
-      <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-6">{title}</h3>
+      <h3 className="text-lg md:text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+        {/* 🪄 DÉCORATION DU TITRE DYNAMIQUE */}
+        <span 
+            className="w-1.5 h-6 rounded-full" 
+            style={{ backgroundColor: 'var(--theme-primary)' }}
+        ></span>
+        {title}
+      </h3>
       
       {loading ? (
          <div className="flex gap-4 overflow-hidden">
@@ -57,6 +64,10 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ title, endpoint, stat
             spaceBetween={12}
             slidesPerView={2.15} // Affiche 2 produits et demi sur mobile
             navigation
+            // 🪄 COULEUR DE NAVIGATION SWIPER DYNAMIQUE
+            style={{
+              '--swiper-navigation-color': 'var(--theme-primary)',
+            } as React.CSSProperties}
             breakpoints={{
                 640: { slidesPerView: 2.5, spaceBetween: 20 },
                 768: { slidesPerView: 3, spaceBetween: 20 },
@@ -66,7 +77,11 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ title, endpoint, stat
         >
           {products.map((p) => (
             <SwiperSlide key={p.id}>
-              <ProductCard product={p} />
+              {/* 🪄 FIX TYPESCRIPT POUR LE PANIER */}
+              <ProductCard 
+                product={p} 
+                onAddToCart={() => console.log('Ajout au panier depuis le carrousel')}
+              />
             </SwiperSlide>
           ))}
         </Swiper>
