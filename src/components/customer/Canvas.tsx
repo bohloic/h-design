@@ -205,11 +205,11 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 bg-slate-100 canvas-container relative h-full">
+    <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 bg-slate-100 dark:bg-slate-900/40 canvas-container relative h-full transition-colors">
       
       <div 
         ref={containerRef}
-        className="relative shadow-2xl rounded-2xl bg-white w-full max-w-[350px] md:max-w-[500px] aspect-square transition-all duration-300 z-0"
+        className="relative shadow-2xl rounded-2xl bg-white dark:bg-slate-800 w-full max-w-[350px] md:max-w-[500px] aspect-square transition-all duration-300 z-0"
         onClick={() => {
             onSelectElement(null);
             setEditingId(null); // Quitter l'édition si on clique ailleurs
@@ -232,10 +232,10 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
 
         {/* Zone impression */}
         <div 
-            className="absolute inset-[15%] border border-dashed border-slate-300/50 rounded-lg pointer-events-none flex items-start justify-center pt-2 z-0"
+            className="absolute inset-[15%] border border-dashed border-slate-300/50 dark:border-slate-600/50 rounded-lg pointer-events-none flex items-start justify-center pt-2 z-0"
             data-html2canvas-ignore="true"
         >
-           <span className="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-white/50 px-2 rounded-full backdrop-blur-sm">
+           <span className="text-[8px] md:text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest bg-white/50 dark:bg-slate-900/50 px-2 rounded-full backdrop-blur-sm">
              Zone d'impression
            </span>
         </div>
@@ -324,7 +324,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
                   <div 
                     onMouseDown={(e) => handleResizeStart(e, el)}
                     onTouchStart={(e) => handleResizeStart(e, el)}
-                    className="absolute -bottom-3 -right-3 w-6 h-6 bg-white border border-slate-200 text-slate-700 rounded-full flex items-center justify-center shadow-md md:w-7 md:h-7 cursor-nwse-resize hover:bg-slate-50"
+                    className="absolute -bottom-3 -right-3 w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-full flex items-center justify-center shadow-md md:w-7 md:h-7 cursor-nwse-resize hover:bg-slate-50 dark:hover:bg-slate-700"
                   >
                     <Maximize2 size={12} />
                   </div>
@@ -332,7 +332,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
                   <div 
                     onMouseDown={(e) => handleRotateStart(e, el)}
                     onTouchStart={(e) => handleRotateStart(e, el)}
-                    className="absolute -bottom-3 -left-3 w-6 h-6 bg-white border border-slate-200 text-slate-700 rounded-full flex items-center justify-center shadow-md md:w-7 md:h-7 cursor-ew-resize hover:bg-slate-50"
+                    className="absolute -bottom-3 -left-3 w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-full flex items-center justify-center shadow-md md:w-7 md:h-7 cursor-ew-resize hover:bg-slate-50 dark:hover:bg-slate-700"
                   >
                     <RotateCcw size={12} />
                   </div>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Edit, Plus, Trash2, XCircle, Search, Calendar, Image as ImageIcon, Layers, Check, AlertCircle } from 'lucide-react';
 import { authFetch } from '../../src/utils/apiClient';
+import { useTheme } from '../../src/utils/context/ThemeContext';
 
 export const CollectionView = () => {
+    const { refreshTheme } = useTheme();
     const [collections, setCollections] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
@@ -108,6 +110,7 @@ export const CollectionView = () => {
             if (res.ok) {
                 resetForm();
                 fetchCollections();
+                refreshTheme(); // 🪄 Mise à jour instantanée du site !
             }
         } catch (error) {
             console.error(error);
@@ -118,6 +121,7 @@ export const CollectionView = () => {
         if(!confirm("Supprimer cette collection ? Tous les produits qui y sont liés la perdront.")) return;
         await authFetch(`/api/collections/${id}`, { method: 'DELETE' });
         fetchCollections();
+        refreshTheme(); // 🪄 Mise à jour instantanée si on supprime le thème actif
     };
 
     const formatDate = (dateString?: string) => {

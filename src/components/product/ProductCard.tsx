@@ -3,6 +3,7 @@ import { ShoppingCart, Eye, Heart, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../../../constants'; 
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { useWishlistStore } from '@/src/store/useWishlistStore';
 
 // 🎨 PALETTE DE COULEURS (Référence)
 const TEXTILE_COLORS_MAP: Record<string, string> = {
@@ -30,6 +31,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
   const navigate = useNavigate();
   const [displayImage, setDisplayImage] = useState<string>('');
   const [isHovered, setIsHovered] = useState(false);
+  const toggleWishlist = useWishlistStore(state => state.toggleItem);
+  const isInWishlist = useWishlistStore(state => state.isInWishlist(product.id));
 
   // 🔴 VARIABLE DE STOCK
   const isOutOfStock = product.stock <= 0;
@@ -110,13 +113,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
 
   return (
     <div 
-      className="group bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full"
+      className="group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full"
       onClick={() => navigate(`/boutique/produit/${product.slug}`)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); handleMouseLeave(); }}
     >
       {/* IMAGE */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+      <div className="relative aspect-[3/4] overflow-hidden bg-slate-100 dark:bg-black/20">
         
         {/* 🔴 BADGE ÉPUISÉ (Reste sémantiquement rouge) */}
         {isOutOfStock && (
@@ -134,7 +137,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         />
         
         {product.hasOptions && !isOutOfStock && (
-            <div className="absolute top-2 left-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm z-10">
+            <div className="absolute top-2 left-2 bg-slate-800/80 dark:bg-slate-900/80 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm z-10">
                 OPTIONS
             </div>
         )}
@@ -142,11 +145,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         {/* ACTIONS */}
         <div className={`absolute bottom-3 left-0 right-0 flex justify-center gap-3 transition-all duration-300 transform z-20 ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
             <button 
-                onClick={(e) => { e.stopPropagation(); /* Favoris logic */ }}
-                className="bg-white text-slate-900 p-2.5 rounded-full shadow-lg transition-colors card-hover-theme-heart"
-                title="Ajouter aux favoris"
+                onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
+                className={`bg-white dark:bg-carbon p-2.5 rounded-full shadow-lg transition-colors ${isInWishlist ? 'text-rose-500' : 'text-slate-900 dark:text-pure card-hover-theme-heart'}`}
+                title={isInWishlist ? "Retirer des favoris" : "Ajouter aux favoris"}
             >
-                <Heart size={18} />
+                <Heart size={18} fill={isInWishlist ? "currentColor" : "none"} />
             </button>
             
             <button 
@@ -155,7 +158,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                 className={`p-2.5 rounded-full shadow-lg transition-colors flex items-center gap-2 px-4 ${
                   isOutOfStock && !product.hasOptions
                     ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                    : 'bg-slate-900 text-white card-hover-theme-btn'
+                    : 'bg-slate-800 dark:bg-slate-900 text-white card-hover-theme-btn'
                 }`}
                 title={isOutOfStock && !product.hasOptions ? "Épuisé" : (product.hasOptions ? "Choisir options" : "Ajouter au panier")}
             >
@@ -175,11 +178,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
 
       {/* INFO */}
       <div className="p-3 sm:p-4 flex flex-col flex-1">
-        <div className="text-[10px] text-slate-400 uppercase tracking-widest truncate mb-1">
+        <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate mb-1">
             {product.category || product.category_name}
         </div>
         
-        <h3 className={`font-bold text-sm sm:text-base mb-2 truncate leading-tight ${isOutOfStock ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+        <h3 className={`font-bold text-sm sm:text-base mb-2 truncate leading-tight transition-colors ${isOutOfStock ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-pure'}`}>
             {product.name}
         </h3>
 
@@ -202,7 +205,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                     ))}
                 </div>
             ) : (
-                <div className="text-[10px] text-slate-300 italic">Unique</div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">Unique</div>
             )}
         </div>
         

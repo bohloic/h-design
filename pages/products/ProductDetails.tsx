@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
     ShoppingCart, Star, Truck,  
-    Ruler, Loader2, Palette, Share2, Check, AlertCircle 
+    Ruler, Loader2, Palette, Share2, Check, AlertCircle, Heart, ArrowLeft 
 } from 'lucide-react'; 
 import { useParams, useNavigate } from 'react-router-dom'; 
 import { formatCurrency } from '@/constants';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import GenderCategorySection from '@/src/components/product/GenderCategorySection';
 import ProductCarousel from '@/src/components/product/ProductCarousel';
+import { useWishlistStore } from '@/src/store/useWishlistStore';
 
 const TEXTILE_COLORS_MAP: Record<string, string> = {
   "Blanc": "#FFFFFF", "Noir": "#000000", "Gris Chiné": "#9CA3AF", "Gris Anthracite": "#374151",
@@ -61,6 +62,8 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const toggleWishlist = useWishlistStore(state => state.toggleItem);
+  const isInWishlist = useWishlistStore(state => product ? state.isInWishlist(product.id) : false);
 
   const [recentProducts, setRecentProducts] = useState<any[]>([]);
 
@@ -225,6 +228,15 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
       
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-4 lg:py-8">
         
+        {/* Navigation Retour */}
+        <button 
+          onClick={() => navigate('/boutique')}
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold text-sm mb-6 group transition-colors"
+        >
+          <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+          Retour à la boutique
+        </button>
+        
         {/* VUE PRINCIPALE */}
         <div className="md:grid md:grid-cols-2 md:gap-8 lg:gap-12 items-start">
           
@@ -271,7 +283,16 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
             <div className="border-b border-slate-100 pb-4">
                <div className="flex justify-between items-start gap-4">
                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight flex-1">{product.name}</h1>
-                   <button className="text-slate-400 hover-theme-text p-1"><Share2 size={20}/></button>
+                   <div className="flex gap-2">
+                        <button 
+                            onClick={() => product && toggleWishlist(product)} 
+                            className={`p-1 transition-colors ${isInWishlist ? 'text-rose-500' : 'text-slate-400 hover-theme-text'}`}
+                            title={isInWishlist ? "Retirer des favoris" : "Ajouter aux favoris"}
+                        >
+                            <Heart size={20} fill={isInWishlist ? "currentColor" : "none"} />
+                        </button>
+                        <button className="text-slate-400 hover-theme-text p-1"><Share2 size={20}/></button>
+                    </div>
                </div>
                <div className="flex items-center justify-between mt-3">
                    <div className="flex items-center gap-2">

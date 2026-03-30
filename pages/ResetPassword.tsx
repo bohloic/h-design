@@ -57,8 +57,8 @@ function ResetPassword() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">
-            <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-carbon px-4 py-12 transition-colors">
+            <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors">
                 
                 {/* 🪄 EN-TÊTE DYNAMIQUE */}
                 <div 
@@ -101,7 +101,7 @@ function ResetPassword() {
                                         value={password} 
                                         onChange={(e) => setPassword(e.target.value)} 
                                         required 
-                                        className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none transition-all text-sm theme-input"
+                                        className="w-full pl-10 pr-12 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none transition-all text-sm theme-input dark:text-pure"
                                     />
                                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover-theme-text">
                                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -119,7 +119,7 @@ function ResetPassword() {
                                         value={confirmPassword} 
                                         onChange={(e) => setConfirmPassword(e.target.value)} 
                                         required 
-                                        className={`w-full pl-10 pr-4 py-3 bg-slate-50 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm ${confirmPassword && password !== confirmPassword ? 'border-red-300 focus:ring-red-600/20 focus:border-red-600' : 'border-slate-200 theme-input'}`}
+                                        className={`w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-900/50 border rounded-xl focus:outline-none focus:ring-2 transition-all text-sm dark:text-pure ${confirmPassword && password !== confirmPassword ? 'border-red-300 focus:ring-red-600/20 focus:border-red-600' : 'border-slate-200 dark:border-slate-700 theme-input'}`}
                                     />
                                 </div>
                             </div>
@@ -138,7 +138,7 @@ function ResetPassword() {
                     <div className="mt-8 text-center pt-6 border-t border-slate-100">
                         <Link 
                             to="/login" 
-                            className="text-slate-500 text-sm font-bold transition-colors hover-theme-text"
+                            className="text-slate-500 dark:text-slate-400 text-sm font-bold transition-colors hover-theme-text"
                         >
                             Retourner à la connexion
                         </Link>

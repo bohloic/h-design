@@ -2,31 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../src/utils/apiClient';
 import { ShoppingBag, ChevronDown, Package, User, Calendar, CreditCard, Search, Eye, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-// 1. LES STATUTS OFFICIELS
-const OrderStatus = {
-  WAITING_VALIDATION: 'waiting_validation', 
-  PAID_WAITING_VALIDATION: 'paid_waiting_validation', 
-  PENDING: 'pending',
-  PAID: 'paid',
-  PROCESSING: 'processing', 
-  SHIPPED: 'shipped',
-  DELIVERED: 'delivered',
-  RETURNED: 'returned',
-  CANCELLED: 'cancelled'
-};
-
-const statusTranslations: Record<string, string> = {
-  'waiting_validation': 'Design (Non Payé)',
-  'paid_waiting_validation': 'À Valider 🎨', 
-  'pending': 'En attente',
-  'paid': 'Payé',
-  'processing': 'En préparation',
-  'shipped': 'Expédié',
-  'delivered': 'Livré',
-  'returned': 'Retourné',
-  'cancelled': 'Annulé'
-};
+import { useNotificationStore } from '../../src/store/useNotificationStore';
+import { jwtDecode } from 'jwt-decode';
+import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
+import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
+import Pagination from '../../src/components/tools/Pagination';
 
 // 🪄 LE TRADUCTEUR UNIVERSEL (Le nettoyeur de base de données)
 const normalizeStatus = (dbStatus: string) => {
@@ -43,20 +23,47 @@ const normalizeStatus = (dbStatus: string) => {
     if (s.includes('payé') || s.includes('paid')) return OrderStatus.PAID;
     if (s.includes('attente') || s.includes('pending')) return OrderStatus.PENDING;
     
-    return dbStatus; // En cas de statut totalement inconnu
+    return dbStatus; 
 };
 
 export const OrderView = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // --- FILTRES ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  // --- PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  const filteredOrders = React.useMemo(() => {
+    return orders.filter((order: any) => {
+      const matchesSearch = 
+        order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.customerEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        `#HD-${String(order.id).padStart(5, '0')}`.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchTerm, statusFilter]);
+
+  const paginatedOrders = React.useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredOrders.slice(start, start + itemsPerPage);
+  }, [filteredOrders, currentPage]);
   
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(true);
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (showLoader = true) => {
     try {
+      if (showLoader) setLoading(true);
       const response = await authFetch('/api/orders');
       if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`);
       const data = await response.json();
@@ -65,6 +72,7 @@ export const OrderView = () => {
 
       const formattedOrders = data.map((order: any) => ({
         id: order.id,
+        userId: order.user_id || order.userId,
         customerName: order.nom ? `${order.nom} ${order.prenom}` : (order.customer_name || 'Client Inconnu'),
         customerEmail: order.email || order.customer_email || '—',
         date: order.created_at ? new Date(order.created_at).toLocaleDateString('fr-FR') : '—',
@@ -77,11 +85,25 @@ export const OrderView = () => {
     } catch (error) {
       console.error("Erreur de chargement:", error);
     } finally {
-        setLoading(false);
+        if (showLoader) setLoading(false);
     }
   };
 
+  useAutoRefresh(() => fetchOrders(false), 10000);
+
   const handleStatusChange = async (orderId: number, newStatus: string) => {
+    const orderBeingUpdated = orders.find((o: any) => o.id === orderId) as any;
+    if (!orderBeingUpdated) return;
+
+    // 🔒 SÉCURITÉ DE PAIEMENT : Empêcher de valider une commande non payée
+    const unpaidStatuses = [OrderStatus.PENDING, OrderStatus.WAITING_VALIDATION];
+    const advancedStatuses = [OrderStatus.PAID, OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.PAID_WAITING_VALIDATION];
+    
+    if (unpaidStatuses.includes(orderBeingUpdated.status) && advancedStatuses.includes(newStatus as any)) {
+        alert("🚨 Action bloquée : Cette commande n'a pas encore été payée par le client. Vous ne pouvez pas la marquer comme Payée ou l'expédier tant que le paiement n'est pas effectif.");
+        return;
+    }
+
     const oldOrders = [...orders];
     setOrders(orders.map((o: any) => o.id === orderId ? { ...o, status: newStatus } : o));
 
@@ -94,6 +116,50 @@ export const OrderView = () => {
 
       if (!response.ok) throw new Error('Erreur update');
       
+      let targetUserId = (orderBeingUpdated as any)?.userId;
+      
+      // Si l'ID client n'est pas dans la liste, on le récupère du détail
+      if (!targetUserId) {
+          try {
+              const detailRes = await authFetch(`/api/orders/${orderId}`);
+              if (detailRes.ok) {
+                  const detailData = await detailRes.json();
+                  targetUserId = detailData.user_id || detailData.userId;
+              }
+          } catch (e) {
+              console.error("Impossible de récupérer l'ID du client", e);
+          }
+      }
+
+      let adminId = undefined;
+      try {
+          const token = localStorage.getItem('token');
+          if (token) {
+              const decoded = jwtDecode<any>(token);
+              adminId = String(decoded.userId);
+          }
+      } catch (e) {}
+
+      // 1. Notification (Strictement pour l'Admin)
+      useNotificationStore.getState().addNotification({
+        userId: adminId,
+        title: "Statut mis à jour",
+        message: `La commande #HD-${String(orderId).padStart(5, '0')} est passée à : ${translateStatus(newStatus)}`,
+        type: newStatus === OrderStatus.CANCELLED || newStatus === OrderStatus.RETURNED ? 'error' : 'success',
+        link: `/admin/orders/${orderId}`
+      });
+
+      // 2. Notification (Strictement pour le Client)
+      if (targetUserId) {
+          useNotificationStore.getState().addNotification({
+            userId: String(targetUserId),
+            title: "Mise à jour de votre commande",
+            message: `Le statut de votre commande #HD-${String(orderId).padStart(5, '0')} a changé : ${translateStatus(newStatus)}`,
+            type: newStatus === OrderStatus.CANCELLED || newStatus === OrderStatus.RETURNED ? 'error' : 'info',
+            link: `/dashboard/orders/HD-${String(orderId).padStart(5, '0')}`
+          });
+      }
+      
     } catch (error) {
       console.error("Erreur update", error);
       setOrders(oldOrders);
@@ -101,27 +167,12 @@ export const OrderView = () => {
     }
   };
 
-  // LES COULEURS
-  const getStatusStyle = (status: string) => {
-    switch(status) {
-        case OrderStatus.PAID_WAITING_VALIDATION: return 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200 animate-pulse ring-2 ring-fuchsia-400 ring-offset-1';
-        case OrderStatus.WAITING_VALIDATION: return 'bg-slate-100 text-slate-600 border-slate-200';
-        case OrderStatus.PAID: return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-        case OrderStatus.PROCESSING: return 'bg-orange-100 text-orange-700 border-orange-200';
-        case OrderStatus.SHIPPED: return 'bg-blue-100 text-blue-700 border-blue-200';
-        case OrderStatus.DELIVERED: return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-        case OrderStatus.RETURNED: return 'bg-rose-100 text-rose-700 border-rose-200';
-        case OrderStatus.CANCELLED: return 'bg-slate-100 text-slate-500 border-slate-200';
-        case OrderStatus.PENDING: return 'bg-amber-100 text-amber-700 border-amber-200';
-        default: return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    }
-  };
+
 
   return (
-    <div className="p-4 md:p-8 space-y-6 relative animate-in fade-in duration-500">
+    <div className="p-4 md:p-8 space-y-6 relative animate-in fade-in duration-500 bg-slate-50 min-h-screen">
       
-      {/* HEADER RESPONSIVE */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div>
           <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
              <span 
@@ -133,6 +184,37 @@ export const OrderView = () => {
              Gestion des Commandes
           </h3>
           <p className="text-slate-500 text-sm mt-1">Suivez et gérez les commandes clients.</p>
+        </div>
+
+        {/* --- BARRE DE FILTRES --- */}
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full lg:w-auto">
+            <div className="relative w-full md:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                    type="text" 
+                    placeholder="Rechercher (Nom, Email, #ID)..."
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-theme-primary/10 focus:border-theme-primary outline-none transition-all shadow-sm"
+                />
+            </div>
+            
+            <div className="relative w-full md:w-60">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <select 
+                    value={statusFilter}
+                    onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                    className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold appearance-none outline-none transition-all shadow-sm focus:border-theme-primary"
+                >
+                    <option value="all">Tous les Statuts</option>
+                    {Object.values(OrderStatus).map(status => (
+                        <option key={status} value={status}>
+                            {translateStatus(status)}
+                        </option>
+                    ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+            </div>
         </div>
       </div>
 
@@ -168,7 +250,7 @@ export const OrderView = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {orders.map((order: any) => (
+                            {paginatedOrders.map((order: any) => (
                                 <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
                                     <td className="px-6 py-4 font-mono text-slate-500 font-bold">
                                         #HD-{String(order.id).padStart(5, '0')}
@@ -184,8 +266,8 @@ export const OrderView = () => {
                                         {order.total.toLocaleString('fr-FR')} FCFA
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold border uppercase tracking-wider ${getStatusStyle(order.status)}`}>
-                                            {statusTranslations[order.status] || order.status || 'INCONNU'}
+                                        <span className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold border uppercase tracking-wider ${getStatusColorClass(order.status)}`}>
+                                            {translateStatus(order.status)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right flex justify-end items-center gap-2">
@@ -197,7 +279,7 @@ export const OrderView = () => {
                                             >
                                                 {Object.values(OrderStatus).map(status => (
                                                     <option key={status} value={status}>
-                                                        {statusTranslations[status]}
+                                                        {translateStatus(status)}
                                                     </option>
                                                 ))}
                                             </select>
@@ -222,7 +304,7 @@ export const OrderView = () => {
 
                 {/* --- LISTE MOBILE (Cartes) --- */}
                 <div className="md:hidden divide-y divide-slate-100 bg-slate-50/50">
-                    {orders.map((order: any) => (
+                    {paginatedOrders.map((order: any) => (
                         <div key={order.id} className="p-4 bg-white mb-2 shadow-sm first:mt-0 last:mb-0">
                             
                             {/* En-tête Carte */}
@@ -236,8 +318,8 @@ export const OrderView = () => {
                                         <p className="font-bold text-slate-800 text-sm">{order.date}</p>
                                     </div>
                                 </div>
-                                <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border text-center ${getStatusStyle(order.status)}`}>
-                                    {statusTranslations[order.status] || order.status}
+                                <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border text-center ${getStatusColorClass(order.status)}`}>
+                                    {translateStatus(order.status)}
                                 </span>
                             </div>
 
@@ -263,7 +345,7 @@ export const OrderView = () => {
                                     >
                                         {Object.values(OrderStatus).map(status => (
                                             <option key={status} value={status}>
-                                                {statusTranslations[status]}
+                                                {translateStatus(status)}
                                             </option>
                                         ))}
                                     </select>
@@ -281,6 +363,15 @@ export const OrderView = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+
+                <div className="p-4 border-t border-slate-100">
+                    <Pagination 
+                        currentPage={currentPage}
+                        totalItems={filteredOrders.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             </>
         )}

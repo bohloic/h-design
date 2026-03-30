@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/apiClient'; 
 import { Loader2, Star, Award, QrCode } from 'lucide-react';
+import logo2 from '../../assets/Logo2.png';
 
 export const LoyaltyCard = () => {
     const [loyaltyData, setLoyaltyData] = useState<any>(null);
@@ -64,15 +65,15 @@ export const LoyaltyCard = () => {
                     {/* En-tête de la carte */}
                     <div className="flex justify-between items-start mb-8">
                         <div>
-                            <h3 className="text-white font-black text-2xl tracking-tighter">
-                                H-DESIGN<span style={{ color: 'var(--theme-primary)' }}>ER</span>
-                            </h3>
+                        <div className="h-10">
+                            <img src={logo2} alt="H-Designer" className="h-full w-auto object-contain" />
                             <p 
                                 className="text-[10px] font-black uppercase tracking-[0.3em] mt-1"
                                 style={{ color: 'var(--theme-primary)' }}
                             >
                                 Membre VIP Privilège
                             </p>
+                        </div>
                         </div>
                         <div 
                             className="p-2.5 rounded-2xl shadow-lg"

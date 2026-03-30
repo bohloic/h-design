@@ -1,4 +1,4 @@
-import React, {useRef, useState, useEffect } from 'react';
+import React, {useRef, useState, useEffect, useCallback } from 'react';
 import { authFetch, uploadDesignToServer } from '../../src/utils/apiClient';
 import SidebarLeft from '../../src/components/customer/SidebarLeft';
 import Canvas, { CanvasHandle } from '../../src/components/customer/Canvas';
@@ -130,7 +130,10 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     }
 
     setSelectedVariant(variantToSelect);
-    setSelectedSize(""); 
+    // 🎯 Taille M pré-sélectionnée par défaut
+    const sizes = product.sizes && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL', 'XXL'];
+    const defaultSize = sizes.includes('M') ? 'M' : sizes[0];
+    setSelectedSize(defaultSize);
     setMobileView('canvas');
   };
 
@@ -194,7 +197,13 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                 quantity: 1, 
                 image_url: designUrl || selectedProduct.image_url 
             });
-            navigate('/boutique'); 
+            // Affiche un toast de succès et navigue vers la boutique
+            const toast = document.createElement('div');
+            toast.textContent = '✅ Article ajouté au panier !';
+            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:white;padding:12px 24px;border-radius:12px;font-weight:bold;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.3);animation:fadeInUp 0.3s ease';
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; setTimeout(() => toast.remove(), 500); }, 2500);
+            navigate('/boutique');
         }
 
     } catch (error) {
@@ -206,7 +215,14 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   };
 
   const handleAddText = (text: string, font: string) => {
-    const newEl: DesignElement = { id: `txt-${Date.now()}`, type: 'text', content: text, x: 150, y: 150, width: 200, height: 50, rotation: 0, fontSize: 30, fontFamily: font, color: '#000000' };
+    // Détection automatique du contraste : si le t-shirt est sombre → texte blanc par défaut
+    const shirtHex = selectedVariant?.hex || selectedVariant?.colorCode || '#FFFFFF';
+    const r = parseInt(shirtHex.slice(1, 3), 16) || 0;
+    const g = parseInt(shirtHex.slice(3, 5), 16) || 0;
+    const b = parseInt(shirtHex.slice(5, 7), 16) || 0;
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const defaultColor = luminance < 0.5 ? '#FFFFFF' : '#000000';
+    const newEl: DesignElement = { id: `txt-${Date.now()}`, type: 'text', content: text, x: 150, y: 150, width: 200, height: 50, rotation: 0, fontSize: 30, fontFamily: font, color: defaultColor };
     setDesignElements([...designElements, newEl]);
     setActiveElementId(newEl.id);
     setMobileView('canvas');
@@ -258,16 +274,23 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   if (!selectedProduct) return <div className="h-screen flex items-center justify-center flex-col gap-2"><Loader2 className="animate-spin" style={{ color: 'var(--theme-primary)' }} size={32} /><span className="text-slate-500 font-bold">Chargement...</span></div>;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-50 overflow-hidden relative">
+    <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-50 dark:bg-carbon overflow-hidden relative transition-colors">
       
       {/* HEADER */}
-      <div className="bg-white border-b border-slate-200 p-3 flex justify-between items-center shadow-sm z-20 shrink-0 h-16">
+      <div className="bg-white dark:bg-carbon border-b border-slate-200 dark:border-slate-800 p-3 flex justify-between items-center shadow-sm z-20 shrink-0 h-16 transition-colors">
           <div className="flex items-center gap-3">
-             <button onClick={() => navigate(-1)} className="p-2 hover-theme-bg rounded-full transition-colors"><ArrowLeft size={20} className="text-slate-600"/></button>
+             <button onClick={() => navigate(-1)} className="p-2 hover-theme-bg rounded-full transition-colors"><ArrowLeft size={20} className="text-slate-600 dark:text-slate-300"/></button>
              <div className="flex flex-col">
-                 <span className="font-bold text-slate-800 text-sm line-clamp-1">{selectedProduct.name}</span>
-                 {/* 🪄 PRIX DYNAMIQUE */}
-                 <span className="text-xs font-black" style={{ color: 'var(--theme-primary)' }}>{currentTotalPrice} FCFA</span>
+                 <span className="font-bold text-slate-800 dark:text-pure text-sm line-clamp-1">{selectedProduct.name}</span>
+                 {/* 🪄 PRIX TRANSPARENT */}
+                 <span className="text-xs font-black" style={{ color: 'var(--theme-primary)' }}>
+                   {basePrice.toLocaleString()} FCFA
+                   {designElements.length > 0 && (
+                     <span className="font-normal text-slate-400 dark:text-slate-500">
+                       {` + ${(designElements.length * DESIGN_PRICE).toLocaleString()} FCFA design`}
+                     </span>
+                   )}
+                 </span>
              </div>
           </div>
           <div className="flex items-center gap-3">
@@ -277,7 +300,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                     value={selectedSize} 
                     onChange={(e) => setSelectedSize(e.target.value)} 
                     style={!selectedSize ? { borderColor: 'color-mix(in srgb, var(--theme-primary) 40%, transparent)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)', color: 'var(--theme-primary)' } : {}}
-                    className={`appearance-none pl-3 pr-8 py-2 rounded-lg border-2 text-xs font-bold uppercase focus:outline-none cursor-pointer transition-all ${!selectedSize ? '' : 'border-slate-200 text-slate-700 bg-slate-50'}`}
+                    className={`appearance-none pl-3 pr-8 py-2 rounded-lg border-2 text-xs font-bold uppercase focus:outline-none cursor-pointer transition-all ${!selectedSize ? '' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800'}`}
                   >
                       <option value="" disabled>Taille</option>
                       {(selectedProduct.sizes && selectedProduct.sizes.length > 0 ? selectedProduct.sizes : ['S', 'M', 'L', 'XL', 'XXL']).map(size => (<option key={size} value={size}>{size}</option>))}
@@ -296,18 +319,18 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">
-        <aside className={`fixed md:relative inset-y-0 left-0 z-30 w-80 bg-white border-r border-slate-200 shadow-2xl md:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} top-16 md:top-0 h-[calc(100%-4rem)] md:h-full`}>
+        <aside className={`fixed md:relative inset-y-0 left-0 z-30 w-80 bg-white dark:bg-carbon border-r border-slate-200 dark:border-slate-800 shadow-2xl md:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} top-16 md:top-0 h-[calc(100%-4rem)] md:h-full`}>
             <div className="h-full overflow-y-auto">
-                <div className="md:hidden p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2"><Shirt size={20}/> Produits</h3>
+                <div className="md:hidden p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+                    <h3 className="font-bold text-slate-800 dark:text-pure flex items-center gap-2"><Shirt size={20}/> Produits</h3>
                     <button onClick={() => setMobileView('canvas')}><X size={24} className="text-slate-400"/></button>
                 </div>
                 <SidebarLeft products={products} categories={categories} onSelectProduct={(p) => handleSelectProduct(p)} selectedProductId={selectedProduct.id} />
             </div>
         </aside>
 
-        <main className="flex-1 flex flex-col relative bg-slate-100 overflow-hidden touch-none items-center justify-center p-4">
-            <div className="relative shadow-xl rounded-xl overflow-hidden bg-white w-full max-w-[500px] aspect-square">
+        <main className="flex-1 flex flex-col relative bg-slate-100 dark:bg-slate-900/40 overflow-hidden touch-none items-center justify-center p-4 transition-colors">
+            <div className="relative shadow-xl rounded-xl overflow-hidden bg-white dark:bg-slate-800 w-full max-w-[500px] aspect-square transition-colors">
                 <Canvas ref={canvasRef} product={selectedProduct} color={currentCanvasColor} elements={designElements} activeElementId={activeElementId} onSelectElement={(id) => { setActiveElementId(id); if (id) setMobileView('tools'); }} onUpdateElement={handleUpdateElement} onDeleteElement={handleDeleteElement} />
                 <div className="absolute inset-0 pointer-events-none z-0 mix-blend-multiply" style={{ backgroundColor: currentCanvasColor.hex, opacity: 0.1 }}></div>
                 <img src={getBgImage()} className="absolute inset-0 w-full h-full object-contain pointer-events-none -z-10 opacity-0" alt=""/>
@@ -315,10 +338,10 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             {(mobileView === 'products' || mobileView === 'tools') && <div className="md:hidden absolute inset-0 bg-black/50 z-20 backdrop-blur-sm" onClick={() => setMobileView('canvas')} />}
         </main>
 
-        <aside className={`fixed md:relative inset-y-0 right-0 z-30 w-full md:w-80 bg-white border-l border-slate-200 shadow-2xl md:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-y-0' : 'translate-y-full md:translate-y-0'} h-[50vh] md:h-full bottom-0 top-auto md:top-0 rounded-t-3xl md:rounded-none`}>
+        <aside className={`fixed md:relative inset-y-0 right-0 z-30 w-full md:w-80 bg-white dark:bg-carbon border-l border-slate-200 dark:border-slate-800 shadow-2xl md:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-y-0' : 'translate-y-full md:translate-y-0'} h-[50vh] md:h-full bottom-0 top-auto md:top-0 rounded-t-3xl md:rounded-none`}>
              <div className="h-full flex flex-col">
-                <div className="md:hidden p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl">
-                    <h3 className="font-bold text-slate-800 flex items-center gap-2"><Palette size={20}/> Outils</h3>
+                <div className="md:hidden p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 rounded-t-3xl text-slate-800 dark:text-pure">
+                    <h3 className="font-bold flex items-center gap-2"><Palette size={20}/> Outils</h3>
                     <button onClick={() => setMobileView('canvas')}><X size={24} className="text-slate-400"/></button>
                 </div>
                 <div className="flex-1 overflow-y-auto">
@@ -329,7 +352,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
       </div>
 
       {/* MOBILE MENU - 🪄 ONGLETS DYNAMIQUES */}
-      <div className="md:hidden bg-white border-t border-slate-200 pb-safe z-30 relative">
+      <div className="md:hidden bg-white dark:bg-carbon border-t border-slate-200 dark:border-slate-800 pb-safe z-30 relative transition-colors">
           <div className="flex justify-around items-center h-16">
               <button 
                 onClick={() => setMobileView('products')} 

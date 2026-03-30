@@ -1,4 +1,4 @@
-// La palette officielle "H-Design" (Inspirée de Spreadshirt)
+// La palette officielle "H-Designer" (Inspirée de Spreadshirt)
 export const TEXTILE_COLORS = [
   { name: "Blanc", hex: "#FFFFFF", border: true }, // Border pour qu'on voie le blanc sur fond blanc
   { name: "Noir", hex: "#000000" },

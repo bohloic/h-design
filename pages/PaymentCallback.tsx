@@ -55,7 +55,7 @@ const PaymentCallback = () => {
     };
 
     return (
-        <div className="h-screen flex flex-col items-center justify-center p-4 text-center bg-slate-50">
+        <div className="h-screen flex flex-col items-center justify-center p-4 text-center bg-slate-50 dark:bg-carbon transition-colors">
             {status === 'loading' && (
                 <>
                     {/* 🪄 LOADER DYNAMIQUE */}
@@ -63,26 +63,26 @@ const PaymentCallback = () => {
                         className="w-16 h-16 animate-spin mb-4" 
                         style={{ color: 'var(--theme-primary)' }} 
                     />
-                    <h2 className="text-xl font-bold text-slate-700">Vérification du paiement...</h2>
-                    <p className="text-slate-400 text-sm mt-2">Ne fermez pas cette page.</p>
+                    <h2 className="text-xl font-bold text-slate-700 dark:text-pure">Vérification du paiement...</h2>
+                    <p className="text-slate-400 dark:text-slate-500 text-sm mt-2">Ne fermez pas cette page.</p>
                 </>
             )}
             
             {status === 'success' && (
                 <div className="animate-bounce-in">
                     {/* On garde le vert sémantique pour le succès */}
-                    <CheckCircle className="w-20 h-20 text-green-600 mb-4 mx-auto" />
-                    <h2 className="text-2xl font-black text-green-700">Paiement Réussi !</h2>
-                    <p className="text-slate-500 mt-2">Panier vidé et commande validée.</p>
+                    <CheckCircle className="w-20 h-20 text-green-600 dark:text-green-500 mb-4 mx-auto" />
+                    <h2 className="text-2xl font-black text-green-700 dark:text-green-400">Paiement Réussi !</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2">Panier vidé et commande validée.</p>
                 </div>
             )}
 
             {status === 'error' && (
                 <div className="animate-in fade-in zoom-in">
                     {/* On garde le rouge sémantique pour l'erreur */}
-                    <XCircle className="w-20 h-20 text-red-600 mb-4 mx-auto" />
-                    <h2 className="text-2xl font-black text-red-700">Paiement Échoué</h2>
-                    <p className="text-slate-500 mt-2">La transaction n'a pas pu être validée.</p>
+                    <XCircle className="w-20 h-20 text-red-600 dark:text-red-500 mb-4 mx-auto" />
+                    <h2 className="text-2xl font-black text-red-700 dark:text-red-400">Paiement Échoué</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2">La transaction n'a pas pu être validée.</p>
                     
                     {/* 🪄 BOUTON RÉESSAYER DYNAMIQUE */}
                     <button 

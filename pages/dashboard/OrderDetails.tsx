@@ -2,14 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Package, Truck, CheckCircle2, MapPin, Download, Phone, ShoppingBag, Clock, XCircle, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/constants';
 import { authFetch } from '@/src/utils/apiClient';
+import { useAutoRefresh } from '@/src/utils/hooks/useAutoRefresh';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { useParams, useNavigate } from 'react-router-dom';
+import { translateStatus, getStatusColorClass } from '@/src/utils/statusTranslations';
 
-interface OrderDetailsProps {
-    orderId: number | string;
-    onBack: () => void;
-}
-
-export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onBack }) => {
+export const OrderDetails: React.FC = () => {
+    const { id: orderSlug } = useParams();
+    const navigate = useNavigate();
+    
+    // Extrait l'ID réel depuis le slug (ex: HD-00123 -> 123)
+    const orderId = orderSlug?.replace('HD-', '');
+    
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -32,7 +36,7 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onBack }) =
             link.href = url;
             
             // 🪄 3. On lui donne le nom officiel du fichier
-            link.setAttribute('download', `Facture_H-designer_${String(orderId).padStart(5, '0')}.pdf`);
+            link.setAttribute('download', `Facture_${orderSlug}.pdf`);
             
             // 🪄 4. On simule un clic sur ce lien pour lancer le téléchargement
             document.body.appendChild(link);
@@ -50,59 +54,45 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onBack }) =
         }
     };
 
-    useEffect(() => {
-        const fetchOrderDetails = async () => {
-            try {
-                const response = await authFetch(`/api/orders/${orderId}`);
-                if (response.ok) {
-                    setOrder(await response.json());
-                }
-            } catch (error) {
-                console.error("Erreur lors du chargement des détails :", error);
-            } finally {
-                setLoading(false);
+    const fetchOrderDetails = async (showLoader = true) => {
+        try {
+            if (showLoader) setLoading(true);
+            const response = await authFetch(`/api/orders/${orderId}`);
+            if (response.ok) {
+                setOrder(await response.json());
             }
-        };
-        fetchOrderDetails();
-    }, [orderId]);
-
-    if (loading) return <div className="p-12 text-center text-slate-400 animate-pulse">Chargement des détails de la commande #HD-{String(orderId).padStart(5, '0')}...</div>;
-    if (!order) return <div className="p-12 text-center text-red-500">Commande introuvable.</div>;
-
-    // 🪄 1. FONCTION DE TRADUCTION DES STATUTS EN FRANÇAIS
-    const translateStatus = (status: string) => {
-        const s = status?.toLowerCase() || '';
-        if (s.includes('pending') || s.includes('attente')) return 'En attente';
-        if (s.includes('validation')) return 'Validation Design';
-        if (s.includes('paid') || s.includes('payé')) return 'Payé';
-        if (s.includes('processing') || s.includes('préparation')) return 'En préparation';
-        if (s.includes('shipped') || s.includes('expédié')) return 'Expédié';
-        if (s.includes('delivered') || s.includes('livré')) return 'Livré';
-        if (s.includes('cancelled') || s.includes('annulé')) return 'Annulé';
-        return status || 'Inconnu';
-    };
-
-    // 🪄 2. FONCTION POUR LA COULEUR DES BADGES DE STATUT
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'En attente': return 'bg-amber-100 text-amber-700 border-amber-200';
-            case 'Validation Design': return 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200';
-            case 'Payé': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-            case 'En préparation': return 'bg-blue-100 text-blue-700 border-blue-200';
-            case 'Expédié': return 'bg-purple-100 text-purple-700 border-purple-200';
-            case 'Livré': return 'bg-green-100 text-green-700 border-green-200';
-            case 'Annulé': return 'bg-red-100 text-red-700 border-red-200';
-            default: return 'bg-slate-100 text-slate-700 border-slate-200';
+        } catch (error) {
+            console.error("Erreur lors du chargement des détails :", error);
+        } finally {
+            if (showLoader) setLoading(false);
         }
     };
 
+    useEffect(() => {
+        fetchOrderDetails(true);
+    }, [orderId]);
+
+    useAutoRefresh(() => {
+        if (orderId) fetchOrderDetails(false);
+    }, 10000);
+
+    if (loading) return <div className="p-12 text-center text-slate-400 animate-pulse">Chargement des détails de la commande {orderSlug}...</div>;
+    if (!order) return <div className="p-12 text-center text-red-500">Commande introuvable.</div>;
+
+
+
     const translatedStatus = translateStatus(order.status);
     const isCancelled = translatedStatus === 'Annulé';
-    const isPending = translatedStatus === 'En attente';
+    const isPending = order.status.toLowerCase() === 'pending';
 
     // --- LOGIQUE DE LA BARRE DE PROGRESSION ---
     const steps = ['Payé', 'En préparation', 'Expédié', 'Livré'];
-    let currentStepIndex = steps.indexOf(translatedStatus);
+    let currentStepIndex = -1;
+    if (order.status.toLowerCase() === 'paid') currentStepIndex = 0;
+    if (order.status.toLowerCase() === 'processing') currentStepIndex = 1;
+    if (order.status.toLowerCase() === 'shipped') currentStepIndex = 2;
+    if (order.status.toLowerCase() === 'delivered') currentStepIndex = 3;
+    
     
     // Calcul de la progression (en %)
     let progressPercentage = 0;
@@ -120,14 +110,14 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onBack }) =
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <div className="flex items-center gap-4">
                     <button 
-                        onClick={onBack}
+                        onClick={() => navigate('/dashboard/orders')}
                         className="p-2 bg-slate-50 hover:bg-slate-200 rounded-full text-slate-600 transition-colors"
                     >
                         <ArrowLeft size={20} />
                     </button>
                     <div>
                         <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
-                            Commande #HD-{String(order.id).padStart(5, '0')}
+                            Commande #{orderSlug}
                         </h2>
                         <p className="text-sm text-slate-500 font-medium">Passée le {new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                     </div>
@@ -152,8 +142,8 @@ export const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId, onBack }) =
             <div className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <div className="flex justify-between items-center mb-10">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Suivi de livraison</h3>
-                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${getStatusBadge(translatedStatus)}`}>
-                        {translatedStatus}
+                    <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${getStatusColorClass(order.status)}`}>
+                        {translateStatus(order.status)}
                     </span>
                 </div>
                 

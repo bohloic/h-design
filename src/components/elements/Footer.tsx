@@ -1,5 +1,7 @@
 import React from 'react';
-import { Gift, Facebook, Instagram, Twitter, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
+import { Gift, Facebook, Instagram, Twitter, Mail, Phone, MapPin, ArrowRight, MessageSquare } from 'lucide-react';
+import logoLight from '../../assets/Logo .png';
+import logoDark from '../../assets/Logo2.png';
 import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
@@ -7,21 +9,21 @@ const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-950 text-slate-300 pt-16 pb-8 px-4 border-t border-slate-900">
+    <footer className="bg-carbon text-slate-300 pt-16 pb-8 px-4 border-t border-slate-800">
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
         
         {/* COLONNE 1 : MARQUE */}
         <div className="space-y-6">
-          <Link to="/" className="flex items-center space-x-2 group">
-            <span 
-              className="text-3xl font-bold group-hover:opacity-80 transition-opacity"
-              style={{ color: 'var(--theme-primary)' }}
-            >
-              H-designer
-            </span>
-            <Gift 
-              className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300"
-              style={{ color: 'var(--theme-primary)' }}
+          <Link to="/" className="flex items-center group">
+            <img 
+              src={logoLight} 
+              alt="H-Designer Logo" 
+              className="h-16 w-auto group-hover:opacity-80 transition-opacity object-contain dark:hidden"
+            />
+            <img 
+              src={logoDark} 
+              alt="H-Designer Logo" 
+              className="h-16 w-auto group-hover:opacity-80 transition-opacity object-contain hidden dark:block"
             />
           </Link>
           <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
@@ -50,7 +52,7 @@ const Footer: React.FC = () => {
               { label: 'Accueil', path: '/' },
               { label: 'Boutique', path: '/boutique' },
               { label: 'Mon Compte', path: '/dashboard' },
-              { label: 'Aide & SAV', path: '#' },
+              { label: 'Aide & SAV', path: '/aide-sav' },
             ].map((link, idx) => (
               <li key={idx}>
                 <Link to={link.path} className="flex items-center gap-2 transition-colors group hover-theme-text">
@@ -98,8 +100,8 @@ const Footer: React.FC = () => {
       </div>
       
       {/* COPYRIGHT */}
-      <div className="max-w-7xl mx-auto pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 space-y-4 md:space-y-0">
-        <p>© {currentYear} H-designer. Tous droits réservés.</p>
+      <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 space-y-4 md:space-y-0">
+        <p>© {currentYear} H-Designer. Tous droits réservés.</p>
         <div className="flex flex-wrap justify-center gap-6">
           <a href="#" className="hover-theme-text transition-colors">Mentions Légales</a>
           <a href="#" className="hover-theme-text transition-colors">Confidentialité</a>

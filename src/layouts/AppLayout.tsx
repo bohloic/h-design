@@ -1,11 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from "../components/admin/Header";
 import { Sidebar } from "../components/admin/Sidebar";
-import { Menu, X } from 'lucide-react'; // Assure-toi d'avoir ces icônes
+import { Menu, X, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../utils/context/ThemeContext.tsx';
 
 export const AppLayout = ({ children, title }: { children?: React.ReactNode; title: string }) => {
+  const navigate = useNavigate();
   // État pour gérer l'ouverture/fermeture de la sidebar sur mobile
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const { themeMode } = useTheme();
+
+  // 🔒 ISOLATION DU THÈME : L'Admin est TOUJOURS en mode clair
+  useEffect(() => {
+    const isDarkAtEntry = document.documentElement.classList.contains('dark');
+    document.documentElement.classList.remove('dark');
+
+    return () => {
+      // On restaure le mode sombre uniquement si c'était le choix global de l'utilisateur
+      if (themeMode === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+    };
+  }, [themeMode]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('data');
+    navigate('/login');
+    window.location.href = '/login';
+  };
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -34,18 +58,12 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         
-        {/* En-tête de la Sidebar Mobile (avec bouton fermer) */}
-        <div className="flex justify-between items-center p-4 lg:hidden border-b border-slate-100">
-            <span className="font-bold text-lg text-slate-800">Menu</span>
-            <button onClick={() => setSidebarOpen(false)} className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg">
-                <X size={24} />
-            </button>
-        </div>
+
 
         {/* On inclut ton composant Sidebar existant ici */}
         {/* Note: Ta Sidebar doit juste contenir les liens, le container externe est géré ici */}
         <div className="h-full overflow-y-auto">
-            <Sidebar /> 
+            <Sidebar onClose={() => setSidebarOpen(false)} /> 
         </div>
       </aside>
 
@@ -64,7 +82,15 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
                 </button>
                 <h1 className="font-bold text-lg text-slate-800 truncate">{title}</h1>
             </div>
-            {/* Tu peux ajouter l'avatar admin ici si tu veux */}
+            {/* Bouton déconnexion mobile */}
+            <button 
+                onClick={handleLogout}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+                title="Déconnexion"
+            >
+                <LogOut size={20} />
+                <span className="text-xs font-bold sm:inline hidden">Déconnexion</span>
+            </button>
         </div>
 
         {/* Header Desktop (Ton composant Header existant) */}

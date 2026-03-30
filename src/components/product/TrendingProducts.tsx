@@ -50,13 +50,13 @@ const TrendingSection = () => {
     // 🪄 LOADER DYNAMIQUE PLUS PROPRE
     if (loading) {
         return (
-            <div className="py-16 bg-slate-50 flex flex-col items-center justify-center">
+            <div className="py-16 bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center border-t border-slate-200 dark:border-slate-800 transition-colors">
                 <Loader2 
                     className="animate-spin mb-3" 
                     size={32} 
                     style={{ color: 'var(--theme-primary)' }} 
                 />
-                <p className="text-slate-400 font-medium">Chargement des tendances...</p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Chargement des tendances...</p>
             </div>
         );
     }
@@ -65,9 +65,9 @@ const TrendingSection = () => {
     if (products.length === 0) return null;
 
     return (
-        <div className="py-8 bg-slate-50">
+        <div className="py-8 bg-transparent dark:bg-carbon transition-colors">
             <div className="max-w-7xl mx-auto px-4 ">
-                <h2 className="text-3xl font-bold mb-2 flex items-center gap-3">
+                <h2 className="text-3xl font-bold mb-2 flex items-center gap-3 text-slate-900 dark:text-pure">
                     {/* 🪄 DÉCORATION DU TITRE DYNAMIQUE (Cohérence avec le ProductCarousel) */}
                     <span 
                         className="w-2 h-8 rounded-full" 
@@ -75,7 +75,7 @@ const TrendingSection = () => {
                     ></span>
                     🔥 Les Plus Populaires
                 </h2>
-                <p className="text-slate-500 mb-8 ml-5">Les articles que tout le monde s'arrache en ce moment.</p>
+                <p className="text-slate-500 dark:text-slate-400 mb-8 ml-5">Les articles que tout le monde s'arrache en ce moment.</p>
                 
                 <CollectionCarousel 
                     data={products} 

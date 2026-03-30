@@ -18,7 +18,7 @@ const CustomSection: React.FC<CustomSectionProps> = ({ onCustomizeClick }) => {
             <picture className="relative block aspect-square overflow-hidden bg-gray-100">
               <img 
                 src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800" 
-                alt="Atelier de personnalisation H-design"
+                alt="Atelier de personnalisation H-Designer"
                 loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
@@ -32,7 +32,7 @@ const CustomSection: React.FC<CustomSectionProps> = ({ onCustomizeClick }) => {
               className="text-sm font-bold tracking-[0.2em] uppercase mb-4"
               style={{ color: 'var(--theme-primary)' }}
             >
-              Exclusivité Atelier H-design
+              Exclusivité Atelier H-Designer
             </span>
             
             <h2 className="text-3xl lg:text-5xl font-black text-gray-900 mb-6 leading-tight uppercase tracking-tight">

@@ -15,18 +15,20 @@ export default defineConfig(({ mode }) => {
         // AJOUTE TOUT CE BLOC "proxy" :
         proxy: {
           '/api': {
-            target: 'http://localhost:205', // L'adresse de ton backend
+            target: 'http://127.0.0.1:205', // L'adresse de ton backend (IP directe)
             changeOrigin: true,
             secure: false,
           },
-          '/images': { // Pour que les images marchent aussi
-            target: 'http://localhost:205',
+          '/images': { 
+            target: 'http://127.0.0.1:205',
             changeOrigin: true,
             secure: false,
           }
         },
       },
-      plugins: [react()],
+      plugins: [
+        react()
+      ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)

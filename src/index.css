@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --color-carbon: #1A1A1A;
+  /* (1e293b) Remplace #101010 par slate-800 pour un dark mode plus doux */
+  --color-pure: #FFFFFF;
+  --color-offwhite: #F8F9FA;
+  --color-nazar: #1E3A8A;
+  --color-rainbow-blue: #3B82F6;
+  --color-rainbow-purple: #8B5CF6;
+  --color-rainbow-cyan: #22D3EE;
+  --color-theme-primary: var(--theme-primary, #1E3A8A);
+
+  --font-sans: "Poppins", sans-serif;
+  --font-signature: "Great Vibes", cursive;
+}
+
+/* 🌙 STRATÉGIE MODE SOMBRE V4 (Basée sur la classe .dark) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+
+@import "./styles/GlobalUX.css";

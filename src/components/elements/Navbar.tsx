@@ -1,39 +1,45 @@
 import React, { useState } from 'react';
-import { ShoppingCart, User, Gift, Search, Menu, X, ShieldCheck, LogOut } from 'lucide-react';
+import { ShoppingCart, User, Gift, Search, Menu, X, ShieldCheck, LogOut, Sun, Moon } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { NotificationDropdown } from './NotificationDropdown';
+import { useTheme } from '../../utils/context/ThemeContext';
+import logoLight from '../../assets/Logo .png';
+import logoDark from '../../assets/Logo2.png';
 
 interface NavbarProps {
   cartCount: number;
   onOpenCart: () => void;
   isAuthenticated: boolean;
   onLogout: () => void;
+  user?: any;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated, onLogout }) => {
+const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated, onLogout, user }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { themeMode, toggleThemeMode } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
   const role = localStorage.getItem('role');
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
-    <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm transition-all">
+    <nav className="sticky top-0 z-40 bg-offwhite/90 dark:bg-carbon/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors text-slate-900 dark:text-pure">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           
           {/* 1. LOGO DYNAMIQUE */}
-          <Link to="/" className="flex items-center space-x-2 group" onClick={closeMenu}>
-            <span 
-              className="text-2xl md:text-3xl font-black group-hover:scale-105 transition-transform tracking-tight"
-              style={{ color: 'var(--theme-primary)' }}
-            >
-              H-designer
-            </span>
-            <Gift 
-              className="w-6 h-6 group-hover:rotate-12 transition-transform" 
-              style={{ color: 'var(--theme-primary)' }}
+          <Link to="/" className="flex items-center group" onClick={closeMenu}>
+            <img 
+              src={logoLight} 
+              alt="H-Designer Logo" 
+              className="h-16 w-auto group-hover:scale-105 transition-transform object-contain dark:hidden"
+            />
+            <img 
+              src={logoDark} 
+              alt="H-Designer Logo" 
+              className="h-16 w-auto group-hover:scale-105 transition-transform object-contain hidden dark:block"
             />
           </Link>
 
@@ -42,14 +48,14 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             <Link 
               to="/" 
               style={isActive('/') ? { color: 'var(--theme-primary)' } : {}}
-              className={`transition-colors ${isActive('/') ? '' : 'text-slate-600 hover-theme-text'}`}
+              className={`transition-colors ${isActive('/') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
             >
               Accueil
             </Link>
             <Link 
               to="/boutique" 
               style={isActive('/boutique') ? { color: 'var(--theme-primary)' } : {}}
-              className={`transition-colors ${isActive('/boutique') ? '' : 'text-slate-600 hover-theme-text'}`}
+              className={`transition-colors ${isActive('/boutique') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
             >
               Boutique
             </Link>
@@ -58,12 +64,12 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                <Link 
                 to="/dashboard" 
                 style={isActive('/dashboard') ? { color: 'var(--theme-primary)' } : {}}
-                className={`transition-colors ${isActive('/dashboard') ? '' : 'text-slate-600 hover-theme-text'}`}
+                className={`transition-colors ${isActive('/dashboard') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
                >
                  Mon Compte
                </Link>
             ) : (
-               <Link to="/login" className="text-slate-600 hover-theme-text transition-colors">
+               <Link to="/login" className="text-slate-600 dark:text-slate-300 hover-theme-text transition-colors">
                  Connexion
                </Link>
             )}
@@ -87,23 +93,39 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
           {/* 3. ICONES ACTIONS */}
           <div className="flex items-center space-x-1 md:space-x-3">
             
-            <button className="hidden sm:block p-2 text-slate-600 hover-theme-bg-light rounded-full transition-colors">
-              <Search className="w-5 h-5" />
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleThemeMode}
+              className="p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors hidden sm:block"
+              title={themeMode === 'dark' ? "Passer en mode clair" : "Passer en mode sombre"}
+            >
+              {themeMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            <Link to={isAuthenticated ? "/dashboard" : "/login"} className="hidden md:block p-2 text-slate-600 hover-theme-bg-light rounded-full transition-colors">
-              <User className="w-5 h-5" />
-            </Link>
 
-            {/* Panier avec bulle dynamique */}
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden lg:block text-xs font-black text-slate-400 uppercase tracking-tighter">
+                  {user?.prenom || 'Compte'}
+                </span>
+                <NotificationDropdown />
+              </div>
+            ) : (
+              <Link to="/login" className="hidden md:block p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors">
+                <User className="w-5 h-5" />
+              </Link>
+            )}
+
+            {/* Panier avec bulle dynamique et animée */}
             <button 
               onClick={onOpenCart}
-              className="p-2 text-slate-600 hover-theme-bg-light rounded-full transition-colors relative"
+              className="p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors relative"
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
                 <span 
-                  className="absolute -top-1 -right-1 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-bounce-in"
+                  key={cartCount}
+                  className="absolute -top-1 -right-1 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white cart-badge-pop"
                   style={{ backgroundColor: 'var(--theme-primary)' }}
                 >
                   {cartCount}
@@ -114,7 +136,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             {/* Burger Mobile */}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg"
             >
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -124,14 +146,14 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
 
       {/* 4. MENU MOBILE */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-slate-100 absolute w-full shadow-xl animate-in slide-in-from-top-5 duration-200">
+        <div className="md:hidden bg-offwhite dark:bg-carbon border-t border-slate-200 dark:border-slate-800 absolute w-full shadow-xl animate-in slide-in-from-top-5 duration-200">
           <div className="px-4 pt-2 pb-6 space-y-2">
             
             <Link 
               to="/" 
               onClick={closeMenu}
               style={isActive('/') ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' } : {}}
-              className={`block px-4 py-3 rounded-xl text-base font-bold ${isActive('/') ? '' : 'text-slate-600 hover:bg-slate-50'}`}
+              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/') ? '' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
             >
               Accueil
             </Link>
@@ -140,7 +162,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
               to="/boutique" 
               onClick={closeMenu}
               style={isActive('/boutique') ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' } : {}}
-              className={`block px-4 py-3 rounded-xl text-base font-bold ${isActive('/boutique') ? '' : 'text-slate-600 hover:bg-slate-50'}`}
+              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/boutique') ? '' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
             >
               Boutique
             </Link>
@@ -156,15 +178,21 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                </Link>
             )}
 
-            <div className="border-t border-slate-100 my-2 pt-2">
+            <div className="border-t border-slate-200 dark:border-slate-800 my-2 pt-2">
+              <button 
+                onClick={() => { toggleThemeMode(); closeMenu(); }}
+                className="w-full flex items-center px-4 py-3 rounded-xl text-base font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+              >
+                {themeMode === 'dark' ? <><Sun className="w-5 h-5 mr-3" /> Mode Clair</> : <><Moon className="w-5 h-5 mr-3" /> Mode Sombre</>}
+              </button>
               {isAuthenticated ? (
                 <>
                   <Link 
                     to="/dashboard" 
                     onClick={closeMenu}
-                    className="flex items-center px-4 py-3 rounded-xl text-base font-bold text-slate-600 hover:bg-slate-50"
+                    className="flex items-center px-4 py-3 rounded-xl text-base font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
                   >
-                    <User className="w-5 h-5 mr-3" /> Mon Compte
+                    <User className="w-5 h-5 mr-3" /> {user?.prenom ? `Mon Compte (${user.prenom})` : 'Mon Compte'}
                   </Link>
                   <button 
                     onClick={() => { onLogout(); closeMenu(); navigate('/'); }}
@@ -178,7 +206,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                   to="/login" 
                   onClick={closeMenu}
                   style={{ backgroundColor: 'var(--theme-primary)' }}
-                  className="flex items-center justify-center w-full text-white px-4 py-4 rounded-xl font-black mt-4 shadow-lg"
+                  className="flex items-center justify-center w-full text-white px-4 py-4 rounded-xl font-black mt-4 shadow-lg active:scale-95 transition-transform"
                 >
                   Se connecter / S'inscrire
                 </Link>

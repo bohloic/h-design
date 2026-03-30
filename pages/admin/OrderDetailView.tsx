@@ -1,58 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { authFetch } from '../../src/utils/apiClient';
-import { 
-    ChevronLeft, Package, User, MapPin, CreditCard, 
+import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
+import {
+    ChevronLeft, Package, User, MapPin, CreditCard,
     Calendar, Printer, Mail, Phone, Shirt, Palette, Loader2, Sparkles, AlertTriangle, Type, Image as ImageIcon, Move, RotateCw, Maximize, Download, Eye,
-    ThumbsUp, ThumbsDown, MessageSquare 
+    ThumbsUp, ThumbsDown, MessageSquare
 } from 'lucide-react';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import { AdminDesignPreview } from '@/src/components/admin/AdminDesignPreview';
+import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
 
-// 🪄 1. LE NETTOYEUR DE STATUT (Pour éviter les bugs d'affichage)
-const normalizeStatus = (dbStatus: string) => {
-    if (!dbStatus) return 'pending';
-    const s = String(dbStatus).toLowerCase().trim();
-    if (s === 'paid_waiting_validation' || s.includes('à valider') || s.includes('validation design')) return 'paid_waiting_validation';
-    if (s === 'waiting_validation' || s.includes('non payé')) return 'waiting_validation';
-    if (s.includes('action requise') || s === 'action_required') return 'action_required';
-    if (s.includes('préparation') || s.includes('processing') || s === 'preparing') return 'processing';
-    if (s.includes('expédié') || s.includes('shipped')) return 'shipped';
-    if (s.includes('livré') || s.includes('delivered')) return 'delivered';
-    if (s.includes('retourné') || s.includes('returned')) return 'returned';
-    if (s.includes('annulé') || s.includes('cancelled')) return 'cancelled';
-    if (s.includes('payé') || s.includes('paid')) return 'paid';
-    if (s.includes('attente') || s.includes('pending')) return 'pending';
-    return dbStatus; 
-};
 
-const getStatusStyle = (status: string) => {
-    switch(status) {
-        case 'paid_waiting_validation': return 'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200 animate-pulse ring-2 ring-fuchsia-400 ring-offset-1';
-        case 'waiting_validation': return 'bg-slate-100 text-slate-600 border-slate-200';
-        case 'action_required': return 'bg-red-100 text-red-700 border-red-200 animate-pulse ring-2 ring-red-400 ring-offset-1';
-        case 'paid': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
-        case 'processing': return 'bg-orange-100 text-orange-700 border-orange-200';
-        case 'shipped': return 'bg-blue-100 text-blue-700 border-blue-200';
-        case 'delivered': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-        case 'cancelled': return 'bg-red-100 text-red-700 border-red-200';
-        default: return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    }
-};
-
-const getStatusLabel = (status: string) => {
-    switch(status) {
-        case 'paid_waiting_validation': return 'À VALIDER 🎨';
-        case 'waiting_validation': return 'DESIGN (NON PAYÉ)';
-        case 'action_required': return 'ACTION REQUISE ⚠️';
-        case 'paid': return 'PAYÉ';
-        case 'processing': return 'EN PRÉPARATION';
-        case 'shipped': return 'EXPÉDIÉ';
-        case 'delivered': return 'LIVRÉ';
-        case 'cancelled': return 'ANNULÉ';
-        default: return status.toUpperCase();
-    }
-};
 
 export const OrderDetailView = () => {
     const { id } = useParams();
@@ -63,31 +22,37 @@ export const OrderDetailView = () => {
     const [validating, setValidating] = useState(false);
     const [designerMessage, setDesignerMessage] = useState("");
 
-    const fetchOrderDetails = async () => {
+    const fetchOrderDetails = async (showLoader = true) => {
         try {
+            if (showLoader) setLoading(true);
             const response = await authFetch(`/api/orders/${id}`);
             if (!response || !response.ok) throw new Error("Erreur chargement");
             const data = await response.json();
-            
+
             // 🪄 On normalise le statut dès la réception !
-            data.status = normalizeStatus(data.status);
-            
+            // On s'assure que le statut est reconnu par notre utilitaire
+            data.status = data.status || OrderStatus.PENDING;
+
             setOrder(data);
             if (data.admin_notes) setDesignerMessage(data.admin_notes); // Si tu stockes les notes dans admin_notes
         } catch (error) {
             console.error(error);
         } finally {
-            setLoading(false);
+            if (showLoader) setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchOrderDetails();
+        fetchOrderDetails(true);
     }, [id, navigate]);
+
+    useAutoRefresh(() => {
+        if (id) fetchOrderDetails(false);
+    }, 10000);
 
     const handleDesignValidation = async (decision: 'approve' | 'reject') => {
         if (!window.confirm(`Confirmer le ${decision === 'approve' ? 'succès' : 'refus'} du design ?`)) return;
-        
+
         // Sécurité : obliger un motif si refus
         if (decision === 'reject' && !designerMessage.trim()) {
             alert("Veuillez saisir un message pour expliquer le refus au client.");
@@ -104,7 +69,7 @@ export const OrderDetailView = () => {
             });
 
             if (response.ok) {
-                await fetchOrderDetails(); 
+                await fetchOrderDetails();
                 alert(decision === 'approve' ? "Design validé avec succès ! Commande en préparation." : "Design refusé, la commande nécessite une action du client.");
                 setDesignerMessage(""); // On vide le message après succès
             } else {
@@ -139,7 +104,7 @@ export const OrderDetailView = () => {
 
     return (
         <div className="p-4 md:p-8 space-y-6 animate-in fade-in duration-500 bg-slate-50 min-h-screen">
-            
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <div>
                     <button onClick={() => navigate(-1)} className="hover-theme-text flex items-center gap-2 text-slate-500 transition-colors mb-2 text-sm font-bold">
@@ -147,17 +112,17 @@ export const OrderDetailView = () => {
                     </button>
                     <div className="flex flex-wrap items-center gap-3">
                         <h1 className="text-2xl md:text-3xl font-black text-slate-900">Commande #HD-{String(order.id).padStart(5, '0')}</h1>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider ${getStatusStyle(order.status)}`}>
-                            {getStatusLabel(order.status)}
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider ${getStatusColorClass(order.status)}`}>
+                            {translateStatus(order.status)}
                         </span>
                     </div>
                     <p className="text-slate-500 text-sm mt-1 flex items-center gap-2">
-                        <Calendar size={14} /> 
+                        <Calendar size={14} />
                         {new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </p>
                 </div>
-                <button 
-                    onClick={() => window.print()} 
+                <button
+                    onClick={() => window.print()}
                     className="hover-theme-border bg-white border-2 border-slate-100 text-slate-700 px-5 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-sm"
                 >
                     <Printer size={18} /> <span className="hidden sm:inline">Imprimer</span>
@@ -165,12 +130,12 @@ export const OrderDetailView = () => {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                
+
                 <div className="xl:col-span-2 space-y-6">
 
                     {/* MODULE DE VALIDATION DESIGNER */}
                     {/* 🪄 N'apparaît que si payé ET en attente de validation */}
-                    {order.status === 'paid_waiting_validation' && (
+                    {order.status === OrderStatus.PAID_WAITING_VALIDATION && (
                         <div className="bg-white border-2 border-fuchsia-200 rounded-3xl p-6 shadow-xl shadow-fuchsia-50 animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="p-2 bg-fuchsia-100 text-fuchsia-600 rounded-xl">
@@ -186,7 +151,7 @@ export const OrderDetailView = () => {
                                 <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2 px-1">
                                     <MessageSquare size={14} /> Note / Motif (Obligatoire si refus)
                                 </label>
-                                <textarea 
+                                <textarea
                                     value={designerMessage}
                                     onChange={(e) => setDesignerMessage(e.target.value)}
                                     placeholder="Ex: 'Design recentré pour une meilleure impression' ou 'L'image est trop floue'..."
@@ -194,7 +159,7 @@ export const OrderDetailView = () => {
                                 />
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <button 
+                                    <button
                                         onClick={() => handleDesignValidation('approve')}
                                         disabled={validating}
                                         style={{ backgroundColor: 'var(--theme-primary)' }}
@@ -203,8 +168,8 @@ export const OrderDetailView = () => {
                                         {validating ? <Loader2 className="animate-spin" size={20} /> : <ThumbsUp size={20} />}
                                         Valider
                                     </button>
-                                    
-                                    <button 
+
+                                    <button
                                         onClick={() => handleDesignValidation('reject')}
                                         disabled={validating}
                                         className="flex items-center justify-center gap-2 bg-red-50 text-red-600 py-4 rounded-2xl font-bold hover:bg-red-100 transition-all disabled:opacity-50 border border-red-100"
@@ -229,7 +194,7 @@ export const OrderDetailView = () => {
                                 let isCustom = false;
                                 let maquetteUrl: string | null = null;
                                 let elements: any[] = [];
-                                
+
                                 let rawData = item.customization || item.design;
 
                                 if (rawData) {
@@ -237,23 +202,23 @@ export const OrderDetailView = () => {
                                         let parsed = rawData;
                                         while (typeof parsed === 'string') {
                                             const prev = parsed;
-                                            try { 
-                                                parsed = JSON.parse(parsed); 
+                                            try {
+                                                parsed = JSON.parse(parsed);
                                                 if (parsed === prev) break;
-                                            } catch(e) { break; }
+                                            } catch (e) { break; }
                                         }
 
                                         if (parsed && typeof parsed === 'object') {
                                             isCustom = true;
                                             if (Array.isArray(parsed)) {
-                                                elements = parsed; 
+                                                elements = parsed;
                                             } else {
                                                 elements = parsed.elements || parsed.design || [];
                                                 const rawUrl = parsed.customizationImage || parsed.imageUrl || parsed.previewUrl;
                                                 if (rawUrl) maquetteUrl = getCleanUrl(rawUrl);
                                             }
                                         }
-                                    } catch(e) { console.error("Erreur parsing:", e); }
+                                    } catch (e) { console.error("Erreur parsing:", e); }
                                 }
 
                                 let thumbnailSrc = item.image_url ? BASE_IMG_URL + item.image_url : '/placeholder.png';
@@ -280,8 +245,8 @@ export const OrderDetailView = () => {
                                                 </div>
 
                                                 <div className="flex flex-wrap gap-2 mb-4">
-                                                    {item.size && <span className="px-3 py-1.5 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100 flex items-center gap-1"><Shirt size={12} className="text-slate-400"/> Taille : {item.size}</span>}
-                                                    {item.color && <span className="px-3 py-1.5 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100 flex items-center gap-2"><Palette size={12} className="text-slate-400"/> Couleur : <span className="w-3 h-3 rounded-full border border-slate-300" style={{backgroundColor: item.color}}></span> {item.color}</span>}
+                                                    {item.size && <span className="px-3 py-1.5 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100 flex items-center gap-1"><Shirt size={12} className="text-slate-400" /> Taille : {item.size}</span>}
+                                                    {item.color && <span className="px-3 py-1.5 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100 flex items-center gap-2"><Palette size={12} className="text-slate-400" /> Couleur : <span className="w-3 h-3 rounded-full border border-slate-300" style={{ backgroundColor: item.color }}></span> {item.color}</span>}
                                                 </div>
 
                                                 {/* DÉTAILS DE LA PERSONNALISATION */}
@@ -289,38 +254,38 @@ export const OrderDetailView = () => {
                                                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200 border-dashed mt-4 space-y-6">
                                                         <div>
                                                             <p className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">
-                                                                <Eye size={14} style={{ color: 'var(--theme-primary)' }}/> 1. Maquette Visuelle
+                                                                <Eye size={14} style={{ color: 'var(--theme-primary)' }} /> 1. Maquette Visuelle
                                                             </p>
                                                             {maquetteUrl ? (
                                                                 <div className="flex flex-col items-start gap-2">
                                                                     <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm inline-block">
                                                                         <img src={maquetteUrl} alt="Maquette Finale" className="max-w-full h-auto max-h-[300px] object-contain rounded" />
                                                                     </div>
-                                                                    <a href={maquetteUrl} download={`maquette-${order.id}-${item.id}.png`} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-2 text-blue-600 font-bold hover:underline bg-blue-50 px-3 py-2 rounded-lg border border-blue-100"><Download size={14}/> Télécharger la maquette</a>
+                                                                    <a href={maquetteUrl} download={`maquette-${order.id}-${item.id}.png`} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-2 text-blue-600 font-bold hover:underline bg-blue-50 px-3 py-2 rounded-lg border border-blue-100"><Download size={14} /> Télécharger la maquette</a>
                                                                 </div>
                                                             ) : (
-                                                                <div className="p-3 bg-yellow-50 text-yellow-700 text-xs rounded border border-yellow-100 flex items-center gap-2"><AlertTriangle size={14}/><span>Image de maquette non disponible.</span></div>
+                                                                <div className="p-3 bg-yellow-50 text-yellow-700 text-xs rounded border border-yellow-100 flex items-center gap-2"><AlertTriangle size={14} /><span>Image de maquette non disponible.</span></div>
                                                             )}
                                                         </div>
 
                                                         <div>
-                                                            <p className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2 border-b border-slate-200 pb-2"><Download size={14} className="text-blue-600"/> 2. Fichiers Sources (HD)</p>
-                                                            <AdminDesignPreview 
-                                                                productImage={item.image_url} 
-                                                                customizationJson={JSON.stringify(elements)} 
+                                                            <p className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2 border-b border-slate-200 pb-2"><Download size={14} className="text-blue-600" /> 2. Fichiers Sources (HD)</p>
+                                                            <AdminDesignPreview
+                                                                productImage={item.image_url}
+                                                                customizationJson={JSON.stringify(elements)}
                                                             />
                                                         </div>
 
                                                         {elements.length > 0 && (
                                                             <div>
-                                                                <p className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2 border-b border-slate-200 pb-2"><Sparkles size={14} className="text-purple-600"/> 3. Données Techniques</p>
+                                                                <p className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2 border-b border-slate-200 pb-2"><Sparkles size={14} className="text-purple-600" /> 3. Données Techniques</p>
                                                                 <div className="space-y-2">
                                                                     {elements.map((el: any, i: number) => (
                                                                         <div key={i} className="bg-white p-3 rounded-xl border border-slate-100 flex flex-wrap gap-2 items-center text-xs text-slate-600">
-                                                                            <span className="font-bold bg-slate-100 px-2 py-1 rounded text-slate-800 flex items-center gap-1">{el.type === 'text' ? <Type size={10}/> : <ImageIcon size={10}/>} {el.type === 'text' ? 'Texte' : 'Image'}</span>
+                                                                            <span className="font-bold bg-slate-100 px-2 py-1 rounded text-slate-800 flex items-center gap-1">{el.type === 'text' ? <Type size={10} /> : <ImageIcon size={10} />} {el.type === 'text' ? 'Texte' : 'Image'}</span>
                                                                             {el.type === 'text' && <span className="font-mono bg-yellow-50 text-yellow-700 px-2 py-1 rounded border border-yellow-100">"{el.content}"</span>}
-                                                                            <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border border-slate-100"><Move size={10}/> X:{Math.round(el.x)} Y:{Math.round(el.y)}</span>
-                                                                            <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border border-slate-100"><Maximize size={10}/> L:{Math.round(el.width)}</span>
+                                                                            <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border border-slate-100"><Move size={10} /> X:{Math.round(el.x)} Y:{Math.round(el.y)}</span>
+                                                                            <span className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded border border-slate-100"><Maximize size={10} /> L:{Math.round(el.width)}</span>
                                                                         </div>
                                                                     ))}
                                                                 </div>
@@ -356,10 +321,10 @@ export const OrderDetailView = () => {
                             <User style={{ color: 'var(--theme-primary)' }} size={20} /> Client
                         </h3>
                         <div className="flex items-center gap-4 mb-6">
-                            <div 
+                            <div
                                 className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl border shadow-sm"
-                                style={{ 
-                                    backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', 
+                                style={{
+                                    backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)',
                                     color: 'var(--theme-primary)',
                                     borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)'
                                 }}
@@ -394,7 +359,7 @@ export const OrderDetailView = () => {
                             <MapPin style={{ color: 'var(--theme-primary)' }} size={20} /> Livraison
                         </h3>
                         <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
-                            {order.shipping_address ? <p className="font-medium">{order.shipping_address}</p> : <span className="italic text-slate-400 flex items-center gap-2"><AlertTriangle size={14}/> Adresse non renseignée</span>}
+                            {order.shipping_address ? <p className="font-medium">{order.shipping_address}</p> : <span className="italic text-slate-400 flex items-center gap-2"><AlertTriangle size={14} /> Adresse non renseignée</span>}
                             <p className="mt-1 text-xs text-slate-400 uppercase tracking-wide">Abidjan, Côte d'Ivoire</p>
                         </div>
                     </div>
@@ -405,8 +370,8 @@ export const OrderDetailView = () => {
                         </h3>
                         <div className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-xl border border-slate-100 font-bold">
                             <span className="text-slate-500">Statut</span>
-                            <span className={order.status === 'pending' || order.status === 'waiting_validation' ? 'text-amber-600' : 'text-green-600'}>
-                                {order.status === 'pending' || order.status === 'waiting_validation' ? 'EN ATTENTE ⏳' : 'PAYÉ ✅'}
+                            <span className={order.status === OrderStatus.PENDING || order.status === OrderStatus.WAITING_VALIDATION ? 'text-amber-600' : 'text-green-600'}>
+                                {order.status === OrderStatus.PENDING || order.status === OrderStatus.WAITING_VALIDATION ? 'EN ATTENTE ⏳' : 'PAYÉ ✅'}
                             </span>
                         </div>
                     </div>

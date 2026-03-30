@@ -5,10 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { authFetch } from '@/src/utils/apiClient';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage'; 
 
+import { useChatStore } from '@/src/store/useChatStore';
+
 const ChatWidget = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, setIsOpen } = useChatStore();
   const [messages, setMessages] = useState([
-    { text: "Bonjour ! Je suis l'IA de **H-Design**. Dites-moi ce que vous cherchez (ex: 'Sacs à main' ou 'T-shirt XL').", sender: 'bot' }
+    { text: "Bonjour ! Je suis l'IA de **H-Designer**. Dites-moi ce que vous cherchez (ex: 'Sacs à main' ou 'T-shirt XL').", sender: 'bot' }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +85,7 @@ const ChatWidget = () => {
             <div className="flex items-center gap-2">
               <div className="bg-white/20 p-1.5 rounded-full"><Bot size={18} /></div>
               <div>
-                <h3 className="font-bold text-sm">Assistant H-Design</h3>
+                <h3 className="font-bold text-sm">Assistant H-Designer</h3>
                 <p className="text-[10px] text-white/80 uppercase tracking-wider flex items-center gap-1 font-medium">
                     <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span> En ligne
                 </p>

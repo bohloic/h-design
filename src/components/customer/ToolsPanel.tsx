@@ -85,17 +85,17 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
   ];
 
   return (
-    <div className="w-full h-full bg-white flex flex-col relative">
+    <div className="w-full h-full bg-white dark:bg-carbon flex flex-col relative transition-colors">
       
       {/* TABS */}
-      <div className="flex border-b border-gray-100 bg-white sticky top-0 z-10">
+      <div className="flex border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-carbon sticky top-0 z-10 transition-colors">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabType)}
             style={activeTab === tab.id ? { color: 'var(--theme-primary)', borderBottomColor: 'var(--theme-primary)' } : {}}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-all active:bg-gray-50 ${
-              activeTab === tab.id ? 'border-b-2' : 'text-gray-400 hover:text-gray-600'
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-all active:bg-gray-50 dark:active:bg-slate-900 ${
+              activeTab === tab.id ? 'border-b-2' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
             }`}
           >
             {tab.icon}
@@ -111,7 +111,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
         {activeTab === 'product' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div>
-              <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-pure mb-4 flex items-center gap-2">
                   <Palette size={16} style={{ color: 'var(--theme-primary)' }}/> Couleur du produit
               </h3>
               <div className="grid grid-cols-5 gap-3">
@@ -144,12 +144,12 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
         {activeTab === 'text' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="space-y-3">
-              <h3 className="text-sm font-bold text-gray-800">Ajouter un texte</h3>
+              <h3 className="text-sm font-bold text-gray-800 dark:text-pure">Ajouter un texte</h3>
               <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Votre message ici..."
-                className="w-full p-4 border border-gray-200 rounded-2xl text-base resize-none h-28 outline-none bg-gray-50 focus:bg-white transition-all theme-input-ring"
+                className="w-full p-4 border border-gray-200 dark:border-slate-800 rounded-2xl text-base text-slate-900 dark:text-pure resize-none h-28 outline-none bg-gray-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 transition-all theme-input-ring"
               />
               <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                 {FONTS.map(font => (
@@ -157,7 +157,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     key={font}
                     onClick={() => setSelectedFont(font)}
                     className={`shrink-0 px-4 py-2 rounded-xl border text-sm font-medium whitespace-nowrap transition-all ${
-                      selectedFont === font ? 'shadow-md transform scale-105' : 'bg-white text-gray-600 border-gray-200'
+                      selectedFont === font ? 'shadow-md transform scale-105' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
                     }`}
                     style={{ 
                         fontFamily: font, 
@@ -203,13 +203,13 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
         {/* IMAGE */}
         {activeTab === 'image' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <h3 className="text-sm font-bold text-gray-800">Vos Images</h3>
-            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-gray-100 active:bg-gray-200 cursor-pointer transition-colors group">
+            <h3 className="text-sm font-bold text-gray-800 dark:text-pure">Vos Images</h3>
+            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-2xl bg-gray-50 dark:bg-slate-900/50 hover:bg-gray-100 dark:hover:bg-slate-800 active:bg-gray-200 cursor-pointer transition-colors group">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                <div className="w-14 h-14 bg-white rounded-full shadow-sm border border-gray-100 flex items-center justify-center text-gray-400 mb-3 transition-all group-hover-theme-icon">
+                <div className="w-14 h-14 bg-white dark:bg-slate-800 rounded-full shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-center text-gray-400 mb-3 transition-all group-hover-theme-icon">
                   <ImageIcon size={28} />
                 </div>
-                <p className="mb-1 text-sm text-gray-700 font-bold">Toucher pour importer</p>
+                <p className="mb-1 text-sm text-gray-700 dark:text-slate-300 font-bold">Toucher pour importer</p>
                 <p className="text-xs text-gray-400">PNG, JPG (Max. 5Mo)</p>
               </div>
               <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
@@ -230,18 +230,18 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
         {/* IA */}
         {activeTab === 'ai' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex bg-gray-100 rounded-xl p-1">
+            <div className="flex bg-gray-100 dark:bg-slate-900 rounded-xl p-1">
               <button 
                 onClick={() => setAiSubTab('text')}
                 style={aiSubTab === 'text' ? { color: 'var(--theme-primary)' } : {}}
-                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'text' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'text' ? 'bg-white dark:bg-slate-800 shadow-sm' : 'text-gray-500'}`}
               >
                 SLOGANS
               </button>
               <button 
                 onClick={() => setAiSubTab('image')}
                 style={aiSubTab === 'image' ? { color: 'var(--theme-primary)' } : {}}
-                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'image' ? 'bg-white shadow-sm' : 'text-gray-500'}`}
+                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'image' ? 'bg-white dark:bg-slate-800 shadow-sm' : 'text-gray-500'}`}
               >
                 IMAGES IA
               </button>
@@ -262,7 +262,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
                   placeholder={aiSubTab === 'text' ? "Ex: Passion foot..." : "Ex: Lion géométrique..."}
-                  className="w-full px-4 py-3 bg-white border border-transparent rounded-xl text-sm outline-none transition-all theme-input-ring shadow-sm"
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl text-sm outline-none text-slate-900 dark:text-pure transition-all theme-input-ring shadow-sm"
                 />
                 <button
                   onClick={aiSubTab === 'text' ? handleAiTextSearch : handleAiImageGen}
@@ -284,7 +284,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     <button
                         key={idx}
                         onClick={() => onAddText(s, 'Inter')}
-                        className="w-full text-left p-4 rounded-xl border border-gray-100 transition-all text-sm font-medium text-gray-700 shadow-sm bg-white active:scale-95 hover-theme-suggestion"
+                        className="w-full text-left p-4 rounded-xl border border-gray-100 dark:border-slate-800 transition-all text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm bg-white dark:bg-slate-800 active:scale-95 hover-theme-suggestion"
                     >
                         "{s}"
                     </button>
@@ -297,7 +297,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
             {aiSubTab === 'image' && generatedImageUrl && !isAiLoading && (
               <div className="space-y-3 animate-in fade-in zoom-in duration-300">
                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Résultat</h4>
-                <div className="relative group rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm aspect-square">
+                <div className="relative group rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-sm aspect-square">
                   <img src={generatedImageUrl} alt="Generated" className="w-full h-full object-contain p-4" />
                   
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">

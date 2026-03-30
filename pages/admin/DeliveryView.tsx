@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Plus, Trash2, XCircle, Truck, Package, Calendar, MapPin, CheckCircle2, User } from 'lucide-react';
+import { Edit, Plus, Trash2, XCircle, Truck, Package, Calendar, MapPin, CheckCircle2, User, Search } from 'lucide-react';
 import { authFetch } from '../../src/utils/apiClient';
+import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
+import Pagination from '../../src/components/tools/Pagination';
 
 export const DeliveryView = () => {
   const [deliveries, setDeliveries] = useState<any[]>([]);
@@ -8,6 +10,41 @@ export const DeliveryView = () => {
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // --- FILTRAGE & RECHERCHE ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const formatOrderId = (id: string | number) => {
+      if (!id) return '';
+      return `#HD-${String(id).padStart(5, '0')}`;
+  };
+
+  const filteredDeliveries = React.useMemo(() => {
+    return deliveries.filter((delivery: any) => {
+        const matchesSearch = 
+            formatOrderId(delivery.order_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (delivery.carrier_name && delivery.carrier_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (delivery.tracking_number && delivery.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        const matchesStatus = statusFilter === 'all' || delivery.status === statusFilter;
+
+        return matchesSearch && matchesStatus;
+    });
+  }, [deliveries, searchTerm, statusFilter]);
+
+  // --- PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  const paginatedDeliveries = React.useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredDeliveries.slice(start, start + itemsPerPage);
+  }, [filteredDeliveries, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   const [formData, setFormData] = useState({
       order_id: '',
@@ -17,14 +54,9 @@ export const DeliveryView = () => {
       estimated_delivery_date: ''
   });
 
-  const formatOrderId = (id: string | number) => {
-      if (!id) return '';
-      return `#HD-${String(id).padStart(5, '0')}`;
-  };
-
-  const fetchData = async () => {
+  const fetchData = async (showLoader = true) => {
     try {
-      setLoading(true);
+      if (showLoader) setLoading(true);
       const [deliveriesRes, ordersRes] = await Promise.all([
           authFetch('/api/deliveries'),
           authFetch('/api/orders')
@@ -38,13 +70,15 @@ export const DeliveryView = () => {
     } catch (error) {
       console.error("Erreur fetch:", error);
     } finally {
-        setLoading(false);
+        if (showLoader) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(true);
   }, []);
+
+  useAutoRefresh(() => fetchData(false), 10000);
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
@@ -86,7 +120,7 @@ export const DeliveryView = () => {
 
         if (response.ok) {
             setIsModalOpen(false);
-            fetchData(); 
+            fetchData(false); 
             setEditingId(null);
             setFormData({ order_id: '', tracking_number: '', carrier_name: '', status: 'pending', estimated_delivery_date: '' });
         } else {
@@ -171,6 +205,37 @@ export const DeliveryView = () => {
         </button>
       </div>
 
+      {/* BARRE DE FILTRES */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input 
+                type="text"
+                placeholder="Rechercher par commande, transporteur ou n° de suivi..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-slate-200 transition-all outline-none"
+            />
+            {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <XCircle size={16} />
+                </button>
+            )}
+        </div>
+
+        <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm text-slate-600 focus:ring-2 focus:ring-slate-200 outline-none cursor-pointer sm:w-48"
+        >
+            <option value="all">Tous les statuts</option>
+            <option value="pending">En préparation</option>
+            <option value="in_transit">En route</option>
+            <option value="delivered">Livrées</option>
+            <option value="returned">Retournées</option>
+        </select>
+      </div>
+
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
         
         {loading ? (
@@ -184,7 +249,7 @@ export const DeliveryView = () => {
         ) : deliveries.length === 0 ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center">
                 <Package size={48} className="mb-4 opacity-20" />
-                <p>Aucune livraison en cours.</p>
+                <p>Aucune livraison ne correspond à vos critères.</p>
             </div>
         ) : (
             <>
@@ -200,7 +265,7 @@ export const DeliveryView = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {deliveries.map((delivery: any) => {
+                        {paginatedDeliveries.map((delivery: any) => {
                             const clientInfo = getOrderDetails(delivery.order_id);
                             return (
                             <tr key={delivery.id} className="hover:bg-slate-50 transition-colors group">
@@ -256,7 +321,7 @@ export const DeliveryView = () => {
                 </div>
 
                 <div className="md:hidden divide-y divide-slate-100">
-                    {deliveries.map((delivery: any) => {
+                    {paginatedDeliveries.map((delivery: any) => {
                         const clientInfo = getOrderDetails(delivery.order_id);
                         return (
                         <div key={delivery.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50 transition-colors">
@@ -303,6 +368,15 @@ export const DeliveryView = () => {
                             </div>
                         </div>
                     )})}
+                </div>
+
+                <div className="p-4 border-t border-slate-100">
+                    <Pagination 
+                        currentPage={currentPage}
+                        totalItems={filteredDeliveries.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             </>
         )}

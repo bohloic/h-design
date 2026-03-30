@@ -15,7 +15,7 @@ const CustomSectionBas: React.FC<CustomSectionProps> = ({ onCustomizeClick }) =>
             <picture className="relative block aspect-square overflow-hidden bg-gray-100">
               <img 
                 src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800" 
-                alt="Personnalisation H-design"
+                alt="Personnalisation H-Designer"
                 loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
@@ -29,7 +29,7 @@ const CustomSectionBas: React.FC<CustomSectionProps> = ({ onCustomizeClick }) =>
               className="text-sm font-bold tracking-[0.2em] uppercase mb-4"
               style={{ color: 'var(--theme-primary)' }}
             >
-              Exclusivité Studio H-design
+              Exclusivité Studio H-Designer
             </span>
             
             <h2 className="text-3xl lg:text-5xl font-black text-gray-900 mb-6 leading-tight uppercase tracking-tight">
@@ -65,7 +65,7 @@ const CustomSectionBas: React.FC<CustomSectionProps> = ({ onCustomizeClick }) =>
                     key={i}
                     className="inline-block h-10 w-10 rounded-full ring-4 ring-white object-cover" 
                     src={`https://picsum.photos/seed/${i + 20}/100/100`} 
-                    alt="Client H-design" 
+                    alt="Client H-Designer" 
                   />
                 ))}
               </div>

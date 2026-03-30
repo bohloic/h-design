@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { authFetch } from '../../src/utils/apiClient';
 import { analyzeSales } from '../../services/geminiService';
+import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
 import { StatCard } from '@/src/components/admin/StatCard';
 import { CheckCircle2, ShoppingBag, TrendingUp, Users, Sparkles, Loader2, Download } from 'lucide-react';
 import { 
@@ -49,9 +50,8 @@ export const DashboardView = () => {
     return `${percent > 0 ? '+' : ''}${percent.toFixed(1)}%`;
   };
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
+  const fetchDashboardData = useCallback(async (showLoader = true) => {
+    if (showLoader) setLoading(true);
       try {
         const [ordersRes, usersRes, productsRes] = await Promise.all([
           authFetch('/api/orders'),
@@ -161,12 +161,16 @@ export const DashboardView = () => {
       } catch (error) {
         console.error("Erreur Dashboard:", error);
       } finally {
-        setLoading(false);
+        if (showLoader) setLoading(false);
       }
-    };
+  }, [timeframe]);
 
-    fetchDashboardData();
-  }, [timeframe]); 
+  useEffect(() => {
+    fetchDashboardData(true);
+  }, [fetchDashboardData]);
+
+  // Rafraîchissement silencieux toutes les 10 secondes
+  useAutoRefresh(() => fetchDashboardData(false), 10000);
 
   // 🖨️ GESTION DU BOUTON D'EXPORT BACKEND
   const handleExportReport = async () => {

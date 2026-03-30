@@ -1,0 +1,75 @@
+/* 🪄 Animations et Utilitaires UX Globaux */
+
+/* Glow effect pour la mise en évidence après recherche */
+@keyframes highlight-glow-animation {
+  0% { 
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+  20% { 
+    background-color: color-mix(in srgb, var(--theme-primary, #ef4444) 15%, transparent);
+    box-shadow: 0 0 20px 5px color-mix(in srgb, var(--theme-primary, #ef4444) 30%, transparent);
+    border-color: var(--theme-primary, #ef4444);
+  }
+  80% { 
+    background-color: color-mix(in srgb, var(--theme-primary, #ef4444) 10%, transparent);
+    box-shadow: 0 0 15px 2px color-mix(in srgb, var(--theme-primary, #ef4444) 20%, transparent);
+    border-color: var(--theme-primary, #ef4444);
+  }
+  100% { 
+    background-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.highlight-glow {
+  animation: highlight-glow-animation 3s ease-in-out forwards;
+  border-width: 2px !important;
+  border-style: solid !important;
+  z-index: 10;
+  position: relative;
+}
+
+/* Scroll to Top Button Smoothness */
+.back-to-top-btn {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.back-to-top-btn:hover {
+  transform: translateY(-5px) scale(1.1);
+}
+
+.back-to-top-btn:active {
+  transform: scale(0.95);
+}
+
+/* Progress ring for Back to Top */
+.progress-ring__circle {
+  transition: stroke-dashoffset 0.1s linear;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+/* H-Designer Brand Kit Utilities */
+.rainbow-bg {
+  background: linear-gradient(to right, #3B82F6, #8B5CF6, #22D3EE);
+}
+
+.rainbow-text {
+  background: linear-gradient(to right, #3B82F6, #8B5CF6, #22D3EE);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 🛒 Badge panier — animation pop élastique */
+@keyframes cart-badge-pop-anim {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.25); opacity: 1; }
+  80%  { transform: scale(0.9); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.cart-badge-pop {
+  animation: cart-badge-pop-anim 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}

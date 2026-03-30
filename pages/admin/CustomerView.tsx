@@ -1,10 +1,42 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authFetch } from '../../src/utils/apiClient';
-import { Edit, Trash2, UserPlus, Gift, Mail, Phone, XCircle, Shield, User as UserIcon, ChevronDown, CheckCircle2, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Edit, Trash2, UserPlus, Gift, Mail, Phone, XCircle, Shield, User as UserIcon, ChevronDown, CheckCircle2, Eye, EyeOff, AlertCircle, Search } from 'lucide-react';
+import Pagination from '../../src/components/tools/Pagination';
 
 export const CustomerView = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // --- FILTRAGE & RECHERCHE ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+
+  const filteredUsers = React.useMemo(() => {
+    return users.filter((user: any) => {
+      const matchesSearch = 
+        `${user.prenom} ${user.nom}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.phone && user.phone.includes(searchTerm));
+      
+      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+
+      return matchesSearch && matchesRole;
+    });
+  }, [users, searchTerm, roleFilter]);
+
+  // --- PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  const paginatedUsers = React.useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(start, start + itemsPerPage);
+  }, [filteredUsers, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, roleFilter]);
   
   // Modal
   const [showModal, setShowModal] = useState(false); 
@@ -29,6 +61,27 @@ export const CustomerView = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // 🪄 LOGIQUE DE MISE EN ÉVIDENCE (Highlight)
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const highlightId = params.get('highlight');
+    
+    if (highlightId && !loading && users.length > 0) {
+      setTimeout(() => {
+        const element = document.getElementById(`customer-${highlightId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('highlight-glow');
+          
+          setTimeout(() => {
+            element.classList.remove('highlight-glow');
+          }, 3500);
+        }
+      }, 500);
+    }
+  }, [location.search, loading, users]);
 
   const fetchUsers = async () => {
     try {
@@ -171,6 +224,35 @@ export const CustomerView = () => {
         </button>
       </div>
 
+      {/* BARRE DE FILTRES */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input 
+                type="text"
+                placeholder="Rechercher par nom, email ou téléphone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-slate-200 transition-all outline-none"
+            />
+            {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <XCircle size={16} />
+                </button>
+            )}
+        </div>
+
+        <select 
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm text-slate-600 focus:ring-2 focus:ring-slate-200 outline-none cursor-pointer sm:w-48"
+        >
+            <option value="all">Tous les rôles</option>
+            <option value="admin">Administrateurs</option>
+            <option value="client">Clients</option>
+        </select>
+      </div>
+
       {/* Contenu : Grille Responsive */}
       {loading ? (
           <div className="p-12 text-center text-slate-400 flex flex-col items-center">
@@ -180,12 +262,12 @@ export const CustomerView = () => {
               ></div>
               Chargement...
           </div>
-      ) : users.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">Aucun utilisateur trouvé.</div>
+      ) : filteredUsers.length === 0 ? (
+          <div className="p-12 text-center text-slate-400">Aucun utilisateur ne correspond à vos critères.</div>
       ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {users.map((user: any) => (
-              <div key={user.id} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
+            {paginatedUsers.map((user: any) => (
+              <div key={user.id} id={`customer-${user.id}`} className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
                 
                 {/* Header Carte : Identité & Rôle */}
                 <div className="flex justify-between items-start mb-4">
@@ -266,6 +348,18 @@ export const CustomerView = () => {
 
               </div>
             ))}
+          </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && filteredUsers.length > 0 && (
+          <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+              <Pagination 
+                  currentPage={currentPage}
+                  totalItems={filteredUsers.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+              />
           </div>
       )}
 

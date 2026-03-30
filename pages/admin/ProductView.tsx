@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../src/utils/apiClient';
 import { Edit, Plus, Trash2, XCircle, Tag, Layers, Check, Image as ImageIcon, Search, Palette, Package } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import Pagination from '../../src/components/tools/Pagination';
 
 const AVAILABLE_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
 
@@ -33,6 +34,49 @@ export const ProductView = () => {
   const [categories, setCategories] = useState([]); 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // --- FILTRAGE ET RECHERCHE ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [collectionFilter, setCollectionFilter] = useState('all');
+  const [stockFilter, setStockFilter] = useState('all');
+
+  const filteredProducts = React.useMemo(() => {
+    return products.filter((product: any) => {
+      // 1. Recherche Textuelle
+      const matchesSearch = 
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      // 2. Filtre Catégorie
+      const matchesCategory = categoryFilter === 'all' || String(product.category_id) === categoryFilter;
+      
+      // 3. Filtre Collection
+      const matchesCollection = collectionFilter === 'all' || String(product.collection_id) === collectionFilter;
+      
+      // 4. Filtre Stock
+      let matchesStock = true;
+      if (stockFilter === 'out') matchesStock = product.stock_quantity <= 0;
+      else if (stockFilter === 'low') matchesStock = product.stock_quantity > 0 && product.stock_quantity <= 10;
+      else if (stockFilter === 'available') matchesStock = product.stock_quantity > 10;
+
+      return matchesSearch && matchesCategory && matchesCollection && matchesStock;
+    });
+  }, [products, searchTerm, categoryFilter, collectionFilter, stockFilter]);
+
+  // --- PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
+
+  const paginatedProducts = React.useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredProducts.slice(start, start + itemsPerPage);
+  }, [filteredProducts, currentPage]);
+
+  // Réinitialiser la page si les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, categoryFilter, collectionFilter, stockFilter]);
 
   // Typage explicite pour éviter les erreurs TypeScript
   const [variants, setVariants] = useState<{ colorName: string, colorCode: string, stockQuantity: number | string, files: File[] }[]>([
@@ -96,6 +140,29 @@ export const ProductView = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // 🪄 LOGIQUE DE MISE EN ÉVIDENCE (Highlight)
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const highlightId = params.get('highlight');
+    
+    if (highlightId && !loading && products.length > 0) {
+      // Petit délai pour s'assurer que le DOM est prêt
+      setTimeout(() => {
+        const element = document.getElementById(`product-${highlightId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('highlight-glow');
+          
+          // Retirer la classe après l'animation (3s définie dans GlobalUX.css)
+          setTimeout(() => {
+            element.classList.remove('highlight-glow');
+          }, 3500);
+        }
+      }, 500);
+    }
+  }, [location.search, loading, products]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -291,6 +358,62 @@ export const ProductView = () => {
         </button>
       </div>
 
+      {/* BARRE DE FILTRES */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {/* Recherche */}
+        <div className="relative lg:col-span-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input 
+                type="text"
+                placeholder="Rechercher un produit ou tag..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-slate-200 transition-all outline-none"
+            />
+            {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <XCircle size={16} />
+                </button>
+            )}
+        </div>
+
+        {/* Catégorie */}
+        <select 
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm text-slate-600 focus:ring-2 focus:ring-slate-200 outline-none cursor-pointer"
+        >
+            <option value="all">Toutes les coupes</option>
+            {categories.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+        </select>
+
+        {/* Collection */}
+        <select 
+            value={collectionFilter}
+            onChange={(e) => setCollectionFilter(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm text-slate-600 focus:ring-2 focus:ring-slate-200 outline-none cursor-pointer"
+        >
+            <option value="all">Tous les thèmes</option>
+            {collections.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+        </select>
+
+        {/* Stock */}
+        <select 
+            value={stockFilter}
+            onChange={(e) => setStockFilter(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm text-slate-600 focus:ring-2 focus:ring-slate-200 outline-none cursor-pointer"
+        >
+            <option value="all">Tout le stock</option>
+            <option value="available">Disponible (&gt;10)</option>
+            <option value="low">Stock faible (1-10)</option>
+            <option value="out">Rupture (0)</option>
+        </select>
+      </div>
+
       {/* --- LISTE DES PRODUITS --- */}
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden w-full">
         {loading ? (
@@ -304,7 +427,7 @@ export const ProductView = () => {
         ) : products.length === 0 ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center">
                 <Search size={48} className="mb-4 opacity-20" />
-                <p>Aucun produit trouvé.</p>
+                <p>Aucun produit ne correspond à vos critères.</p>
             </div>
         ) : (
             <>
@@ -322,8 +445,8 @@ export const ProductView = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {products.map((product: any) => (
-                        <tr key={product.id} className="hover:bg-slate-50 transition-colors group">
+                        {paginatedProducts.map((product: any) => (
+                        <tr key={product.id} id={`product-${product.id}`} className="hover:bg-slate-50 transition-colors group">
                             <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0">
@@ -358,8 +481,8 @@ export const ProductView = () => {
 
                 {/* 2. VUE CARTES (MOBILE SEULEMENT) */}
                 <div className="md:hidden divide-y divide-slate-100 bg-slate-50/50 w-full">
-                    {products.map((product: any) => (
-                        <div key={product.id} className="p-4 bg-white mb-2 shadow-sm first:mt-0 last:mb-0 w-full">
+                    {paginatedProducts.map((product: any) => (
+                        <div key={product.id} id={`product-card-${product.id}`} className="p-4 bg-white mb-2 shadow-sm first:mt-0 last:mb-0 w-full">
                              
                              {/* En-tête Carte */}
                              <div className="flex justify-between items-start mb-3">
@@ -407,6 +530,15 @@ export const ProductView = () => {
                              </div>
                         </div>
                     ))}
+                </div>
+
+                <div className="p-4 border-t border-slate-100">
+                    <Pagination 
+                        currentPage={currentPage}
+                        totalItems={filteredProducts.length}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                    />
                 </div>
             </>
         )}
