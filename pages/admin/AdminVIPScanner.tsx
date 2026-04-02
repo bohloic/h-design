@@ -10,6 +10,7 @@ export const AdminVIPScanner = () => {
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
     const [showCamera, setShowCamera] = useState(false);
+    const [confirmRedeem, setConfirmRedeem] = useState(false);
 
     // Fonction appelée quand la caméra détecte un QR Code
     const handleScan = async (result: string) => {
@@ -33,6 +34,7 @@ export const AdminVIPScanner = () => {
         setError('');
         setSuccessMessage('');
         setScannedUser(null);
+        setConfirmRedeem(false);
 
         try {
             // Note : Nous allons créer cette route backend juste après !
@@ -50,8 +52,13 @@ export const AdminVIPScanner = () => {
 
     // Fonction pour valider le T-shirt offert et retirer 200 points
     const handleRedeemPoints = async () => {
-        if (!window.confirm("Valider le T-shirt offert et déduire 200 points ?")) return;
+        if (!confirmRedeem) {
+            setConfirmRedeem(true);
+            setTimeout(() => setConfirmRedeem(false), 4000);
+            return;
+        }
 
+        setConfirmRedeem(false);
         setLoading(true);
         try {
             // Note : Nous allons aussi créer cette route backend
@@ -201,9 +208,9 @@ export const AdminVIPScanner = () => {
                                         onClick={handleRedeemPoints}
                                         // 🪄 TEXTE DYNAMIQUE ICI POUR RESTER COHÉRENT
                                         style={{ color: 'var(--theme-primary)' }}
-                                        className="w-full bg-white py-3 rounded-xl font-black uppercase tracking-wide hover:bg-slate-50 transition-colors active:scale-95"
+                                        className={`w-full py-3 rounded-xl font-black uppercase tracking-wide transition-colors active:scale-95 select-none ${confirmRedeem ? 'bg-red-500 text-white border-2 border-red-500 shadow-xl scale-105' : 'bg-white hover:bg-slate-50'}`}
                                     >
-                                        Valider la gratuité
+                                        {confirmRedeem ? "Taper pour Confirmer (!)" : "Valider la gratuité"}
                                     </button>
                                 </div>
                             ) : (

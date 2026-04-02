@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@import "./styles/GlobalUX.css";
 @theme {
   --color-carbon: #1A1A1A;
   /* (1e293b) Remplace #101010 par slate-800 pour un dark mode plus doux */
@@ -17,6 +17,3 @@
 
 /* 🌙 STRATÉGIE MODE SOMBRE V4 (Basée sur la classe .dark) */
 @custom-variant dark (&:where(.dark, .dark *));
-
-
-@import "./styles/GlobalUX.css";

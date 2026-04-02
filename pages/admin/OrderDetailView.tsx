@@ -222,7 +222,12 @@ export const OrderDetailView = () => {
                                 }
 
                                 let thumbnailSrc = item.image_url ? BASE_IMG_URL + item.image_url : '/placeholder.png';
-                                if (maquetteUrl) thumbnailSrc = maquetteUrl;
+                                if (maquetteUrl) {
+                                    thumbnailSrc = maquetteUrl;
+                                } else if (isCustom && item.image_url) {
+                                    // 🪄 FALLBACK : Si c'est du perso mais pas de maquette (ancien), on montre le produit brut
+                                    thumbnailSrc = BASE_IMG_URL + item.image_url;
+                                }
 
                                 return (
                                     <div key={item.id} className="p-6">

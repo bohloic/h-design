@@ -15,7 +15,7 @@ import TrendingSection from '@/src/components/product/TrendingProducts';
 
 // Images (Assurez-vous que ces imports fonctionnent, sinon remplacez par vos chemins)
 import imageHome from '@/src/assets/image1.png';
-import imageHome2 from '@/src/assets/image2.jpg';
+import imageHome2 from '../src/assets/h_designer_hero_fashion_atelier_1774889548518.png';
 import imageHome3 from '@/src/assets/image4.png';
 
 interface HomeProps {

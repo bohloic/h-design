@@ -274,7 +274,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   if (!selectedProduct) return <div className="h-screen flex items-center justify-center flex-col gap-2"><Loader2 className="animate-spin" style={{ color: 'var(--theme-primary)' }} size={32} /><span className="text-slate-500 font-bold">Chargement...</span></div>;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-50 dark:bg-carbon overflow-hidden relative transition-colors">
+    <div className="flex flex-col h-auto min-h-[calc(100vh-64px)] bg-slate-50 dark:bg-carbon overflow-y-visible relative transition-colors">
       
       {/* HEADER */}
       <div className="bg-white dark:bg-carbon border-b border-slate-200 dark:border-slate-800 p-3 flex justify-between items-center shadow-sm z-20 shrink-0 h-16 transition-colors">
@@ -329,7 +329,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             </div>
         </aside>
 
-        <main className="flex-1 flex flex-col relative bg-slate-100 dark:bg-slate-900/40 overflow-hidden touch-none items-center justify-center p-4 transition-colors">
+        <main className="flex-1 flex flex-col relative bg-slate-100 dark:bg-slate-900/40 items-center justify-center p-4 transition-colors">
             <div className="relative shadow-xl rounded-xl overflow-hidden bg-white dark:bg-slate-800 w-full max-w-[500px] aspect-square transition-colors">
                 <Canvas ref={canvasRef} product={selectedProduct} color={currentCanvasColor} elements={designElements} activeElementId={activeElementId} onSelectElement={(id) => { setActiveElementId(id); if (id) setMobileView('tools'); }} onUpdateElement={handleUpdateElement} onDeleteElement={handleDeleteElement} />
                 <div className="absolute inset-0 pointer-events-none z-0 mix-blend-multiply" style={{ backgroundColor: currentCanvasColor.hex, opacity: 0.1 }}></div>

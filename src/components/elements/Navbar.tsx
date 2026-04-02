@@ -59,6 +59,13 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             >
               Boutique
             </Link>
+            <Link 
+              to="/personnaliser/mon-design" 
+              style={isActive('/personnaliser/mon-design') ? { color: 'var(--theme-primary)' } : {}}
+              className={`transition-colors ${isActive('/personnaliser/mon-design') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
+            >
+              Personnalisation
+            </Link>
             
             {isAuthenticated ? (
                <Link 
@@ -162,9 +169,17 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
               to="/boutique" 
               onClick={closeMenu}
               style={isActive('/boutique') ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' } : {}}
-              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/boutique') ? '' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
+              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/boutique') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-bg-light'}`}
             >
               Boutique
+            </Link>
+            <Link 
+              to="/personnaliser/mon-design" 
+              onClick={closeMenu}
+              style={isActive('/personnaliser/mon-design') ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' } : {}}
+              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/personnaliser/mon-design') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-bg-light'}`}
+            >
+              Personnalisation
             </Link>
 
             {isAuthenticated && role === 'admin' && (

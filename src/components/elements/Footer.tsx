@@ -18,12 +18,7 @@ const Footer: React.FC = () => {
             <img 
               src={logoLight} 
               alt="H-Designer Logo" 
-              className="h-16 w-auto group-hover:opacity-80 transition-opacity object-contain dark:hidden"
-            />
-            <img 
-              src={logoDark} 
-              alt="H-Designer Logo" 
-              className="h-16 w-auto group-hover:opacity-80 transition-opacity object-contain hidden dark:block"
+              className="h-16 w-auto group-hover:opacity-80 transition-opacity object-contain"
             />
           </Link>
           <p className="text-slate-400 text-sm leading-relaxed max-w-xs">

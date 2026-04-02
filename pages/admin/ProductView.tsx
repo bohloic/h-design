@@ -4,6 +4,7 @@ import { Edit, Plus, Trash2, XCircle, Tag, Layers, Check, Image as ImageIcon, Se
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import Pagination from '../../src/components/tools/Pagination';
+import { useNotificationStore } from '../../src/store/useNotificationStore';
 
 const AVAILABLE_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
 
@@ -306,29 +307,54 @@ export const ProductView = () => {
         });
 
         if (response.ok) {
+            useNotificationStore.getState().addNotification({
+                title: editingId ? "Produit modifié" : "Produit créé",
+                message: "L'opération a été réalisée avec succès dans le catalogue.",
+                type: "success"
+            });
             fetchData();
             resetForm();
         } else {
             const errorData = await response.json();
-            alert("Erreur Backend : " + (errorData.message || errorData.error));
+            useNotificationStore.getState().addNotification({
+                title: "Erreur Backend",
+                message: errorData.message || errorData.error || "Mise à jour refusée.",
+                type: "error"
+            });
         }
 
     } catch (error: any) {
         console.error("ERREUR:", error);
-        alert("Erreur technique : " + error.message);
+        useNotificationStore.getState().addNotification({
+            title: "Erreur technique",
+            message: error.message || "Impossible de joindre le serveur.",
+            type: "error"
+        });
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Êtes-vous sûr ?")) return;
+    if (!window.confirm("Êtes-vous sûr de supprimer définitivement ce produit du catalogue ?")) return;
     const token = localStorage.getItem('token');
     try {
         const response = await authFetch(`/api/products/delete-product/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (response.ok) setProducts(prev => prev.filter((p:any) => p.id !== id));
-        else alert("Impossible de supprimer.");
+        if (response.ok) {
+            setProducts(prev => prev.filter((p:any) => p.id !== id));
+            useNotificationStore.getState().addNotification({
+                title: "Suppression confirmée",
+                message: "Le produit a bien été retiré.",
+                type: "success"
+            });
+        } else {
+            useNotificationStore.getState().addNotification({
+                title: "Erreur de suppression",
+                message: "Impossible de retirer ce produit. Il est potentiellement lié à des commandes.",
+                type: "error"
+            });
+        }
     } catch (error) { console.error(error); }
   };
 

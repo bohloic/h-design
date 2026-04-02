@@ -29,6 +29,7 @@ function Auth({ onLoginSuccess }) {
     const [showVerification, setShowVerification] = useState(false);
     const [isForgotMode, setIsForgotMode] = useState(false);
     const [captchaVerified, setCaptchaVerified] = useState(false);
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
     const [registeredEmail, setRegisteredEmail] = useState('');
     const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
@@ -135,8 +136,8 @@ function Auth({ onLoginSuccess }) {
         setIsLoading(true);
         setStatus({ type: '', message: '' });
 
-        // 🛠️ MODE DEV : code universel 000000
-        const isDevBypass = import.meta.env.VITE_DEV_OTP_BYPASS === 'true' && fullCode === '000000';
+        // 🛠️ MODE DEV : code universel 000000 statiquement désactivé en production
+        const isDevBypass = import.meta.env.DEV && import.meta.env.VITE_DEV_OTP_BYPASS === 'true' && fullCode === '000000';
 
         try {
             if (isDevBypass) {
@@ -192,8 +193,8 @@ function Auth({ onLoginSuccess }) {
         setIsLoading(true);
         const url = isLoginMode ? `${API_BASE_URL}/login` : `${API_BASE_URL}/register`;
         const bodyData = isLoginMode
-            ? { email: formData.email, password: formData.password }
-            : { nom: formData.nom, prenom: formData.prenom, email: formData.email, phone: formData.phone, password: formData.password };
+            ? { email: formData.email, password: formData.password, captchaToken }
+            : { nom: formData.nom, prenom: formData.prenom, email: formData.email, phone: formData.phone, password: formData.password, captchaToken };
 
         try {
             const response = await authFetch(url, {
@@ -299,26 +300,15 @@ function Auth({ onLoginSuccess }) {
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         try {
-            // Dans un cas réel, on appellerait window.google.accounts.id.prompt() 
-            // ou on redirigerait vers une URL de callback backend.
-
-            // Simulation d'un succès
-            const mockToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5OTkiLCJlbWFpbCI6InNvY2lhbEB1c2VyLmNvbSIsInJvbGUiOiJjbGllbnQifQ";
-            localStorage.setItem('token', mockToken);
-            localStorage.setItem('role', 'client');
-
+            // Remontée d'une vraie erreur si l'API cliente n'est pas instanciée ou ne retourne pas de token valide
             useNotificationStore.getState().addNotification({
-                userId: '999',
-                title: `Connexion ${provider}`,
-                message: `Bienvenue ! Vous êtes connecté via ${provider}.`,
-                type: "success"
+                title: `Connexion ${provider} indisponible`,
+                message: `Les clés d'accès OAuth (Client ID) pour ${provider} n'ont pas été insérées en backend/frontend. Le service est suspendu.`,
+                type: "error"
             });
 
-            setStatus({ type: 'success', message: `Connecté avec succès via ${provider} !` });
-
-            if (onLoginSuccess) onLoginSuccess();
-            setTimeout(() => navigate('/dashboard'), 800);
-
+            setStatus({ type: 'error', message: `Mise en service de ${provider} incomplète.` });
+            
         } catch (error) {
             setStatus({ type: 'error', message: `Échec de la connexion via ${provider}.` });
         } finally {
@@ -477,7 +467,7 @@ function Auth({ onLoginSuccess }) {
                                     <div className="pt-2 flex justify-center">
                                         <ReCAPTCHA
                                             sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                                            onChange={(val) => setCaptchaVerified(!!val)}
+                                            onChange={(val) => { setCaptchaVerified(!!val); setCaptchaToken(val); }}
                                         />
                                     </div>
 

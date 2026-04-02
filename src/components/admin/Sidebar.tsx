@@ -61,8 +61,7 @@ export const Sidebar = ({ onClose }: { onClose?: () => void }) => {
       {/* ── LOGO ── */}
       <div className="px-4 py-5 border-b border-slate-800/60 flex-shrink-0 flex items-center justify-between">
         <Link to="/admin" className="flex items-center group -ml-2">
-          <img src={logoLight} alt="H-Designer" className="h-16 w-auto group-hover:scale-105 transition-transform object-contain dark:hidden" />
-          <img src={logoDark} alt="H-Designer" className="h-16 w-auto group-hover:scale-105 transition-transform object-contain hidden dark:block" />
+          <img src={logoLight} alt="H-Designer" className="h-16 w-auto group-hover:scale-105 transition-transform object-contain" />
           <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest -ml-4">Admin</p>
         </Link>
 

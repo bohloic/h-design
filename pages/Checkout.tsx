@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import { usePaymentStore } from '@/src/store/usePaymentStore';
+import { useNotificationStore } from '../src/store/useNotificationStore';
 
 export interface CartItem {
   id: string | number;
@@ -92,7 +93,11 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
   const handleNext = () => {
     if (step === 1) {
       if (!formData.nom || !formData.prenom || !formData.address || !formData.phone || !formData.city) {
-        alert("Veuillez remplir tous les champs obligatoires.");
+        useNotificationStore.getState().addNotification({
+            title: "Informations incomplètes",
+            message: "Veuillez remplir tous les champs obligatoires pour la livraison.",
+            type: "warning"
+        });
         return;
       }
     }
@@ -111,7 +116,11 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
     // MODE INVITÉ : pas de token requis si l'email est fourni
     if (!token) {
         if (!formData.email || !formData.nom) {
-            alert("Veuillez fournir votre nom et email pour continuer.");
+            useNotificationStore.getState().addNotification({
+                title: "Mode invité",
+                message: "Veuillez fournir un mail et un nom valide pour recevoir votre confirmation.",
+                type: "warning"
+            });
             return;
         }
         // On continue en mode invité (userId = null)
@@ -157,7 +166,11 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         const newOrderId = orderData.orderId;
 
         if (paymentMethod === 'Espèces') {
-            alert("Commande confirmée ! Un livreur est en route 🚚");
+            useNotificationStore.getState().addNotification({
+                title: "Commande validée !",
+                message: "Votre commande est confirmée. Préparez-vous pour la livraison en espèces 🚚",
+                type: "success"
+            });
             onClearCart();
             navigate('/order-confirmed', { state: { orderId: newOrderId } });
 
@@ -171,7 +184,8 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                 body: JSON.stringify({
                     email: formData.email,
                     amount: total,
-                    orderId: newOrderId
+                    orderId: newOrderId,
+                    callbackUrl: window.location.origin
                 })
             });
 
@@ -195,7 +209,11 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
 
     } catch (error: any) {
         console.error("ERREUR COMMANDE:", error);
-        alert("Oups ! Problème technique : " + error.message);
+        useNotificationStore.getState().addNotification({
+            title: "Problème Technique",
+            message: error.message || "Impossible de finaliser la transaction. Veuillez réessayer.",
+            type: "error"
+        });
     } finally {
         setIsLoading(false);
     }
