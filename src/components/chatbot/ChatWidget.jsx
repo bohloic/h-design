@@ -72,7 +72,7 @@ const ChatWidget = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+    <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[1002] flex flex-col items-end font-sans">
       
       {isOpen && (
         <div className="bg-white w-80 md:w-96 h-[500px] rounded-2xl shadow-2xl border border-slate-100 flex flex-col mb-4 overflow-hidden animate-in slide-in-from-bottom-5">
@@ -198,7 +198,7 @@ const ChatWidget = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{ backgroundColor: 'var(--theme-primary)' }}
-        className="text-white p-4 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 relative"
+        className={`text-white p-3 md:p-4 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 relative backdrop-blur-sm ${!isOpen ? 'opacity-70 hover:opacity-100' : 'opacity-100'}`}
       >
         {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
         {!isOpen && (

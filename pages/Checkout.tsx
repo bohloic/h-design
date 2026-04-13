@@ -185,7 +185,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                     email: formData.email,
                     amount: total,
                     orderId: newOrderId,
-                    callbackUrl: window.location.origin
+                    callbackUrl: window.location.origin // Le backend ajoute probablement /payment/callback
                 })
             });
 

@@ -67,4 +67,6 @@ export interface DesignElement {
   color?: string;
   fontSize?: number;
   fontFamily?: string;
+  opacity?: number;
+  borderRadius?: number;
 }

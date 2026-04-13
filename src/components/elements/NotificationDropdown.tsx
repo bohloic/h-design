@@ -17,18 +17,34 @@ export const NotificationDropdown: React.FC = () => {
   const navigate = useNavigate();
 
   const token = localStorage.getItem('token');
-  let currentUserId = '';
-  if (token) {
-    try {
-      const decoded = jwtDecode<MonTokenCustom>(token);
-      currentUserId = String(decoded.userId);
-    } catch {}
-  }
 
-  const { notifications, getUnreadCount, markAsRead, markAllAsRead, removeNotification } = useNotificationStore();
-  const unreadCount = getUnreadCount(currentUserId);
+  const { 
+    notifications, 
+    getUnreadCount, 
+    markAsRead, 
+    markAllAsRead, 
+    removeNotification,
+    fetchNotifications,
+    isLoading
+  } = useNotificationStore();
 
-  const userNotifications = notifications.filter(n => !n.userId || String(n.userId) === currentUserId);
+  const unreadCount = getUnreadCount();
+
+  // 1. Fetch initial
+  useEffect(() => {
+    if (token) {
+      fetchNotifications();
+    }
+  }, [token]);
+
+  // 2. Polling (Temps réel simulé)
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000); // Toutes les 30s
+    return () => clearInterval(interval);
+  }, [token]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -51,7 +67,7 @@ export const NotificationDropdown: React.FC = () => {
   };
 
   const handleNotificationClick = (notif: any) => {
-    markAsRead(notif.id);
+    markAsRead(String(notif.id));
     if (notif.link) {
       navigate(notif.link);
       setIsOpen(false);
@@ -78,7 +94,7 @@ export const NotificationDropdown: React.FC = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-pure rounded-full transition-colors relative focus:outline-none"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className={unreadCount > 0 ? "w-5 h-5 animate-wiggle" : "w-5 h-5"} />
         {unreadCount > 0 && (
           <span 
             className="absolute -top-1 -right-1 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-in zoom-in"
@@ -102,7 +118,7 @@ export const NotificationDropdown: React.FC = () => {
             </h3>
             {unreadCount > 0 && (
               <button 
-                onClick={(e) => { e.stopPropagation(); markAllAsRead(currentUserId); }}
+                onClick={(e) => { e.stopPropagation(); markAllAsRead(); }}
                 className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-pure transition-colors flex items-center gap-1"
               >
                 Tout lire <Check size={14} />
@@ -111,7 +127,7 @@ export const NotificationDropdown: React.FC = () => {
           </div>
 
           <div className="max-h-[400px] overflow-y-auto no-scrollbar">
-            {userNotifications.length === 0 ? (
+            {notifications.length === 0 ? (
               <div className="p-8 flex flex-col items-center justify-center text-center">
                 <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mb-3">
                   <Bell className="w-8 h-8 text-slate-400 dark:text-slate-600" />
@@ -121,13 +137,13 @@ export const NotificationDropdown: React.FC = () => {
               </div>
             ) : (
               <div className="divide-y divide-slate-200 dark:divide-slate-800/50">
-                {userNotifications.map((notif) => (
+                {notifications.map((notif) => (
                   <div 
                     key={notif.id}
-                    className={`p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50 flex gap-3 group relative cursor-pointer ${notif.read ? 'opacity-70' : 'bg-slate-100 dark:bg-slate-900/30'}`}
+                    className={`p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50 flex gap-3 group relative cursor-pointer ${notif.is_read ? 'opacity-70' : 'bg-slate-100 dark:bg-slate-900/30'}`}
                     onClick={() => handleNotificationClick(notif)}
                   >
-                    {!notif.read && (
+                    {!notif.is_read && (
                       <div className="absolute top-1/2 -left-0.5 -translate-y-1/2 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--theme-primary)' }} />
                     )}
                     
@@ -136,19 +152,19 @@ export const NotificationDropdown: React.FC = () => {
                     </div>
                     
                     <div className="flex-1 min-w-0 pr-6">
-                      <p className={`text-sm ${notif.read ? 'font-medium text-slate-500 dark:text-slate-400' : 'font-bold text-slate-900 dark:text-pure'} truncate`}>
+                      <p className={`text-sm ${notif.is_read ? 'font-medium text-slate-500 dark:text-slate-400' : 'font-bold text-slate-900 dark:text-pure'} truncate`}>
                         {notif.title}
                       </p>
                       <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 leading-snug">
                         {notif.message}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-medium">
-                        {timeAgo(notif.date)}
+                        {timeAgo(notif.created_at)}
                       </p>
                     </div>
 
                     <button 
-                      onClick={(e) => { e.stopPropagation(); removeNotification(notif.id); }}
+                      onClick={(e) => { e.stopPropagation(); removeNotification(String(notif.id)); }}
                       className="absolute right-4 top-4 p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                       title="Supprimer"
                     >
@@ -171,6 +187,16 @@ export const NotificationDropdown: React.FC = () => {
           </div>
         </div>
       )}
+      <style>{`
+        @keyframes wiggle {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(10deg); }
+          75% { transform: rotate(-10deg); }
+        }
+        .animate-wiggle {
+          animation: wiggle 0.5s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

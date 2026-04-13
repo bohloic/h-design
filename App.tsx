@@ -11,6 +11,7 @@ import Footer from './src/components/elements/Footer.tsx';
 import ScrollToTop from './src/components/tools/ScrollToTop.tsx';
 import ChatWidget from './src/components/chatbot/ChatWidget.jsx';
 import { BackToTop } from './src/components/elements/BackToTop.tsx';
+import WelcomeTour from './src/components/tools/WelcomeTour.tsx';
 
 // Styles
 import './src/styles/GlobalUX.css';
@@ -78,6 +79,11 @@ const useIsAuthZone = () => {
   return ['/login', '/reset-password'].includes(location.pathname);
 };
 
+const useIsCustomizerZone = () => {
+  const location = useLocation();
+  return location.pathname.startsWith('/personnaliser');
+};
+
 // ============================================================
 // Composant Shell : gère la mise en page conditionnelle
 // ============================================================
@@ -95,6 +101,7 @@ const AppShell: React.FC<{
   const isAdminZone = useIsAdminZone();
   const isDashboardZone = useIsDashboardZone();
   const isAuthZone = useIsAuthZone();
+  const isCustomizerZone = useIsCustomizerZone();
   const { activeCollection } = useTheme();
   const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
 
@@ -104,6 +111,7 @@ const AppShell: React.FC<{
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
+      <WelcomeTour />
 
       {/* 🖼️ BANNIÈRE PUBLIQUE DYNAMIQUE (Cachée UNIQUEMENT en zone Admin) */}
       {!hidePublicLayout && activeCollection?.ui_config?.banner_url && (
@@ -196,8 +204,8 @@ const AppShell: React.FC<{
       {/* 🔝 Bouton Retour en haut */}
       <BackToTop />
 
-      {/* 🦶 Footer (Caché en Admin) */}
-      {!hidePublicLayout && <Footer />}
+      {/* 🦶 Footer (Caché en Admin et Personnalisation) */}
+      {!hidePublicLayout && !isCustomizerZone && <Footer />}
 
       {/* 🛒 Tiroir Panier — toujours disponible */}
       <CartDrawer

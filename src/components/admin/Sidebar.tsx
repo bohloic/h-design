@@ -16,7 +16,7 @@ import {
   X 
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import logoLight from "../../assets/Logo .png";
+import logoLight from "../../assets/logo.png";
 import logoDark from "../../assets/Logo2.png";
 
 export const Sidebar = ({ onClose }: { onClose?: () => void }) => {

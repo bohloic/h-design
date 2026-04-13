@@ -5,7 +5,7 @@ import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
 import {
     ChevronLeft, Package, User, MapPin, CreditCard,
     Calendar, Printer, Mail, Phone, Shirt, Palette, Loader2, Sparkles, AlertTriangle, Type, Image as ImageIcon, Move, RotateCw, Maximize, Download, Eye,
-    ThumbsUp, ThumbsDown, MessageSquare
+    ThumbsUp, ThumbsDown, MessageSquare, CheckCircle2
 } from 'lucide-react';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import { AdminDesignPreview } from '@/src/components/admin/AdminDesignPreview';
@@ -20,7 +20,17 @@ export const OrderDetailView = () => {
     const [loading, setLoading] = useState(true);
 
     const [validating, setValidating] = useState(false);
-    const [designerMessage, setDesignerMessage] = useState("");
+    const [itemDecisions, setItemDecisions] = useState<Record<number, { status: 'approved' | 'rejected' | 'pending', reason?: string }>>({});
+
+    const handleItemAction = (itemId: number, status: 'approved' | 'rejected') => {
+        if (status === 'rejected') {
+            const reason = window.prompt("Motif du rejet de cet article :");
+            if (!reason) return;
+            setItemDecisions(prev => ({ ...prev, [itemId]: { status, reason } }));
+        } else {
+            setItemDecisions(prev => ({ ...prev, [itemId]: { status } }));
+        }
+    };
 
     const fetchOrderDetails = async (showLoader = true) => {
         try {
@@ -31,10 +41,8 @@ export const OrderDetailView = () => {
 
             // 🪄 On normalise le statut dès la réception !
             // On s'assure que le statut est reconnu par notre utilitaire
-            data.status = data.status || OrderStatus.PENDING;
-
+            // data.status = data.status || OrderStatus.PENDING;
             setOrder(data);
-            if (data.admin_notes) setDesignerMessage(data.admin_notes); // Si tu stockes les notes dans admin_notes
         } catch (error) {
             console.error(error);
         } finally {
@@ -50,32 +58,38 @@ export const OrderDetailView = () => {
         if (id) fetchOrderDetails(false);
     }, 10000);
 
-    const handleDesignValidation = async (decision: 'approve' | 'reject') => {
-        if (!window.confirm(`Confirmer le ${decision === 'approve' ? 'succès' : 'refus'} du design ?`)) return;
+    const handleFinalSubmit = async () => {
+        const decisionsArray = order.items.map((item: any) => ({
+            id: item.id,
+            status: itemDecisions[item.id]?.status || item.design_status || 'pending',
+            reason: itemDecisions[item.id]?.reason || item.rejection_reason || ''
+        }));
 
-        // Sécurité : obliger un motif si refus
-        if (decision === 'reject' && !designerMessage.trim()) {
-            alert("Veuillez saisir un message pour expliquer le refus au client.");
+        const hasNewDecision = order.items.some((item: any) => itemDecisions[item.id]);
+        if (!hasNewDecision) {
+            alert("Aucun changement n'a été effectué.");
             return;
         }
 
+        if (!window.confirm("Confirmer ces décisions de design ?")) return;
+
         setValidating(true);
         try {
-            // 🪄 Envoi avec les bons noms de variables pour ton Backend (action & reason)
-            const response = await authFetch(`/api/admin/orders/${id}/validate-design`, {
+            const response = await authFetch(`/api/admin/orders/${id}/validate-items`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: decision, reason: designerMessage })
+                body: JSON.stringify({ decisions: decisionsArray })
             });
 
             if (response.ok) {
-                await fetchOrderDetails();
-                alert(decision === 'approve' ? "Design validé avec succès ! Commande en préparation." : "Design refusé, la commande nécessite une action du client.");
-                setDesignerMessage(""); // On vide le message après succès
+                await fetchOrderDetails(false);
+                alert("Décisions enregistrées !");
+                setItemDecisions({});
             } else {
-                alert("Erreur lors de la validation technique.");
+                alert("Erreur lors de la validation.");
             }
         } catch (error) {
+            console.error(error);
             alert("Erreur serveur.");
         } finally {
             setValidating(false);
@@ -133,52 +147,28 @@ export const OrderDetailView = () => {
 
                 <div className="xl:col-span-2 space-y-6">
 
-                    {/* MODULE DE VALIDATION DESIGNER */}
-                    {/* 🪄 N'apparaît que si payé ET en attente de validation */}
-                    {order.status === OrderStatus.PAID_WAITING_VALIDATION && (
+                    {/* MODULE DE VALIDATION DESIGNER (NOUVEAU : Granulaire) */}
+                    {order.status.includes('Validation') && (
                         <div className="bg-white border-2 border-fuchsia-200 rounded-3xl p-6 shadow-xl shadow-fuchsia-50 animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="p-2 bg-fuchsia-100 text-fuchsia-600 rounded-xl">
                                     <Sparkles size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="text-lg font-black text-slate-800 uppercase">Contrôle Créatif Designer</h3>
-                                    <p className="text-sm text-slate-500">Approuvez ou refusez les personnalisations demandées.</p>
+                                    <h3 className="text-lg font-black text-slate-800 uppercase">Validation Finale</h3>
+                                    <p className="text-sm text-slate-500">Appliquez vos décisions article par article ci-dessous.</p>
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2 px-1">
-                                    <MessageSquare size={14} /> Note / Motif (Obligatoire si refus)
-                                </label>
-                                <textarea
-                                    value={designerMessage}
-                                    onChange={(e) => setDesignerMessage(e.target.value)}
-                                    placeholder="Ex: 'Design recentré pour une meilleure impression' ou 'L'image est trop floue'..."
-                                    className="w-full p-4 bg-slate-50 rounded-2xl border border-slate-200 focus:border-fuchsia-400 focus:ring-4 focus:ring-fuchsia-50 outline-none text-sm min-h-[100px] transition-all"
-                                />
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button
-                                        onClick={() => handleDesignValidation('approve')}
-                                        disabled={validating}
-                                        style={{ backgroundColor: 'var(--theme-primary)' }}
-                                        className="flex items-center justify-center gap-2 text-white py-4 rounded-2xl font-bold shadow-lg opacity-95 hover:opacity-100 transition-opacity disabled:opacity-50"
-                                    >
-                                        {validating ? <Loader2 className="animate-spin" size={20} /> : <ThumbsUp size={20} />}
-                                        Valider
-                                    </button>
-
-                                    <button
-                                        onClick={() => handleDesignValidation('reject')}
-                                        disabled={validating}
-                                        className="flex items-center justify-center gap-2 bg-red-50 text-red-600 py-4 rounded-2xl font-bold hover:bg-red-100 transition-all disabled:opacity-50 border border-red-100"
-                                    >
-                                        <ThumbsDown size={20} />
-                                        Refuser
-                                    </button>
-                                </div>
-                            </div>
+                            <button
+                                onClick={handleFinalSubmit}
+                                disabled={validating || !order.items.some((item: any) => itemDecisions[item.id])}
+                                style={{ backgroundColor: 'var(--theme-primary)' }}
+                                className="w-full flex items-center justify-center gap-2 text-white py-4 rounded-2xl font-bold shadow-lg opacity-95 hover:opacity-100 transition-opacity disabled:opacity-50"
+                            >
+                                {validating ? <Loader2 className="animate-spin" size={20} /> : <ThumbsUp size={20} />}
+                                Confirmer toutes les décisions
+                            </button>
                         </div>
                     )}
 
@@ -238,10 +228,36 @@ export const OrderDetailView = () => {
                                             </div>
 
                                             <div className="flex-1">
-                                                <div className="flex justify-between items-start mb-2">
+                                                <div className="flex justify-between items-start mb-2 group-relative">
                                                     <div>
                                                         <h4 className="font-bold text-slate-900 text-lg">{item.name || item.product_name}</h4>
                                                         <p className="text-xs text-slate-400">Réf: {item.product_id}</p>
+                                                        
+                                                        {/* INDICATEUR DE STATUT DESIGN (Uniquement si Personnalisé) */}
+                                                        <div className="mt-2 flex items-center gap-2">
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${isCustom ? 'bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-100' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
+                                                                {isCustom ? '✨ Personnalisé' : '📦 Standard'}
+                                                            </span>
+
+                                                            {isCustom && (
+                                                                <div className="flex gap-2 ml-1 border-l border-slate-200 pl-3">
+                                                                    <button 
+                                                                        onClick={() => handleItemAction(item.id, 'rejected')}
+                                                                        className={`p-1.5 rounded-lg transition-colors ${(itemDecisions[item.id]?.status || item.design_status) === 'rejected' ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-400 hover:text-red-500'}`}
+                                                                    >
+                                                                        <ThumbsDown size={14} />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => handleItemAction(item.id, 'approved')}
+                                                                        className={`p-1.5 rounded-lg transition-colors ${(itemDecisions[item.id]?.status || item.design_status) === 'approved' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 hover:text-emerald-500'}`}
+                                                                    >
+                                                                        <ThumbsUp size={14} />
+                                                                    </button>
+                                                                    {(itemDecisions[item.id]?.status || item.design_status) === 'approved' && <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1"><CheckCircle2 size={12} /> Approuvé</span>}
+                                                                    {(itemDecisions[item.id]?.status || item.design_status) === 'rejected' && <span className="text-[10px] font-bold text-red-600 flex items-center gap-1"><AlertTriangle size={12} /> Refusé</span>}
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="font-bold text-slate-900">{((item.unit_price || item.price) * item.quantity).toLocaleString('fr-FR')} FCFA</p>

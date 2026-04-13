@@ -33,7 +33,7 @@ const NotFound = () => {
         </h2>
         
         <p className="text-slate-500 text-base md:text-lg mb-8 leading-relaxed">
-          Il semblerait que le traîneau du Père Noël ne passe pas par ici. La page que vous cherchez a disparu dans la neige.
+          Il semblerait que ce design ne soit pas dans notre catalogue. La page que vous cherchez a disparu dans l'atelier.
         </p>
 
         {/* 🪄 BOUTON RETOUR DYNAMIQUE */}

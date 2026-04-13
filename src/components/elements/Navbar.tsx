@@ -3,7 +3,7 @@ import { ShoppingCart, User, Gift, Search, Menu, X, ShieldCheck, LogOut, Sun, Mo
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from './NotificationDropdown';
 import { useTheme } from '../../utils/context/ThemeContext';
-import logoLight from '../../assets/Logo .png';
+import logoLight from '../../assets/logo.png';
 import logoDark from '../../assets/Logo2.png';
 
 interface NavbarProps {

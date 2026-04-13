@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Package, Truck, CheckCircle2, MapPin, Download, Phone, ShoppingBag, Clock, XCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Package, Truck, CheckCircle2, MapPin, Download, Phone, ShoppingBag, Clock, XCircle, Loader2, Palette, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '@/constants';
 import { authFetch } from '@/src/utils/apiClient';
 import { useAutoRefresh } from '@/src/utils/hooks/useAutoRefresh';
@@ -81,27 +81,28 @@ export const OrderDetails: React.FC = () => {
 
 
 
+    const status = order.status.toLowerCase();
     const translatedStatus = translateStatus(order.status);
-    const isCancelled = translatedStatus === 'Annulé';
-    const isPending = order.status.toLowerCase() === 'pending';
+    const isCancelled = status.includes('annulé') || status === 'cancelled';
+    const isPending = status.includes('en attente de paiement') || status === 'pending';
 
     // --- LOGIQUE DE LA BARRE DE PROGRESSION ---
-    const steps = ['Payé', 'En préparation', 'Expédié', 'Livré'];
+    const steps = ['Paiement', 'Préparation', 'Expédition', 'Livré'];
     let currentStepIndex = -1;
-    if (order.status.toLowerCase() === 'paid') currentStepIndex = 0;
-    if (order.status.toLowerCase() === 'processing') currentStepIndex = 1;
-    if (order.status.toLowerCase() === 'shipped') currentStepIndex = 2;
-    if (order.status.toLowerCase() === 'delivered') currentStepIndex = 3;
     
+    if (status.includes('payé') || status === 'paid') currentStepIndex = 0;
+    if (status.includes('en préparation') || status === 'processing') currentStepIndex = 1;
+    if (status.includes('expédié') || status === 'shipped') currentStepIndex = 2;
+    if (status.includes('livré') || status === 'delivered') currentStepIndex = 3;
     
     // Calcul de la progression (en %)
     let progressPercentage = 0;
-    if (isCancelled || isPending) {
-        progressPercentage = 0; // Barre vide si annulé ou en attente de paiement
+    if (isCancelled || isPending || status.includes('validation')) {
+        progressPercentage = 0; // On ne montre pas de progression avant le paiement ou pendant la validation design non payée
     } else if (currentStepIndex !== -1) {
-        progressPercentage = (currentStepIndex / (steps.length - 1)) * 100;
+        progressPercentage = ((currentStepIndex + 1) / steps.length) * 100;
     } else {
-        progressPercentage = 100; // Sécurité si statut inconnu "terminé"
+        progressPercentage = 100;
     }
 
     return (
@@ -219,12 +220,66 @@ export const OrderDetails: React.FC = () => {
                         {order.items?.map((item: any, idx: number) => (
                             <div key={idx} className="pt-4 first:pt-0 flex items-center gap-4">
                                 <div className="w-20 h-24 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 flex-shrink-0 p-1">
-                                    <img src={item.image_url ? BASE_IMG_URL + item.image_url : '/placeholder.png'} alt={item.name} className="w-full h-full object-contain rounded-xl" />
+                                    {(() => {
+                                        let displayImage = item.image_url;
+                                        try {
+                                            const design = typeof item.customization === 'string' ? JSON.parse(item.customization) : item.customization;
+                                            if (design?.customizationImage) displayImage = design.customizationImage;
+                                        } catch (e) {}
+                                        
+                                        return (
+                                            <img 
+                                                src={displayImage ? BASE_IMG_URL + displayImage : '/placeholder.png'} 
+                                                alt={item.name} 
+                                                className="w-full h-full object-contain rounded-xl" 
+                                            />
+                                        );
+                                    })()}
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="font-bold text-slate-800 line-clamp-1">{item.name || 'Création personnalisée'}</h4>
-                                    <p className="text-sm text-slate-500 mt-1">Quantité : <span className="font-bold text-slate-700">{item.quantity}</span></p>
-                                    <p className="text-lg font-black mt-2" style={{ color: 'var(--theme-primary)' }}>{formatCurrency(item.unit_price || item.price)}</p>
+                                    <div className="flex justify-between items-start">
+                                        <h4 className="font-bold text-slate-800 line-clamp-1">{item.name || 'Création personnalisée'}</h4>
+                                        <p className="text-sm font-black" style={{ color: 'var(--theme-primary)' }}>{formatCurrency(item.unit_price || item.price)}</p>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-1">Quantité : <span className="font-bold text-slate-700">{item.quantity}</span></p>
+                                    
+                                    {/* STATUS DU DESIGN PAR ARTICLE */}
+                                    <div className="mt-3 flex flex-wrap gap-2 items-center">
+                                        {item.design_status === 'approved' ? (
+                                            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100">
+                                                <CheckCircle2 size={12} /> Design Validé
+                                            </span>
+                                        ) : item.design_status === 'rejected' ? (
+                                            <>
+                                                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-bold border border-red-100">
+                                                    <AlertTriangle size={12} /> Action Requise
+                                                </span>
+                                                <button 
+                                                    onClick={() => navigate('/products/customizer', { 
+                                                        state: { 
+                                                            productId: item.product_id, 
+                                                            orderItemId: item.id,
+                                                            isEdit: true,
+                                                            existingDesign: typeof item.customization === 'string' ? JSON.parse(item.customization) : item.customization
+                                                        } 
+                                                    })}
+                                                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800 transition-colors shadow-sm active:scale-95"
+                                                >
+                                                    <Palette size={12} /> Modifier mon design
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200">
+                                                <Clock size={12} /> En attente de validation
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {item.design_status === 'rejected' && item.rejection_reason && (
+                                        <div className="mt-2 p-2 bg-red-50 border-l-2 border-red-400 rounded-r-lg text-[10px] text-red-700 italic">
+                                            Motif : "{item.rejection_reason}"
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}

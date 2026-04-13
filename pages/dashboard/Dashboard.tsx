@@ -49,39 +49,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddToCart }) => {
       const newUser = responseUser.ok ? await responseUser.json() : {};
       const newOrders = responseOrder.ok ? await responseOrder.json() : [];
 
-      // 🚨 DÉTECTION DES CHANGEMENTS EN TEMPS RÉEL (Diff Polling)
-      if (prevOrdersRef.current !== null && Array.isArray(newOrders) && Array.isArray(prevOrdersRef.current)) {
-          newOrders.forEach(newO => {
-              const oldO = prevOrdersRef.current?.find(o => o.id === newO.id);
-              // Si le statut a changé depuis la dernière vérification (10s)
-              if (oldO && oldO.status !== newO.status) {
-                  useNotificationStore.getState().addNotification({
-                      userId: String(userId),
-                      title: "Mise à jour en direct 🟢",
-                      message: `Votre commande #HD-${String(newO.id).padStart(5, '0')} a changé de statut. Nouveau statut : ${translateStatus(newO.status)}`,
-                      type: 'info',
-                      link: `/dashboard/orders/HD-${String(newO.id).padStart(5, '0')}`
-                  });
-              }
-          });
-      }
-
-      if (prevUserRef.current !== null && newUser) {
-          const oldPoints = prevUserRef.current.loyalty_points || prevUserRef.current.points || 0;
-          const newPoints = newUser.loyalty_points || newUser.points || 0;
-          
-          if (oldPoints < 200 && newPoints >= 200) {
-              useNotificationStore.getState().addNotification({
-                  userId: String(userId),
-                  title: "Félicitations ! 🎉",
-                  message: `Vous venez d'atteindre le palier de 200 points ! Découvrez vos nouvelles récompenses.`,
-                  type: 'success',
-                  link: `/dashboard/overview`
-              });
-          }
-      }
-
-      // Mise à jour des références
+      // On garde les références à jour but on ne génère plus de notifications locales ici
+      // car le backend s'en occupe maintenant pour tout l'écosystème.
       prevUserRef.current = newUser;
       prevOrdersRef.current = newOrders;
 

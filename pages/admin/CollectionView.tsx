@@ -146,7 +146,7 @@ export const CollectionView = () => {
                         </span>
                         Thèmes & Collections
                     </h3>
-                    <p className="text-slate-500 text-sm mt-1">Personnalisez le design du site selon les saisons (Noël, Été...).</p>
+                    <p className="text-slate-500 text-sm mt-1">Personnalisez le design du site selon les collections (Signature, Été...).</p>
                 </div>
                 <button 
                     onClick={() => { resetForm(); setIsModalOpen(true); }}
@@ -319,13 +319,13 @@ export const CollectionView = () => {
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
                             
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Nom du thème (Ex: Collection de Noël)</label>
+                                <label className="text-sm font-bold text-slate-700">Nom du thème (Ex: Collection Signature)</label>
                                 <input 
                                     type="text" name="name" required
                                     value={formData.name} onChange={handleChange}
                                     style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
                                     className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none font-medium placeholder-slate-400 transition-all focus:bg-white focus:ring-2"
-                                    placeholder="Ex: Noël 2025"
+                                    placeholder="Ex: Hiver 2025"
                                 />
                             </div>
 

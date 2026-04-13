@@ -1,6 +1,6 @@
 import React from 'react';
 import { Gift, Facebook, Instagram, Twitter, Mail, Phone, MapPin, ArrowRight, MessageSquare } from 'lucide-react';
-import logoLight from '../../assets/Logo .png';
+import logoLight from '../../assets/logo2.png';
 import logoDark from '../../assets/Logo2.png';
 import { Link } from 'react-router-dom';
 
@@ -11,13 +11,13 @@ const Footer: React.FC = () => {
   return (
     <footer className="bg-carbon text-slate-300 pt-16 pb-8 px-4 border-t border-slate-800">
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-        
+
         {/* COLONNE 1 : MARQUE */}
         <div className="space-y-6">
           <Link to="/" className="flex items-center group">
-            <img 
-              src={logoLight} 
-              alt="H-Designer Logo" 
+            <img
+              src={logoLight}
+              alt="H-Designer Logo"
               className="h-16 w-auto group-hover:opacity-80 transition-opacity object-contain"
             />
           </Link>
@@ -26,9 +26,9 @@ const Footer: React.FC = () => {
           </p>
           <div className="flex space-x-3">
             {[Facebook, Instagram, Twitter].map((Icon, idx) => (
-              <a 
-                key={idx} 
-                href="#" 
+              <a
+                key={idx}
+                href="#"
                 className="p-2.5 bg-slate-900 rounded-xl hover:text-white transition-all duration-300 transform hover:-translate-y-1 hover-theme-bg"
               >
                 <Icon size={18} />
@@ -51,7 +51,7 @@ const Footer: React.FC = () => {
             ].map((link, idx) => (
               <li key={idx}>
                 <Link to={link.path} className="flex items-center gap-2 transition-colors group hover-theme-text">
-                  <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--theme-primary)' }}/> 
+                  <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--theme-primary)' }} />
                   {link.label}
                 </Link>
               </li>
@@ -93,7 +93,7 @@ const Footer: React.FC = () => {
           </ul>
         </div>
       </div>
-      
+
       {/* COPYRIGHT */}
       <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 space-y-4 md:space-y-0">
         <p>© {currentYear} H-Designer. Tous droits réservés.</p>

@@ -31,7 +31,10 @@ export const usePaymentStore = create<PaymentState>()(
       removeCard: () => set({ savedCard: null })
     }),
     {
-      name: 'payment-preferences'
+      name: 'payment-preferences',
+      // 🛡️ SÉCURITÉ : On n'enregistre PAS les données de carte dans le localStorage !
+      // On ne persiste que la méthode préférée.
+      partialize: (state) => ({ preferredMethod: state.preferredMethod }),
     }
   )
 );

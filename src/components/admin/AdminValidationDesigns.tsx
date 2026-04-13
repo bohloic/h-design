@@ -16,9 +16,8 @@ export const AdminValidationDesigns = () => {
             const response = await authFetch('/api/admin/orders'); 
             const allOrders = await response.json();
             
-            // On filtre uniquement celles qui attendent une validation
-            const waiting = allOrders.filter((o: any) => o.status === 'paid_waiting_validation');
-            setPendingOrders(waiting);
+            // L'API filtre déjà pour nous au niveau du backend
+            setPendingOrders(allOrders);
         } catch (error) {
             console.error("Erreur chargement des designs :", error);
         } finally {
@@ -30,47 +29,51 @@ export const AdminValidationDesigns = () => {
         fetchPendingDesigns();
     }, []);
 
-    // 2. ACTION : APPROUVER LE DESIGN
-    const handleApprove = async (orderId: number) => {
-        if (!window.confirm("Valider ce design et lancer la préparation ?")) return;
-        
-        try {
-            setProcessingId(orderId);
-            const response = await authFetch(`/api/admin/orders/${orderId}/validate-design`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'approve' })
-            });
+    // 2. GESTION DES DÉCISIONS PAR ARTICLE
+    const [itemDecisions, setItemDecisions] = useState<Record<number, { status: 'approved' | 'rejected' | 'pending', reason?: string }>>({});
 
-            if (response.ok) {
-                setPendingOrders(prev => prev.filter(o => o.id !== orderId));
-            } else {
-                alert("Erreur lors de l'approbation.");
-            }
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setProcessingId(null);
+    const handleItemAction = (itemId: number, status: 'approved' | 'rejected') => {
+        if (status === 'rejected') {
+            const reason = window.prompt("Motif du rejet de cet article :");
+            if (!reason) return;
+            setItemDecisions(prev => ({ ...prev, [itemId]: { status, reason } }));
+        } else {
+            setItemDecisions(prev => ({ ...prev, [itemId]: { status } }));
         }
     };
 
-    // 3. ACTION : REJETER LE DESIGN
-    const handleReject = async (orderId: number) => {
-        const reason = window.prompt("Motif du rejet (ex: Image de mauvaise qualité, Contenu inapproprié...) :");
-        if (!reason) return; 
+    // 3. SOUMISSION FINALE DE LA DÉCISION
+    const handleFinalSubmit = async (order: any) => {
+        const decisionsArray = order.items.map((item: any) => ({
+            id: item.id,
+            status: itemDecisions[item.id]?.status || 'pending',
+            reason: itemDecisions[item.id]?.reason || ''
+        }));
+
+        if (decisionsArray.some((d: any) => d.status === 'pending')) {
+            if (!window.confirm("Certains articles n'ont pas encore été validés. Voulez-vous continuer ?")) return;
+        }
 
         try {
-            setProcessingId(orderId);
-            const response = await authFetch(`/api/admin/orders/${orderId}/validate-design`, {
+            setProcessingId(order.id);
+            // On envoie le tableau de décisions au backend. 
+            // Note: Nous utilisons l'ID de la commande pour mettre à jour les éléments liés.
+            const response = await authFetch(`/api/admin/orders/${order.id}/validate-items`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'reject', reason })
+                body: JSON.stringify({ decisions: decisionsArray })
             });
 
             if (response.ok) {
-                setPendingOrders(prev => prev.filter(o => o.id !== orderId));
+                setPendingOrders(prev => prev.filter(o => o.id !== order.id));
+                // Nettoyage des décisions locales pour cette commande
+                setItemDecisions(prev => {
+                    const next = { ...prev };
+                    order.items.forEach((item: any) => delete next[item.id]);
+                    return next;
+                });
             } else {
-                alert("Erreur lors du rejet.");
+                alert("Erreur lors de la mise à jour de la commande.");
             }
         } catch (error) {
             console.error(error);
@@ -117,24 +120,21 @@ export const AdminValidationDesigns = () => {
                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cmd #HD-{String(order.id).padStart(5, '0')}</span>
                                     <h4 className="font-bold text-slate-900 mt-0.5">{order.customer_name || 'Client Inconnu'}</h4>
                                 </div>
-                                <span className="text-xs font-bold bg-fuchsia-100 text-fuchsia-700 px-3 py-1.5 rounded-full">
-                                    {formatCurrency(order.total_amount)}
-                                </span>
+                                <div className="flex flex-col items-end gap-1">
+                                    <span className="text-xs font-bold bg-fuchsia-100 text-fuchsia-700 px-3 py-1.5 rounded-full">
+                                        {formatCurrency(order.total_amount)}
+                                    </span>
+                                    {order.status.includes('Payé') && (
+                                        <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                            Payé
+                                        </span>
+                                    )}
+                                </div>
                             </div>
 
                             {/* CONTENU (Articles & Designs) */}
                             <div className="p-5 flex-1 space-y-4">
-                                {/* GESTION D'ERREUR SI L'API NE RENVOIE PAS LES ARTICLES */}
-                                {(!order.items || order.items.length === 0) && (
-                                    <div className="text-center py-4 text-amber-500 flex flex-col items-center">
-                                        <PackageX size={32} className="opacity-50 mb-2" />
-                                        <p className="text-sm font-bold">Aucun détail d'article reçu.</p>
-                                        <p className="text-xs text-slate-400 mt-1">Vérifiez que votre API inclut les articles de la commande.</p>
-                                    </div>
-                                )}
-
                                 {order.items?.map((item: any, idx: number) => {
-                                    // Extraction robuste du design
                                     let designData: any = null;
                                     try {
                                         if (item.customization) {
@@ -146,47 +146,63 @@ export const AdminValidationDesigns = () => {
                                         console.error("Erreur de parsing JSON pour la customisation :", e);
                                     }
 
-                                    // Recherche intelligente de l'image (selon comment elle est stockée)
-                                    const imgUrl = designData?.customizationImage || designData?.image || null;
+                                    const imgUrl = designData?.customizationImage || designData?.image || item.image_url || null;
+                                    const isCustomizable = !!(designData?.customizationImage || (designData?.elements && designData.elements.length > 0));
+                                    const decision = itemDecisions[item.id];
 
                                     return (
-                                        <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 relative">
-                                            <p className="font-bold text-sm text-slate-800 line-clamp-1 mb-3 pr-8">{item.name || 'Article personnalisé'}</p>
-                                            <span className="absolute top-4 right-4 text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded-md border border-slate-100">x{item.quantity}</span>
-                                            
-                                            {designData ? (
-                                                <div className="space-y-3">
-                                                    {/* AFFICHAGE DE L'IMAGE (Si trouvée) */}
-                                                    {imgUrl ? (
-                                                        <a href={imgUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                                            <img src={BASE_IMG_URL + imgUrl} alt="Design client" className="w-full h-40 object-contain p-2 group-hover:scale-105 transition-transform" />
-                                                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-sm">
-                                                                <Eye size={28} className="mb-2" />
-                                                                <span className="text-xs font-bold tracking-widest uppercase">Agrandir</span>
-                                                            </div>
-                                                        </a>
-                                                    ) : (
-                                                        /* AFFICHAGE DES DONNÉES BRUTES SI PAS D'IMAGE */
-                                                        <div className="bg-slate-900 p-3 rounded-xl overflow-auto max-h-32">
-                                                            <p className="text-[10px] text-fuchsia-400 font-bold mb-1 uppercase tracking-widest">Données brutes du design</p>
-                                                            <pre className="text-xs text-slate-300 font-mono">
-                                                                {JSON.stringify(designData, null, 2)}
-                                                            </pre>
-                                                        </div>
-                                                    )}
-
-                                                    {/* AFFICHAGE DU TEXTE PERSONNALISÉ (Si présent) */}
-                                                    {designData.text && (
-                                                        <div className="bg-white p-3 rounded-xl text-sm border border-slate-200 shadow-sm">
-                                                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Texte à imprimer :</p>
-                                                            <p className="font-black text-slate-800">"{designData.text}"</p>
-                                                        </div>
+                                        <div key={idx} className={`p-4 rounded-2xl border transition-all relative ${
+                                            decision?.status === 'approved' ? 'bg-emerald-50/50 border-emerald-100' : 
+                                            decision?.status === 'rejected' ? 'bg-red-50/50 border-red-100' : 
+                                            'bg-slate-50 border-slate-100'
+                                        }`}>
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <p className="font-bold text-sm text-slate-800 line-clamp-1 pr-16">{item.name || item.product_name || 'Article'}</p>
+                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">
+                                                        {isCustomizable ? '✨ Personnalisé' : '📦 Standard'}
+                                                    </p>
+                                                </div>
+                                                <div className="flex gap-1">
+                                                    {isCustomizable && (
+                                                        <>
+                                                            <button 
+                                                                onClick={() => handleItemAction(item.id, 'rejected')}
+                                                                className={`p-1.5 rounded-lg transition-colors ${decision?.status === 'rejected' ? 'bg-red-500 text-white' : 'bg-white text-slate-400 hover:text-red-500 border border-slate-100'}`}
+                                                            >
+                                                                <XCircle size={14} />
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleItemAction(item.id, 'approved')}
+                                                                className={`p-1.5 rounded-lg transition-colors ${decision?.status === 'approved' ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 hover:text-emerald-500 border border-slate-100'}`}
+                                                            >
+                                                                <CheckCircle size={14} />
+                                                            </button>
+                                                        </>
                                                     )}
                                                 </div>
+                                            </div>
+                                            
+                                            {imgUrl ? (
+                                                <div className="relative group overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                                    <img src={BASE_IMG_URL + imgUrl} alt={isCustomizable ? "Design client" : "Produit standard"} className="w-full h-40 object-contain p-2" />
+                                                    <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-sm">
+                                                        <button onClick={() => window.open(BASE_IMG_URL + imgUrl, '_blank')} className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors mb-1">
+                                                            <Eye size={18} />
+                                                        </button>
+                                                        <span className="text-[9px] font-bold tracking-widest uppercase">Voir en Grand</span>
+                                                    </div>
+                                                </div>
                                             ) : (
-                                                <div className="flex items-center gap-2 text-slate-400 bg-white p-3 rounded-xl border border-slate-100">
-                                                    <AlertCircle size={16}/> 
-                                                    <span className="text-xs italic">Aucune donnée de personnalisation détectée.</span>
+                                                <div className="h-40 bg-slate-200/50 rounded-xl flex flex-col items-center justify-center text-center p-4">
+                                                    <AlertCircle size={24} className="text-amber-500 mb-2 opacity-50" />
+                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Image non disponible</p>
+                                                </div>
+                                            )}
+
+                                            {decision?.reason && (
+                                                <div className="mt-3 p-2 bg-red-100/50 border border-red-200 rounded-lg text-[11px] text-red-700 italic">
+                                                    " {decision.reason} "
                                                 </div>
                                             )}
                                         </div>
@@ -195,22 +211,25 @@ export const AdminValidationDesigns = () => {
                             </div>
 
                             {/* ACTIONS (Boutons au bas de la carte) */}
-                            <div className="p-4 border-t border-slate-100 bg-white flex gap-3">
-                                <button 
-                                    onClick={() => handleReject(order.id)}
-                                    disabled={processingId === order.id}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-50 active:scale-95"
-                                >
-                                    <XCircle size={18} /> Rejeter
-                                </button>
-                                <button 
-                                    onClick={() => handleApprove(order.id)}
-                                    disabled={processingId === order.id}
-                                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors disabled:opacity-50 active:scale-95"
-                                >
-                                    {processingId === order.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                                    Approuver
-                                </button>
+                            <div className="p-4 border-t border-slate-100 bg-white">
+                                {(() => {
+                                    const hasNewDecision = order.items.some((item: any) => itemDecisions[item.id]);
+                                    
+                                    return (
+                                        <button 
+                                            onClick={() => handleFinalSubmit(order)}
+                                            disabled={processingId === order.id || !hasNewDecision}
+                                            style={{ backgroundColor: 'var(--theme-primary)' }}
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+                                        >
+                                            {processingId === order.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
+                                            Confirmer ma décision
+                                        </button>
+                                    );
+                                })()}
+                                <p className="text-[10px] text-center text-slate-400 mt-3 italic">
+                                    Vérifiez bien chaque item avant de confirmer.
+                                </p>
                             </div>
                         </div>
                     ))}
@@ -218,4 +237,4 @@ export const AdminValidationDesigns = () => {
             )}
         </div>
     );
-};
+};

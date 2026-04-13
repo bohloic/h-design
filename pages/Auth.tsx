@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { authFetch } from '../src/utils/apiClient';
-import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShieldCheck, Phone, Eye, EyeOff, KeyRound, RefreshCw } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShieldCheck, Phone, Eye, EyeOff, KeyRound, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useNotificationStore } from '../src/store/useNotificationStore';
 import { jwtDecode } from 'jwt-decode';
-import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
-import AppleSignin, { appleAuthHelpers } from 'react-apple-signin-auth';
+import logo from '../src/assets/logo.png';
 import ReCAPTCHA from "react-google-recaptcha";
 
 interface MonTokenCustom {
@@ -136,28 +135,9 @@ function Auth({ onLoginSuccess }) {
         setIsLoading(true);
         setStatus({ type: '', message: '' });
 
-        // 🛠️ MODE DEV : code universel 000000 statiquement désactivé en production
-        const isDevBypass = import.meta.env.DEV && import.meta.env.VITE_DEV_OTP_BYPASS === 'true' && fullCode === '000000';
-
         try {
-            if (isDevBypass) {
-                // En dev, on passe directement par le login pour récupérer le token
-                const loginResponse = await authFetch(`${API_BASE_URL}/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: registeredEmail, password: '_dev_bypass_', devBypass: true })
-                });
-                const loginData = await loginResponse.json();
-                if (loginData.token) {
-                    localStorage.setItem('token', loginData.token);
-                    if (loginData.user?.role) localStorage.setItem('role', loginData.user.role);
-                }
-                setStatus({ type: 'success', message: "⚠️ Mode DEV — Compte validé sans vérification." });
-                if (onLoginSuccess) onLoginSuccess();
-                setTimeout(() => navigate('/dashboard'), 1000);
-                return;
-            }
-
+            // 🛡️ SÉCURITÉ : Le bypass 000000 a été supprimé pour la production.
+            // Toutes les vérifications passent désormais par le backend avec un vrai code.
             const response = await authFetch(`${API_BASE_URL}/verify-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -225,7 +205,7 @@ function Auth({ onLoginSuccess }) {
                     } catch { }
 
                     useNotificationStore.getState().addNotification({
-                        userId: decodedUserId,
+                        user_id: decodedUserId,
                         title: "Bienvenue !",
                         message: "Connecté avec succès. Découvrez nos nouveautés.",
                         type: "success"
@@ -257,67 +237,15 @@ function Auth({ onLoginSuccess }) {
 
     const handleContainerClick = () => {
         hiddenInputRef.current?.focus();
-    };
-
-    const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    }; const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value.replace(/\D/g, '').slice(0, 6);
         const newCode = val.split('');
         // Fill the rest with empty strings
         while (newCode.length < 6) newCode.push('');
         setVerificationCode(newCode);
     };
-
-    // --- OAUTH LOGIC ---
-    const loginGoogle = useGoogleLogin({
-        onSuccess: (codeResponse) => handleSocialLogin('Google'),
-        onError: () => setStatus({ type: 'error', message: 'Erreur Google' })
-    });
-
-    const loginApple = async () => {
-        try {
-            const response = await appleAuthHelpers.signIn({
-                authOptions: {
-                    clientId: 'com.hdesigner.web',
-                    scope: 'email name',
-                    redirectURI: 'https://hdesigner.ci/api/auth/apple/callback',
-                    state: '',
-                    nonce: 'nonce',
-                    usePopup: true
-                }
-            });
-            handleSocialLogin('Apple');
-        } catch (error) {
-            setStatus({ type: 'error', message: 'Erreur Apple' });
-        }
-    };
-
-    // --- SOCIAL LOGINS (SIMULATION) ---
-    const handleSocialLogin = async (provider: string) => {
-        setIsLoading(true);
-        setStatus({ type: '', message: '' });
-
-        // Simulation d'un délai réseau pour l'authentification sociale
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        try {
-            // Remontée d'une vraie erreur si l'API cliente n'est pas instanciée ou ne retourne pas de token valide
-            useNotificationStore.getState().addNotification({
-                title: `Connexion ${provider} indisponible`,
-                message: `Les clés d'accès OAuth (Client ID) pour ${provider} n'ont pas été insérées en backend/frontend. Le service est suspendu.`,
-                type: "error"
-            });
-
-            setStatus({ type: 'error', message: `Mise en service de ${provider} incomplète.` });
-            
-        } catch (error) {
-            setStatus({ type: 'error', message: `Échec de la connexion via ${provider}.` });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     return (
-        <div 
+        <div
             className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-cover bg-center relative"
             style={{ backgroundImage: "url('/src/assets/image1.png')" }}
         >
@@ -335,7 +263,7 @@ function Auth({ onLoginSuccess }) {
                     {/* Logo (cliquable vers l'accueil) superposé sur l'image en haut à gauche */}
                     <div className="absolute top-8 left-8 z-10">
                         <button onClick={() => navigate('/')} className="focus:outline-none hover:opacity-80 transition-opacity">
-                            <img src="/src/assets/Logo .png" alt="Logo" className="h-16 w-auto brightness-0 invert" />
+                            <img src={logo} alt="Logo" className="h-16 w-auto brightness-0 invert" />
                         </button>
                     </div>
                 </div>
@@ -343,10 +271,21 @@ function Auth({ onLoginSuccess }) {
                 {/* --- PANNEAU DROIT : FORMULAIRE --- */}
                 <div className="flex-1 p-8 md:p-16 lg:p-24 flex flex-col justify-center bg-white relative">
 
-                    {/* Logo pour mobile (visible uniquement sur petits écrans) */}
-                    <div className="md:hidden block mb-8 flex justify-center">
+                    {/* Bouton Retour Explicite (UX) */}
+                    <div className="absolute top-8 right-8 md:top-12 md:right-12">
+                        <button
+                            onClick={() => navigate('/')}
+                            className="flex items-center gap-2 text-[13px] font-bold text-gray-400 hover:text-[#0b2e35] transition-colors group"
+                        >
+                            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                            RETOUR À LA BOUTIQUE
+                        </button>
+                    </div>
+
+                    {/* Logo pour mobile & tablette (visible uniquement sur écrans < md) */}
+                    <div className="md:hidden flex justify-center mb-8 mt-12">
                         <button onClick={() => navigate('/')} className="focus:outline-none hover:opacity-80 transition-opacity">
-                            <img src="/src/assets/Logo .png" alt="Logo" className="h-20 w-auto" />
+                            <img src={logo} alt="Logo" className="h-[70px] w-auto" />
                         </button>
                     </div>
 
@@ -477,42 +416,7 @@ function Auth({ onLoginSuccess }) {
                                         </button>
                                     </div>
 
-                                    {/* --- SOCIAL LOGINS --- */}
-                                    <div className="pt-2 space-y-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (import.meta.env.VITE_GOOGLE_CLIENT_ID) {
-                                                    loginGoogle();
-                                                } else {
-                                                    // Simulation de succès (Mode Développement) car pas de vraie clé
-                                                    handleSocialLogin('Google');
-                                                }
-                                            }}
-                                            aria-label="Continuer avec Google"
-                                            className="w-full flex items-center justify-center gap-3 py-3.5 bg-white border border-gray-200 rounded-xl font-bold text-[14px] text-gray-700 hover:bg-gray-50 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-200 shadow-sm"
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" /></svg>
-                                            Continuer avec Google
-                                        </button>
-                                        
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (import.meta.env.VITE_APPLE_CLIENT_ID) {
-                                                    loginApple();
-                                                } else {
-                                                    // Simulation de succès (Mode Développement) car pas de vraie clé
-                                                    handleSocialLogin('Apple');
-                                                }
-                                            }}
-                                            aria-label="Continuer avec Apple"
-                                            className="w-full flex items-center justify-center gap-3 py-3.5 bg-black rounded-xl font-bold text-[14px] text-white hover:bg-gray-900 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-900 shadow-sm"
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 384 512" fill="white" aria-hidden="true"><path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
-                                            Continuer avec Apple
-                                        </button>
-                                    </div>
+
 
                                     {/* Toggle Mode */}
                                     <div className="mt-8 text-center pt-2">
@@ -534,13 +438,6 @@ function Auth({ onLoginSuccess }) {
 }
 
 export default function AuthWrapper(props: any) {
-    // Clé statique par défaut juste pour empêcher l'erreur de crash du provider
-    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "static-mock-key-for-provider.apps.google.com";
-
-    return (
-        <GoogleOAuthProvider clientId={googleClientId}>
-            <Auth {...props} />
-        </GoogleOAuthProvider>
-    );
+    return <Auth {...props} />;
 }
 

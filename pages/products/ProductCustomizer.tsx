@@ -4,7 +4,7 @@ import SidebarLeft from '../../src/components/customer/SidebarLeft';
 import Canvas, { CanvasHandle } from '../../src/components/customer/Canvas';
 import ToolsPanel from '../../src/components/customer/ToolsPanel';
 import { Product, DesignElement, ProductVariant, Category } from '../../types';
-import { ShoppingCart, X, Layers, Shirt, Palette, ArrowLeft, Loader2 } from 'lucide-react';
+import { ShoppingCart, X, Layers, Shirt, Palette, ArrowLeft, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 
@@ -43,7 +43,9 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   const canvasRef = useRef<CanvasHandle>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const [mobileView, setMobileView] = useState<'canvas' | 'products' | 'tools'>('canvas');
+  const [mobileView, setMobileView] = useState<'products' | 'canvas' | 'tools'>('products');
+  const [currentStep, setCurrentStep] = useState(1); // 1: Product, 2: Design, 3: Review
+  const [hideBaseDesign, setHideBaseDesign] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,7 +60,13 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
         setProducts(productsData);
         setCategories(categoriesData);
 
-        const state = location.state as { productId?: number; variantId?: number | string; colorName?: string } | null;
+        const state = location.state as { 
+            productId?: number; 
+            variantId?: number | string; 
+            colorName?: string;
+            isEdit?: boolean;
+            existingDesign?: any;
+        } | null;
         
         let productToSelect = productsData.length > 0 ? productsData[0] : null;
 
@@ -69,6 +77,20 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
 
         if (productToSelect) {
             handleSelectProduct(productToSelect, state?.variantId, state?.colorName);
+        }
+
+        // 🪄 CHARGEMENT DESIGN EXISTANT (MODE ÉDITION)
+        if (state?.isEdit && state.existingDesign) {
+            console.log("🛠️ Mode Édition activé, chargement du design...");
+            if (state.existingDesign.elements) {
+                setDesignElements(state.existingDesign.elements);
+            }
+            if (state.existingDesign.options?.size) {
+                setSelectedSize(state.existingDesign.options.size);
+            }
+            // On saute directement au canvas pour l'édition
+            setCurrentStep(2);
+            setMobileView('canvas');
         }
 
       } catch (error) {
@@ -116,6 +138,21 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
         });
     }
 
+    // AJOUT DES COULEURS STANDARDS RESTANTES
+    Object.keys(TEXTILE_COLORS_MAP).forEach(key => {
+        if (!seenColors.has(key.toLowerCase())) {
+            mergedVariants.push({
+                id: `std-${key}`,
+                colorName: key,
+                hex: TEXTILE_COLORS_MAP[key],
+                colorCode: TEXTILE_COLORS_MAP[key],
+                images: product.image_url ? [product.image_url] : [],
+                stock_quantity: 100
+            });
+            seenColors.add(key.toLowerCase());
+        }
+    });
+
     setAvailableColors(mergedVariants);
 
     let variantToSelect = mergedVariants[0];
@@ -134,7 +171,12 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     const sizes = product.sizes && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL', 'XXL'];
     const defaultSize = sizes.includes('M') ? 'M' : sizes[0];
     setSelectedSize(defaultSize);
-    setMobileView('canvas');
+    
+    // Sur mobile, on passe automatiquement à l'étape suivante après choix produit
+    if (window.innerWidth < 768) {
+      setMobileView('canvas');
+      setCurrentStep(2);
+    }
   };
 
   const handleAddToCartAction = async () => {
@@ -147,20 +189,27 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     try {
         let designUrl = null;
 
-        if (designElements.length > 0 && canvasRef.current) {
+        if (canvasRef.current) {
+            console.log("📸 Tentative d'exportation du canvas...");
             const blob = await canvasRef.current.exportAsImage();
             
             if (blob) {
+                console.log("✅ Canvas exporté (Blob size:", blob.size, ")");
                 const file = new File([blob], `design_${Date.now()}.png`, { type: "image/png" });
                 
                 try {
                     designUrl = await uploadDesignToServer(file);
+                    console.log("☁️ Design uploadé avec succès:", designUrl);
                 } catch (err) {
-                    console.error("Erreur upload:", err);
-                    alert("Impossible de sauvegarder le design. Réessayez.");
+                    console.error("❌ Erreur upload serveur:", err);
+                    alert("Impossible de sauvegarder le design sur le serveur.");
                     setIsUploading(false);
                     return; 
                 }
+            } else {
+                console.error("❌ L'exportation du canvas a renvoyé NULL (Problème html2canvas)");
+                // Optionnel : ne pas bloquer l'ajout au panier mais prévenir
+                // alert("Attention: La photo personnalisée n'a pas pu être générée.");
             }
         }
 
@@ -188,7 +237,29 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             }
         };
 
-        if(onAddToCart) {
+        const editState = location.state as { isEdit?: boolean; orderItemId?: number } | null;
+
+        if (editState?.isEdit) {
+            // ✅ MODE ÉDITION : On met à jour l'article existant
+            const response = await authFetch(`/api/orders/items/${editState.orderItemId}/design`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    customization: JSON.stringify({
+                        elements: designElements,
+                        customizationImage: designUrl
+                    }),
+                    image_url: designUrl
+                })
+            });
+
+            if (response && response.ok) {
+                alert("✅ Votre design a été mis à jour avec succès !");
+                navigate(-1); // Retour aux détails de la commande
+            } else {
+                throw new Error("Erreur lors de la mise à jour du design");
+            }
+        } else if (onAddToCart) {
+            // ✅ MODE NORMAL : Ajout au panier
             onAddToCart({ 
                 ...selectedProduct, 
                 ...cartItem, 
@@ -274,7 +345,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   if (!selectedProduct) return <div className="h-screen flex items-center justify-center flex-col gap-2"><Loader2 className="animate-spin" style={{ color: 'var(--theme-primary)' }} size={32} /><span className="text-slate-500 font-bold">Chargement...</span></div>;
 
   return (
-    <div className="flex flex-col h-auto min-h-[calc(100vh-64px)] bg-slate-50 dark:bg-carbon overflow-y-visible relative transition-colors">
+    <div className="flex flex-col h-[calc(100dvh-64px)] md:h-[calc(100vh-64px)] bg-slate-50 dark:bg-carbon overflow-hidden relative transition-colors">
       
       {/* HEADER */}
       <div className="bg-white dark:bg-carbon border-b border-slate-200 dark:border-slate-800 p-3 flex justify-between items-center shadow-sm z-20 shrink-0 h-16 transition-colors">
@@ -312,74 +383,121 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                 style={{ backgroundColor: 'var(--theme-primary)' }}
                 className="text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2 active:scale-95 transition-all text-xs sm:text-sm disabled:opacity-70"
               >
-                {isUploading ? <Loader2 className="animate-spin" size={16} /> : <ShoppingCart size={16} />} 
-                <span className="hidden sm:inline">Ajouter</span>
+                {isUploading ? <Loader2 className="animate-spin" size={16} /> : (location.state?.isEdit ? <CheckCircle2 size={16} /> : <ShoppingCart size={16} />)} 
+                <span className="hidden sm:inline">
+                   {location.state?.isEdit ? "Mettre à jour" : "Ajouter"}
+                </span>
               </button>
           </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative">
-        <aside className={`fixed md:relative inset-y-0 left-0 z-30 w-80 bg-white dark:bg-carbon border-r border-slate-200 dark:border-slate-800 shadow-2xl md:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} top-16 md:top-0 h-[calc(100%-4rem)] md:h-full`}>
-            <div className="h-full overflow-y-auto">
-                <div className="md:hidden p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+      <div className="flex flex-1 overflow-hidden relative z-10">
+        {/* SIDEBAR PRODUITS */}
+        <aside className={`absolute md:relative inset-y-0 left-0 z-30 w-full md:w-80 bg-white dark:bg-carbon border-r border-slate-200 dark:border-slate-800 shadow-2xl md:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} h-full`}>
+            <div className="h-full flex flex-col">
+                <div className="md:hidden p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 shrink-0">
                     <h3 className="font-bold text-slate-800 dark:text-pure flex items-center gap-2"><Shirt size={20}/> Produits</h3>
                     <button onClick={() => setMobileView('canvas')}><X size={24} className="text-slate-400"/></button>
                 </div>
-                <SidebarLeft products={products} categories={categories} onSelectProduct={(p) => handleSelectProduct(p)} selectedProductId={selectedProduct.id} />
+                <div className="flex-1 overflow-y-auto">
+                    <SidebarLeft products={products} categories={categories} onSelectProduct={(p) => handleSelectProduct(p)} selectedProductId={selectedProduct.id} />
+                </div>
             </div>
         </aside>
 
         <main className="flex-1 flex flex-col relative bg-slate-100 dark:bg-slate-900/40 items-center justify-center p-4 transition-colors">
-            <div className="relative shadow-xl rounded-xl overflow-hidden bg-white dark:bg-slate-800 w-full max-w-[500px] aspect-square transition-colors">
-                <Canvas ref={canvasRef} product={selectedProduct} color={currentCanvasColor} elements={designElements} activeElementId={activeElementId} onSelectElement={(id) => { setActiveElementId(id); if (id) setMobileView('tools'); }} onUpdateElement={handleUpdateElement} onDeleteElement={handleDeleteElement} />
+            <div className="relative shadow-xl rounded-xl overflow-hidden bg-white dark:bg-slate-800 w-full max-w-[500px] transition-colors" style={{ aspectRatio: '1/1', maxHeight: '100%', maxWidth: '100%' }}>
+                <Canvas ref={canvasRef} product={selectedProduct} bgImage={getBgImage()} hideBaseImage={hideBaseDesign} color={currentCanvasColor} elements={designElements} activeElementId={activeElementId} onSelectElement={(id) => setActiveElementId(id)} onUpdateElement={handleUpdateElement} onDeleteElement={handleDeleteElement} />
                 <div className="absolute inset-0 pointer-events-none z-0 mix-blend-multiply" style={{ backgroundColor: currentCanvasColor.hex, opacity: 0.1 }}></div>
                 <img src={getBgImage()} className="absolute inset-0 w-full h-full object-contain pointer-events-none -z-10 opacity-0" alt=""/>
             </div>
             {(mobileView === 'products' || mobileView === 'tools') && <div className="md:hidden absolute inset-0 bg-black/50 z-20 backdrop-blur-sm" onClick={() => setMobileView('canvas')} />}
         </main>
 
-        <aside className={`fixed md:relative inset-y-0 right-0 z-30 w-full md:w-80 bg-white dark:bg-carbon border-l border-slate-200 dark:border-slate-800 shadow-2xl md:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-y-0' : 'translate-y-full md:translate-y-0'} h-[50vh] md:h-full bottom-0 top-auto md:top-0 rounded-t-3xl md:rounded-none`}>
-             <div className="h-full flex flex-col">
-                <div className="md:hidden p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 rounded-t-3xl text-slate-800 dark:text-pure">
-                    <h3 className="font-bold flex items-center gap-2"><Palette size={20}/> Outils</h3>
-                    <button onClick={() => setMobileView('canvas')}><X size={24} className="text-slate-400"/></button>
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                    <ToolsPanel onAddText={handleAddText} onAddImage={handleAddImage} onUpdateElement={handleUpdateElement} onDeleteElement={handleDeleteElement} onAIGenerate={handleAIGenerate} activeElement={designElements.find(el => el.id === activeElementId) || null} colors={toolsColors} selectedColor={currentCanvasColor} onSelectColor={(colorObj) => { const variant = availableColors.find(v => (v.hex || v.colorCode) === colorObj.hex); if (variant) setSelectedVariant(variant); }} />
-                </div>
+        <aside className={`absolute md:relative inset-y-0 right-0 z-30 w-full md:w-80 bg-white dark:bg-carbon border-l border-slate-200 dark:border-slate-800 shadow-2xl md:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-x-0' : 'translate-x-full md:translate-x-0'} h-full flex flex-col`}>
+             <div className="md:hidden p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-pure shrink-0">
+                 <h3 className="font-bold flex items-center gap-2"><Palette size={20}/> Outils</h3>
+                 <button onClick={() => setMobileView('canvas')}><X size={24} className="text-slate-400"/></button>
+             </div>
+             <div className="flex-1 overflow-hidden">
+                 <ToolsPanel onAddText={handleAddText} hideBaseDesign={hideBaseDesign} setHideBaseDesign={setHideBaseDesign} onAddImage={handleAddImage} onUpdateElement={handleUpdateElement} onDeleteElement={handleDeleteElement} onAIGenerate={handleAIGenerate} activeElement={designElements.find(el => el.id === activeElementId) || null} colors={toolsColors} selectedColor={currentCanvasColor} onSelectColor={(colorObj) => { const variant = availableColors.find(v => (v.hex || v.colorCode) === colorObj.hex); if (variant) setSelectedVariant(variant); }} />
              </div>
         </aside>
       </div>
 
-      {/* MOBILE MENU - 🪄 ONGLETS DYNAMIQUES */}
-      <div className="md:hidden bg-white dark:bg-carbon border-t border-slate-200 dark:border-slate-800 pb-safe z-30 relative transition-colors">
-          <div className="flex justify-around items-center h-16">
+      {/* MOBILE MENU - 🪄 ONGLETS DYNAMIQUES ET ÉTAPES SOLIDES */}
+      <div className="md:hidden bg-white dark:bg-carbon border-t border-slate-200 dark:border-slate-800 pb-safe z-30 shrink-0 relative transition-colors shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+          
+          {/* Barre de progression d'étapes sur mobile */}
+          <div className="flex items-center px-6 pt-3 pb-1 gap-2">
+            {[1, 2, 3].map((s) => (
+              <div 
+                key={s} 
+                className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${currentStep >= s ? "" : "bg-slate-100 dark:bg-slate-800"}`}
+                style={currentStep >= s ? { backgroundColor: "var(--theme-primary)" } : {}}
+              />
+            ))}
+          </div>
+
+          <div className="flex justify-around items-center py-2 shrink-0">
               <button 
-                onClick={() => setMobileView('products')} 
-                style={mobileView === 'products' ? { color: 'var(--theme-primary)' } : {}}
-                className={`flex flex-col items-center gap-1 p-2 transition-colors ${mobileView === 'products' ? '' : 'text-slate-400'}`}
+                onClick={() => { setMobileView('products'); setCurrentStep(1); }} 
+                style={currentStep === 1 ? { color: 'var(--theme-primary)' } : {}}
+                className={`flex flex-col items-center gap-1 p-2 transition-colors ${currentStep === 1 ? '' : 'text-slate-400'}`}
               >
-                <Shirt size={20} />
-                <span className="text-[10px] font-bold uppercase">Produits</span>
+                <Shirt size={20} className={currentStep === 1 ? "animate-pulse" : ""} />
+                <span className="text-[10px] font-bold uppercase">Produit</span>
               </button>
               
               <button 
-                onClick={() => setMobileView('canvas')} 
-                style={mobileView === 'canvas' ? { color: 'var(--theme-primary)' } : {}}
-                className={`flex flex-col items-center gap-1 p-2 transition-colors ${mobileView === 'canvas' ? '' : 'text-slate-400'}`}
+                onClick={() => { setMobileView('canvas'); setCurrentStep(2); }} 
+                style={currentStep === 2 ? { color: 'var(--theme-primary)' } : {}}
+                className={`flex flex-col items-center gap-1 p-2 transition-colors ${currentStep === 2 ? '' : 'text-slate-400'}`}
               >
-                <Layers size={20} />
-                <span className="text-[10px] font-bold uppercase">Aperçu</span>
+                <Palette size={20} className={currentStep === 2 ? "animate-pulse" : ""} />
+                <span className="text-[10px] font-bold uppercase">Design</span>
               </button>
               
               <button 
-                onClick={() => setMobileView('tools')} 
-                style={mobileView === 'tools' ? { color: 'var(--theme-primary)' } : {}}
-                className={`flex flex-col items-center gap-1 p-2 transition-colors ${mobileView === 'tools' ? '' : 'text-slate-400'}`}
+                onClick={() => { setMobileView('tools'); setCurrentStep(3); }} 
+                style={currentStep === 3 ? { color: 'var(--theme-primary)' } : {}}
+                className={`flex flex-col items-center gap-1 p-2 transition-colors ${currentStep === 3 ? '' : 'text-slate-400'}`}
               >
-                <Palette size={20} />
-                <span className="text-[10px] font-bold uppercase">Outils</span>
+                <Layers size={20} className={currentStep === 3 ? "animate-pulse" : ""} />
+                <span className="text-[10px] font-bold uppercase">Revue</span>
               </button>
+          </div>
+
+          {/* Bouton d'action principale sur mobile pour guider l'utilisateur */}
+          <div className="px-4 pb-2">
+            {currentStep === 1 && selectedProduct && (
+              <button 
+                 onClick={() => { setMobileView('canvas'); setCurrentStep(2); }}
+                 style={{ backgroundColor: 'var(--theme-primary)' }}
+                 className="w-full py-3 rounded-xl text-white font-black text-sm shadow-lg flex items-center justify-center gap-2"
+              >
+                Personnaliser cet article <ArrowRight size={18} />
+              </button>
+            )}
+            {currentStep === 2 && (
+              <button 
+                 onClick={() => { setMobileView('tools'); setCurrentStep(3); }}
+                 style={{ backgroundColor: 'var(--theme-primary)' }}
+                 className="w-full py-3 rounded-xl text-white font-black text-sm shadow-lg flex items-center justify-center gap-2"
+              >
+                Voir les finitions <ArrowRight size={18} />
+              </button>
+            )}
+             {currentStep === 3 && (
+              <button 
+                 onClick={handleAddToCartAction}
+                 disabled={isUploading}
+                 className="w-full py-4 bg-green-600 text-white rounded-xl font-black text-sm shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-transform"
+              >
+                 {isUploading ? <Loader2 className="animate-spin" size={18}/> : (location.state?.isEdit ? <CheckCircle2 size={18} /> : <ShoppingCart size={18} />)}
+                 {location.state?.isEdit ? "METTRE À JOUR MON DESIGN" : "AJOUTER AU PANIER"}
+              </button>
+            )}
           </div>
       </div>
 

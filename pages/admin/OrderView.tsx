@@ -140,25 +140,13 @@ export const OrderView = () => {
           }
       } catch (e) {}
 
-      // 1. Notification (Strictement pour l'Admin)
+      // 1. Notification locale pour l'Admin (Confirmation immédiate)
       useNotificationStore.getState().addNotification({
-        userId: adminId,
         title: "Statut mis à jour",
         message: `La commande #HD-${String(orderId).padStart(5, '0')} est passée à : ${translateStatus(newStatus)}`,
         type: newStatus === OrderStatus.CANCELLED || newStatus === OrderStatus.RETURNED ? 'error' : 'success',
         link: `/admin/orders/${orderId}`
       });
-
-      // 2. Notification (Strictement pour le Client)
-      if (targetUserId) {
-          useNotificationStore.getState().addNotification({
-            userId: String(targetUserId),
-            title: "Mise à jour de votre commande",
-            message: `Le statut de votre commande #HD-${String(orderId).padStart(5, '0')} a changé : ${translateStatus(newStatus)}`,
-            type: newStatus === OrderStatus.CANCELLED || newStatus === OrderStatus.RETURNED ? 'error' : 'info',
-            link: `/dashboard/orders/HD-${String(orderId).padStart(5, '0')}`
-          });
-      }
       
     } catch (error) {
       console.error("Erreur update", error);

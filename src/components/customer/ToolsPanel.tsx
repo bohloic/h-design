@@ -14,6 +14,8 @@ interface ToolsPanelProps {
   colors: ProductColor[];
   selectedColor: ProductColor;
   onSelectColor: (c: ProductColor) => void;
+  hideBaseDesign?: boolean;
+  setHideBaseDesign?: (val: boolean) => void;
 }
 
 type TabType = 'product' | 'text' | 'image' | 'ai';
@@ -27,7 +29,9 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
   activeElement,
   colors = [], 
   selectedColor,
-  onSelectColor
+  onSelectColor,
+  hideBaseDesign,
+  setHideBaseDesign
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('text');
   const [inputText, setInputText] = useState('');
@@ -94,7 +98,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabType)}
             style={activeTab === tab.id ? { color: 'var(--theme-primary)', borderBottomColor: 'var(--theme-primary)' } : {}}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 transition-all active:bg-gray-50 dark:active:bg-slate-900 ${
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-all active:bg-gray-50 dark:active:bg-slate-900 ${
               activeTab === tab.id ? 'border-b-2' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
             }`}
           >
@@ -105,7 +109,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
       </div>
 
       {/* CONTENU */}
-      <div className="flex-1 overflow-y-auto p-5 custom-scrollbar pb-24 md:pb-5">
+      <div className="flex-1 overflow-y-auto p-4 md:p-5 custom-scrollbar pb-24 md:pb-5">
         
         {/* COULEUR */}
         {activeTab === 'product' && (
@@ -137,6 +141,22 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* Toggle pour cacher le motif d'origine */}
+            {setHideBaseDesign && (
+              <div className="pt-6 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-800 dark:text-pure mb-1">Cacher le motif d'origine</h3>
+                  <p className="text-xs text-gray-500">Affiche le T-shirt vierge avec la couleur sélectionnée</p>
+                </div>
+                <button
+                  onClick={() => setHideBaseDesign(!hideBaseDesign)}
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${hideBaseDesign ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-700'}`}
+                >
+                  <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform absolute ${hideBaseDesign ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -178,19 +198,45 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
             </div>
             
             {activeElement?.type === 'text' && (
-              <div className="pt-6 border-t border-gray-100 space-y-4">
+              <div className="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Modifier texte</h3>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Modifier sélection</h3>
                   <button onClick={() => onDeleteElement(activeElement.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
                     <Trash2 size={18} />
                   </button>
                 </div>
-                <div className="flex gap-3 overflow-x-auto pb-2">
+
+                <textarea
+                  value={activeElement.content}
+                  onChange={(e) => onUpdateElement(activeElement.id, { content: e.target.value })}
+                  placeholder="Modifier votre texte..."
+                  className="w-full p-4 border border-gray-200 dark:border-slate-800 rounded-2xl text-sm text-slate-900 dark:text-pure resize-none h-20 outline-none bg-gray-50 dark:bg-slate-900 focus:bg-white dark:focus:bg-slate-800 transition-all theme-input-ring focus:border-slate-300"
+                />
+
+                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                  {FONTS.map(font => (
+                    <button
+                      key={font}
+                      onClick={() => onUpdateElement(activeElement.id, { fontFamily: font })}
+                      className={`shrink-0 px-4 py-2 rounded-xl border text-xs font-medium whitespace-nowrap transition-all ${
+                        activeElement.fontFamily === font ? 'shadow-md transform scale-105' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
+                      }`}
+                      style={{ 
+                          fontFamily: font, 
+                          ...(activeElement.fontFamily === font ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)', color: 'white' } : {}) 
+                      }}
+                    >
+                      Aa {font}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                   {['#000000', '#FFFFFF', '#DC2626', '#2563EB', '#16A34A', '#F59E0B', '#9333EA'].map(c => (
                       <button 
                         key={c}
                         onClick={() => onUpdateElement(activeElement.id, { color: c })} 
-                        className={`w-8 h-8 rounded-full border shadow-sm shrink-0 ${activeElement.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
+                        className={`w-10 h-10 rounded-full border shadow-sm shrink-0 transition-transform active:scale-95 ${activeElement.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
                         style={{ backgroundColor: c }}
                       />
                   ))}
@@ -215,12 +261,44 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
               <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
             </label>
              {activeElement?.type === 'image' && (
-              <div className="pt-6 border-t border-gray-100">
-                <div className="bg-slate-50 p-4 rounded-xl flex items-center justify-between border border-slate-100">
-                  <span className="text-sm font-bold text-slate-700">Image sélectionnée</span>
-                  <button onClick={() => onDeleteElement(activeElement.id)} className="flex items-center gap-2 text-red-600 bg-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm border border-red-100 hover:bg-red-50 transition-colors">
-                    <Trash2 size={14} /> Supprimer
+              <div className="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Modifier sélection</h3>
+                  <button onClick={() => onDeleteElement(activeElement.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors">
+                    <Trash2 size={18} />
                   </button>
+                </div>
+                
+                <div className="space-y-2 bg-gray-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
+                  <div className="flex justify-between">
+                    <label className="text-xs font-bold text-gray-600 dark:text-gray-300">Transparence</label>
+                    <span className="text-xs text-gray-400">{Math.round((activeElement.opacity ?? 1) * 100)}%</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0.1" 
+                    max="1" 
+                    step="0.05" 
+                    value={activeElement.opacity ?? 1} 
+                    onChange={(e) => onUpdateElement(activeElement.id, { opacity: parseFloat(e.target.value) })}
+                    className="w-full accent-[var(--theme-primary)]"
+                  />
+                </div>
+
+                <div className="space-y-2 bg-gray-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
+                  <div className="flex justify-between">
+                    <label className="text-xs font-bold text-gray-600 dark:text-gray-300">Arrondir les angles</label>
+                    <span className="text-xs text-gray-400">{activeElement.borderRadius ?? 0}%</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="50" 
+                    step="1" 
+                    value={activeElement.borderRadius ?? 0} 
+                    onChange={(e) => onUpdateElement(activeElement.id, { borderRadius: parseFloat(e.target.value) })}
+                    className="w-full accent-[var(--theme-primary)]"
+                  />
                 </div>
               </div>
             )}
@@ -300,11 +378,11 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                 <div className="relative group rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-800 shadow-sm aspect-square">
                   <img src={generatedImageUrl} alt="Generated" className="w-full h-full object-contain p-4" />
                   
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
+                  <div className="absolute inset-0 bg-black/10 md:bg-black/40 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity flex items-end pb-4 md:pb-0 md:items-center justify-center md:p-4">
                     <button 
                       onClick={() => onAddImage(generatedImageUrl)}
                       style={{ color: 'var(--theme-primary)' }}
-                      className="bg-white px-6 py-3 rounded-full font-bold text-sm flex items-center gap-2 shadow-xl transform hover:scale-105 transition-transform"
+                      className="bg-white px-5 py-2.5 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xl transform hover:scale-105 transition-transform"
                     >
                       <Plus size={18} /> Ajouter au T-shirt
                     </button>

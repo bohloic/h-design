@@ -21,7 +21,7 @@ export const getGiftAdvice = async (prompt: string): Promise<string> => {
     return data.text || "Désolé, je n'ai pas pu générer de conseil pour le moment. Réessayez !";
   } catch (error: any) {
     console.error("AI Assistant Error:", error);
-    return `Oups ! La magie de Noël rencontre un petit souci technique : ${error.message || "Serveur indisponible"}. Reviens plus tard ! ❄️`;
+    return `Oups ! Notre atelier créatif rencontre un petit souci technique : ${error.message || "Serveur indisponible"}. Reviens plus tard ! ✨`;
   }
 };
 

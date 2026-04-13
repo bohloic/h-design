@@ -46,10 +46,10 @@ export const BackToTop = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed bottom-28 right-10 z-[1001] animate-in fade-in slide-in-from-bottom-5 duration-300">
+    <div className="fixed bottom-20 right-4 md:bottom-28 md:right-6 z-[1001] animate-in fade-in slide-in-from-bottom-5 duration-300">
       <button
         onClick={scrollToTop}
-        className="back-to-top-btn relative group flex items-center justify-center w-14 h-14 bg-white text-slate-800 rounded-full shadow-2xl border border-slate-100/50 backdrop-blur-md"
+        className="back-to-top-btn relative group flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-white text-slate-800 rounded-full shadow-2xl border border-slate-100/50 backdrop-blur-md opacity-60 hover:opacity-100 transition-all duration-300"
         style={{
              backgroundColor: 'rgba(255, 255, 255, 0.8)'
         }}

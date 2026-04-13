@@ -4,69 +4,69 @@ import { Product } from './types';
 export const PRODUCTS: Product[] = [
   {
     id: '1',
-    name: 'Pull de Noël Traditionnel',
-    description: 'Un pull chaud et confortable avec des motifs de rennes pour toute la famille.',
+    name: 'T-shirt Signature H-Designer',
+    description: 'Le t-shirt emblématique de notre atelier, 100% coton bio de qualité premium.',
     price: 15000,
-    category: 'Noël',
-    image: 'https://picsum.photos/seed/xmas1/600/800',
+    category: 'T-shirts',
+    image: 'https://picsum.photos/seed/hdes1/600/800',
     isFeatured: true
   },
   {
     id: '2',
-    name: 'Robe de Réveillon Rouge',
-    description: 'Élégante robe en velours pour briller lors du réveillon de Noël.',
+    name: 'Robe d\'Été Élégante',
+    description: 'Une pièce fluide et chic, parfaite pour vos soirées estivales.',
     price: 35000,
     category: 'Femmes',
-    image: 'https://picsum.photos/seed/xmas2/600/800',
+    image: 'https://picsum.photos/seed/hdes2/600/800',
     isNew: true
   },
   {
     id: '3',
-    name: 'Costume Homme Élégant',
-    description: 'Parfait pour les grandes occasions de fin d\'année.',
+    name: 'Costume Homme Sur Mesure',
+    description: 'Le savoir-faire de l\'atelier H-designer pour vos grandes occasions.',
     price: 85000,
     category: 'Hommes',
-    image: 'https://picsum.photos/seed/xmas3/600/800'
+    image: 'https://picsum.photos/seed/hdes3/600/800'
   },
   {
     id: '4',
-    name: 'Pyjama de Lutin',
-    description: 'Le pyjama idéal pour les enfants le matin de Noël.',
+    name: 'T-shirt Enfant Fun',
+    description: 'Confort et style pour les petits avec des motifs uniques.',
     price: 12000,
     category: 'Enfants',
-    image: 'https://picsum.photos/seed/xmas4/600/800'
+    image: 'https://picsum.photos/seed/hdes4/600/800'
   },
   {
     id: '5',
-    name: 'Écharpe en Cachemire',
-    description: 'Douceur et chaleur garanties pour les hivers frais.',
+    name: 'Écharpe en Soie',
+    description: 'Une touche d\'élégance pour sublimer vos tenues.',
     price: 25000,
     category: 'Accessoires',
-    image: 'https://picsum.photos/seed/xmas5/600/800'
+    image: 'https://picsum.photos/seed/hdes5/600/800'
   },
   {
     id: '6',
-    name: 'Bonnet à Pompon Festif',
-    description: 'Un accessoire indispensable pour vos sorties au marché de Noël.',
-    price: 5000,
+    name: 'Casquette Premium Ligne H',
+    description: 'Accessoire incontournable pour un look urbain chic.',
+    price: 15000,
     category: 'Accessoires',
-    image: 'https://picsum.photos/seed/xmas6/600/800'
+    image: 'https://picsum.photos/seed/hdes6/600/800'
   },
   {
     id: '7',
-    name: 'Manteau d\'Hiver Chic',
-    description: 'Style et protection contre le froid.',
+    name: 'Veste de Mi-saison',
+    description: 'Style et légèreté pour une allure moderne.',
     price: 65000,
     category: 'Hommes',
-    image: 'https://picsum.photos/seed/xmas7/600/800'
+    image: 'https://picsum.photos/seed/hdes7/600/800'
   },
   {
     id: '8',
-    name: 'Bottes de Neige Stylées',
-    description: 'Marchez sur la neige avec élégance.',
+    name: 'Sneakers Minimalistes',
+    description: 'Confort absolu et design épuré pour tous les jours.',
     price: 45000,
-    category: 'Femmes',
-    image: 'https://picsum.photos/seed/xmas8/600/800'
+    category: 'Chaussures',
+    image: 'https://picsum.photos/seed/hdes8/600/800'
   }
 ];
 
