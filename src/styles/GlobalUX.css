@@ -74,10 +74,4 @@
   animation: cart-badge-pop-anim 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-/* 🖋️ FIX: Forcer le texte des champs de saisie en noir (Clair/Sombre) */
-input, textarea, select {
-  color: #0f172a !important; /* text-slate-900 */
-}
-input::placeholder, textarea::placeholder {
-  color: #94a3b8 !important; /* text-slate-400 */
-}
+/* Les couleurs des inputs sont désormais gérées par Tailwind (text-slate-900 dark:text-white) */

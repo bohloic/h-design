@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { authFetch } from '../utils/apiClient';
 
-const BASE_URL = 'http://localhost:205/api'; // Ajustez si nécessaire
+// ✅ FIX #3 : Plus de BASE_URL hardcodée. On utilise authFetch qui gère
+// automatiquement le token, le proxy Vite en dev, et l'URL en production.
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
@@ -36,10 +38,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
     set({ isLoading: true });
     try {
-      const response = await fetch(`${BASE_URL}/notifications`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
+      const response = await authFetch('/notifications');
+      if (response && response.ok) {
         const data = await response.json();
         set({ notifications: data });
       }
@@ -52,7 +52,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   addNotification: (notification) => {
     // Note: Dans le nouveau système, l'admin ajoute via le backend.
-    // Cette fonction peut rester pour des notifications purement locales/éphémères si besoin.
+    // Cette fonction reste pour des notifications purement locales/éphémères.
     const newNotif: Notification = {
       ...notification,
       id: `local-${Date.now()}`,
@@ -66,25 +66,21 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    // Optimiste
+    // Mise à jour optimiste (UI réactive avant la réponse serveur)
     set((state) => ({
-      notifications: state.notifications.map((n) => 
+      notifications: state.notifications.map((n) =>
         String(n.id) === String(id) ? { ...n, is_read: true } : n
       )
     }));
 
     try {
-      await fetch(`${BASE_URL}/notifications/${id}/read`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      await authFetch(`/notifications/${id}/read`, { method: 'PUT' });
     } catch (error) {
       console.error("Erreur markAsRead:", error);
     }
   },
 
   markAllAsRead: async () => {
-    // Implémentation simple : boucle sur les non lues
     const unread = get().notifications.filter(n => !n.is_read);
     for (const n of unread) {
       await get().markAsRead(String(n.id));
@@ -94,16 +90,14 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   removeNotification: async (id) => {
     const token = localStorage.getItem('token');
     if (!token) {
+      // Suppression locale uniquement si pas de token
       set((state) => ({ notifications: state.notifications.filter((n) => String(n.id) !== String(id)) }));
       return;
     }
 
     try {
-      const resp = await fetch(`${BASE_URL}/notifications/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (resp.ok) {
+      const resp = await authFetch(`/notifications/${id}`, { method: 'DELETE' });
+      if (resp && resp.ok) {
         set((state) => ({ notifications: state.notifications.filter((n) => String(n.id) !== String(id)) }));
       }
     } catch (error) {

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { authFetch } from '@/src/utils/apiClient.ts';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { CartItem, DecodedToken } from './types';
-import { jwtDecode } from 'jwt-decode';
+import { CartItem } from './types';
 
 // Components
 import Navbar from './src/components/elements/Navbar.tsx';
@@ -232,13 +230,7 @@ const App: React.FC = () => {
   });
 
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [data, setData] = useState<any>(() => {
-    try {
-      const saveData = localStorage.getItem('data');
-      return saveData ? JSON.parse(saveData) : {};
-    } catch { return {}; }
-  });
+  // ✅ FIX #7 : isAuthenticated et data supprimés ici — gérés par AuthProvider/useAuth()
 
   // Sync panier depuis localStorage (Paystack callback)
   useEffect(() => {
@@ -262,44 +254,7 @@ const App: React.FC = () => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
-  // Auth
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsAuthenticated(true);
-      try {
-        const decodedToken = jwtDecode<DecodedToken>(token);
-        if (decodedToken.userId) {
-          const fetchUser = async () => {
-            try {
-              const response = await authFetch(`/api/users/${decodedToken.userId}`);
-              if (response.ok) {
-                const userData = await response.json();
-                const { password, ...safeUserData } = userData;
-                setData(safeUserData);
-                localStorage.setItem('data', JSON.stringify(safeUserData));
-              }
-            } catch (err) { console.error('Erreur fetch user', err); }
-          };
-          fetchUser();
-        }
-      } catch {
-        localStorage.removeItem('token');
-        localStorage.removeItem('data');
-        setIsAuthenticated(false);
-      }
-    } else {
-      setIsAuthenticated(false);
-    }
-  }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('data');
-    setIsAuthenticated(false);
-    setData({});
-    window.location.href = '/';
-  };
 
   const addToCart = (product: any) => {
     setCart(prev => {

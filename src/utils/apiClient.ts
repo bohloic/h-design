@@ -25,6 +25,8 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
   const token = localStorage.getItem('token');
   const headers: Record<string, string> = {
     ...options.headers as Record<string, string>,
+    // ✅ FIX #16 : Header ngrok uniquement en développement (inutile en production)
+    ...(import.meta.env.DEV ? { 'ngrok-skip-browser-warning': 'true' } : {}),
   };
 
   // Ajout du Content-Type JSON sauf si c'est un FormData (pour les images)

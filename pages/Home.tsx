@@ -17,6 +17,11 @@ import TrendingSection from '@/src/components/product/TrendingProducts';
 import imageHome from '@/src/assets/image1.png';
 import imageHome2 from '../src/assets/h_designer_hero_fashion_atelier_1774889548518.png';
 import imageHome3 from '@/src/assets/image4.png';
+import CatHome1 from '@/src/assets/cat1.png';
+import CatHome2 from '@/src/assets/cat2.png';
+import CatHome3 from '@/src/assets/cat3.png';
+import CatHome4 from '@/src/assets/cat4.png';
+
 
 interface HomeProps {
   onAddToCart: (product: Product) => void;
@@ -156,10 +161,10 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: "Homme", img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=500&q=80" },
-              { label: "Femme", img: "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?auto=format&fit=crop&w=500&q=80" },
-              { label: "Enfant", img: "https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=500&q=80" },
-              { label: "Unisexe", img: "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&w=500&q=80" }
+              { label: "Homme", img: CatHome1 },
+              { label: "Femme", img: CatHome2 },
+              { label: "Enfant", img: CatHome3 },
+              { label: "Unisexe", img: CatHome4 }
             ].map((cat, idx) => (
               <div
                 key={idx}

@@ -5,7 +5,6 @@ import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2, Shiel
 import { useNotificationStore } from '../src/store/useNotificationStore';
 import { jwtDecode } from 'jwt-decode';
 import logo from '../src/assets/logo.png';
-import ReCAPTCHA from "react-google-recaptcha";
 
 interface MonTokenCustom {
     userId: string;
@@ -27,8 +26,6 @@ function Auth({ onLoginSuccess }) {
 
     const [showVerification, setShowVerification] = useState(false);
     const [isForgotMode, setIsForgotMode] = useState(false);
-    const [captchaVerified, setCaptchaVerified] = useState(false);
-    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
     const [registeredEmail, setRegisteredEmail] = useState('');
     const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
@@ -173,8 +170,8 @@ function Auth({ onLoginSuccess }) {
         setIsLoading(true);
         const url = isLoginMode ? `${API_BASE_URL}/login` : `${API_BASE_URL}/register`;
         const bodyData = isLoginMode
-            ? { email: formData.email, password: formData.password, captchaToken }
-            : { nom: formData.nom, prenom: formData.prenom, email: formData.email, phone: formData.phone, password: formData.password, captchaToken };
+            ? { email: formData.email, password: formData.password }
+            : { nom: formData.nom, prenom: formData.prenom, email: formData.email, phone: formData.phone, password: formData.password };
 
         try {
             const response = await authFetch(url, {
@@ -402,16 +399,10 @@ function Auth({ onLoginSuccess }) {
                                         </div>
                                     )}
 
-                                    {/* Captcha */}
-                                    <div className="pt-2 flex justify-center">
-                                        <ReCAPTCHA
-                                            sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                                            onChange={(val) => { setCaptchaVerified(!!val); setCaptchaToken(val); }}
-                                        />
-                                    </div>
+
 
                                     <div className="pt-2">
-                                        <button type="submit" disabled={isLoading || !captchaVerified} className="w-full bg-[#0b2e35] text-white py-3.5 rounded-xl font-bold text-[15px] shadow-sm hover:bg-opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0b2e35]">
+                                        <button type="submit" disabled={isLoading} className="w-full bg-[#0b2e35] text-white py-3.5 rounded-xl font-bold text-[15px] shadow-sm hover:bg-opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0b2e35]">
                                             {isLoading ? <Loader2 className="animate-spin" /> : <>{isLoginMode ? 'Se connecter' : "S'inscrire"}</>}
                                         </button>
                                     </div>

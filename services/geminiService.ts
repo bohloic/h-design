@@ -45,9 +45,24 @@ export const getDesignSuggestions = async (prompt: string): Promise<string[]> =>
 };
 
 export const generateDesignImage = async (prompt: string): Promise<string> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(`https://images.unsplash.com/photo-1543332164-6e82f3555182?q=80&w=500&auto=format&fit=crop`);
-    }, 1500);
-  });
+  try {
+    const response = await authFetch('/ai/generate-design', {
+      method: 'POST',
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!response || !response.ok) {
+        throw new Error("Erreur lors de la génération de l'image");
+    }
+
+    const data = await response.json();
+    if (data.success && data.imageUrl) {
+      return data.imageUrl;
+    } else {
+       throw new Error(data.text || "L'IA n'a pas pu générer l'image.");
+    }
+  } catch (error: any) {
+    console.error("Erreur Generateur Image IA:", error);
+    throw new Error(error.message || "Impossible de joindre le serveur d'IA");
+  }
 };

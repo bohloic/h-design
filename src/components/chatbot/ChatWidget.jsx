@@ -95,14 +95,15 @@ const ChatWidget = () => {
           </div>
 
           {/* Zone Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+          {/* Zone Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900 transition-colors">
             {messages.map((msg, index) => (
               <div key={index} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                 
                 <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
                     msg.sender === 'user' 
                       ? 'bg-slate-800 text-white rounded-tr-none' 
-                      : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-tl-none'
                   }`}>
                   
                   {msg.sender === 'user' ? (
@@ -114,7 +115,7 @@ const ChatWidget = () => {
                                   <a {...props} style={{ color: 'var(--theme-primary)' }} className="font-bold underline hover:opacity-80 transition-opacity" rel="noopener noreferrer" />
                               ),
                               p: ({node, ...props}) => <p {...props} className="mb-2 last:mb-0" />,
-                              strong: ({node, ...props}) => <strong {...props} className="font-black text-slate-900" />,
+                              strong: ({node, ...props}) => <strong {...props} className="font-black text-slate-900 dark:text-white" />,
                               ul: ({node, ...props}) => <ul {...props} className="list-disc pl-4 mb-2 space-y-1" />,
                               li: ({node, ...props}) => (
                                 <li {...props} className="theme-marker" />
@@ -130,7 +131,7 @@ const ChatWidget = () => {
                 {msg.products && msg.products.length > 0 && (
                   <div className="mt-3 w-full overflow-x-auto pb-2 flex gap-3 snap-x no-scrollbar">
                     {msg.products.map((product) => (
-                      <div key={product.id} className="snap-center shrink-0 w-36 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col hover:shadow-md transition-all">
+                      <div key={product.id} className="snap-center shrink-0 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col hover:shadow-md transition-all">
                         <div className="h-28 bg-white relative p-2">
                             <img 
                                 src={product.image_url ? (BASE_IMG_URL + product.image_url) : "/placeholder.png"} 
@@ -138,8 +139,8 @@ const ChatWidget = () => {
                                 className="w-full h-full object-contain"
                             />
                         </div>
-                        <div className="p-2 flex flex-col flex-1 border-t border-slate-50">
-                            <h4 className="text-[10px] font-bold text-slate-800 line-clamp-2 leading-tight h-8">{product.name}</h4>
+                        <div className="p-2 flex flex-col flex-1 border-t border-slate-50 dark:border-slate-700">
+                            <h4 className="text-[10px] font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight h-8">{product.name}</h4>
                             <p 
                               className="text-xs font-bold mt-1"
                               style={{ color: 'var(--theme-primary)' }}
@@ -164,7 +165,7 @@ const ChatWidget = () => {
             ))}
             
             {isLoading && (
-              <div className="flex items-center gap-1 bg-white p-3 rounded-2xl rounded-tl-none w-fit shadow-sm border border-slate-100">
+              <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-none w-fit shadow-sm border border-slate-100 dark:border-slate-700">
                 <Loader2 className="animate-spin text-slate-400" size={16} />
                 <span className="text-xs text-slate-400">L'IA réfléchit...</span>
               </div>
@@ -173,13 +174,13 @@ const ChatWidget = () => {
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-slate-100 flex gap-2">
+          <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Je cherche un article..."
-              className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 outline-none placeholder:text-slate-400 transition-all theme-input-ring"
+              className="flex-1 bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 outline-none placeholder:text-slate-400 transition-all theme-input-ring"
             />
             <button 
               type="submit" 
