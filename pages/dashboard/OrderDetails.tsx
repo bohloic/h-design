@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Package, Truck, CheckCircle2, MapPin, Download, Phone, ShoppingBag, Clock, XCircle, Loader2, Palette, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
+import { ArrowLeft, Package, Truck, CheckCircle2, MapPin, Download, Phone, ShoppingBag, Clock, XCircle, Loader2, Palette, AlertTriangle, CreditCard } from 'lucide-react';
+import { useToast } from '@/src/utils/context/ToastContext';
 import { formatCurrency } from '@/constants';
 import { authFetch } from '@/src/utils/apiClient';
 import { useAutoRefresh } from '@/src/utils/hooks/useAutoRefresh';
@@ -8,6 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { translateStatus, getStatusColorClass } from '@/src/utils/statusTranslations';
 
 export const OrderDetails: React.FC = () => {
+    const { showToast } = useToast();
     const { id: orderSlug } = useParams();
     const navigate = useNavigate();
     
@@ -17,6 +19,42 @@ export const OrderDetails: React.FC = () => {
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isPaying, setIsPaying] = useState(false);
+    const progressBarRef = useRef<HTMLDivElement>(null);
+
+    const handlePayNow = async () => {
+        if (!order) return;
+        setIsPaying(true);
+        try {
+            const response = await fetch('/api/payment/initialize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    email: order.customer_email || '', 
+                    amount: order.total_amount,
+                    orderId: order.id,
+                    callbackUrl: window.location.origin
+                })
+            });
+
+            const data = await response.json();
+            if (data.success && data.authorization_url) {
+                window.location.href = data.authorization_url;
+            } else {
+                alert(data.message || "Erreur lors de l'initialisation du paiement");
+            }
+        } catch (error) {
+            console.error("Erreur paiement:", error);
+            alert("Erreur technique lors de la redirection vers Paystack");
+        } finally {
+            setIsPaying(null);
+        }
+    };
+
+
 
     const handleDownloadInvoice = async () => {
         try {
@@ -48,7 +86,7 @@ export const OrderDetails: React.FC = () => {
             
         } catch (error) {
             console.error("Erreur de téléchargement :", error);
-            alert("Impossible de télécharger la facture pour le moment.");
+            showToast("Impossible de télécharger la facture pour le moment.", "error");
         } finally {
             setIsDownloading(false);
         }
@@ -76,13 +114,8 @@ export const OrderDetails: React.FC = () => {
         if (orderId) fetchOrderDetails(false);
     }, 10000);
 
-    if (loading) return <div className="p-12 text-center text-slate-400 animate-pulse">Chargement des détails de la commande {orderSlug}...</div>;
-    if (!order) return <div className="p-12 text-center text-red-500">Commande introuvable.</div>;
-
-
-
-    const status = order.status.toLowerCase();
-    const translatedStatus = translateStatus(order.status);
+    const status = order?.status?.toLowerCase() || '';
+    const translatedStatus = order ? translateStatus(order.status) : '';
     const isCancelled = status.includes('annulé') || status === 'cancelled';
     const isPending = status.includes('en attente de paiement') || status === 'pending';
 
@@ -98,12 +131,21 @@ export const OrderDetails: React.FC = () => {
     // Calcul de la progression (en %)
     let progressPercentage = 0;
     if (isCancelled || isPending || status.includes('validation')) {
-        progressPercentage = 0; // On ne montre pas de progression avant le paiement ou pendant la validation design non payée
+        progressPercentage = 0; 
     } else if (currentStepIndex !== -1) {
         progressPercentage = ((currentStepIndex + 1) / steps.length) * 100;
     } else {
         progressPercentage = 100;
     }
+
+    useLayoutEffect(() => {
+        if (progressBarRef.current) {
+            progressBarRef.current.style.width = `${progressPercentage}%`;
+        }
+    }, [progressPercentage]);
+
+    if (loading) return <div className="p-12 text-center text-slate-400 animate-pulse">Chargement des détails de la commande {orderSlug}...</div>;
+    if (!order) return <div className="p-12 text-center text-red-500">Commande introuvable.</div>;
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -113,6 +155,7 @@ export const OrderDetails: React.FC = () => {
                     <button 
                         onClick={() => navigate('/dashboard/orders')}
                         className="p-2 bg-slate-50 hover:bg-slate-200 rounded-full text-slate-600 transition-colors"
+                        title="Retour aux commandes"
                     >
                         <ArrowLeft size={20} />
                     </button>
@@ -120,7 +163,7 @@ export const OrderDetails: React.FC = () => {
                         <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
                             Commande #{orderSlug}
                         </h2>
-                        <p className="text-sm text-slate-500 font-medium">Passée le {new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                        <p className="text-sm text-slate-500 font-medium">Passée le {new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                 </div>
                 
@@ -128,8 +171,7 @@ export const OrderDetails: React.FC = () => {
                 <button 
                     onClick={handleDownloadInvoice}
                     disabled={isDownloading}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md hover-theme-bg disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: 'white', color: 'var(--theme-primary)', border: '2px solid color-mix(in srgb, var(--theme-primary) 20%, transparent)' }}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md hover-theme-bg disabled:opacity-50 disabled:cursor-not-allowed bg-white text-theme-primary border-2 border-theme-primary/20"
                 >
                     {isDownloading ? (
                         <><Loader2 size={18} className="animate-spin" /> Génération...</>
@@ -157,7 +199,16 @@ export const OrderDetails: React.FC = () => {
                     <div className="flex flex-col items-center justify-center py-6 text-amber-500">
                         <Clock size={48} className="mb-3 opacity-50 animate-pulse" />
                         <p className="font-bold text-lg">En attente de confirmation de paiement.</p>
-                        <p className="text-sm text-slate-500 mt-2 text-center">Votre commande passera en préparation dès réception du paiement.</p>
+                        <p className="text-sm text-slate-500 mt-2 mb-6 text-center">Votre commande passera en préparation dès réception du paiement.</p>
+                        
+                        <button 
+                            onClick={handlePayNow}
+                            disabled={isPaying}
+                            className="flex items-center gap-2 px-8 py-4 bg-emerald-500 text-white font-black rounded-2xl hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 dark:shadow-none active:scale-95 disabled:opacity-50"
+                        >
+                            {isPaying ? <Loader2 className="animate-spin" /> : <CreditCard size={20} />}
+                            {isPaying ? 'Initialisation...' : 'Payer maintenant ✅'}
+                        </button>
                     </div>
                 ) : (
                     <div className="relative flex justify-between items-center max-w-3xl mx-auto mt-4 px-2 md:px-0">
@@ -166,11 +217,8 @@ export const OrderDetails: React.FC = () => {
                         
                         {/* La ligne de progression (couleur dynamique) */}
                         <div 
-                            className="absolute left-0 top-1/2 -translate-y-1/2 h-2 rounded-full transition-all duration-1000 ease-out"
-                            style={{ 
-                                width: `${progressPercentage}%`,
-                                backgroundColor: 'var(--theme-primary)'
-                            }}
+                            ref={progressBarRef}
+                            className="absolute left-0 top-1/2 -translate-y-1/2 h-2 rounded-full transition-all duration-1000 ease-out bg-theme-primary"
                         ></div>
 
                         {/* Les étapes */}
@@ -182,13 +230,9 @@ export const OrderDetails: React.FC = () => {
                                 <div key={step} className="relative z-10 flex flex-col items-center gap-3">
                                     <div 
                                         className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border-4 transition-all duration-500 
-                                            ${isCompleted ? 'border-white text-white shadow-lg' : 'border-slate-50 bg-white text-slate-300'}
-                                            ${isCurrent ? 'ring-4 ring-offset-2' : ''}
+                                            ${isCompleted ? 'bg-[var(--theme-primary)] border-white text-white shadow-lg' : 'bg-white border-slate-50 text-slate-300'}
+                                            ${isCurrent ? 'ring-4 ring-[color-mix(in_srgb,var(--theme-primary),transparent_70%)] ring-offset-2' : ''}
                                         `}
-                                        style={{
-                                            backgroundColor: isCompleted ? 'var(--theme-primary)' : '',
-                                            '--tw-ring-color': isCurrent ? 'color-mix(in srgb, var(--theme-primary) 30%, transparent)' : 'transparent'
-                                        } as React.CSSProperties}
                                     >
                                         {index === 0 && <ShoppingBag size={20} />}
                                         {index === 1 && <Package size={20} />}
@@ -229,7 +273,11 @@ export const OrderDetails: React.FC = () => {
                                         
                                         return (
                                             <img 
-                                                src={displayImage ? BASE_IMG_URL + displayImage : '/placeholder.png'} 
+                                                src={(() => {
+                                                    if (!displayImage) return "/placeholder.png";
+                                                    if (displayImage.startsWith('data:') || displayImage.startsWith('http')) return displayImage;
+                                                    return BASE_IMG_URL + displayImage;
+                                                })()} 
                                                 alt={item.name} 
                                                 className="w-full h-full object-contain rounded-xl" 
                                             />
@@ -237,45 +285,73 @@ export const OrderDetails: React.FC = () => {
                                     })()}
                                 </div>
                                 <div className="flex-1">
-                                    <div className="flex justify-between items-start">
-                                        <h4 className="font-bold text-slate-800 line-clamp-1">{item.name || 'Création personnalisée'}</h4>
-                                        <p className="text-sm font-black" style={{ color: 'var(--theme-primary)' }}>{formatCurrency(item.unit_price || item.price)}</p>
-                                    </div>
-                                    <p className="text-xs text-slate-500 mt-1">Quantité : <span className="font-bold text-slate-700">{item.quantity}</span></p>
-                                    
-                                    {/* STATUS DU DESIGN PAR ARTICLE */}
-                                    <div className="mt-3 flex flex-wrap gap-2 items-center">
-                                        {item.design_status === 'approved' ? (
-                                            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100">
-                                                <CheckCircle2 size={12} /> Design Validé
+                                    {/* BADGE TYPE PRODUIT */}
+                                    <div className="mb-1">
+                                        {item.customization ? (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-600 text-[10px] font-bold border border-purple-100">
+                                                <Palette size={10} /> Personnalisé
                                             </span>
-                                        ) : item.design_status === 'rejected' ? (
-                                            <>
-                                                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-bold border border-red-100">
-                                                    <AlertTriangle size={12} /> Action Requise
-                                                </span>
-                                                <button 
-                                                    onClick={() => navigate('/products/customizer', { 
-                                                        state: { 
-                                                            productId: item.product_id, 
-                                                            orderItemId: item.id,
-                                                            isEdit: true,
-                                                            existingDesign: typeof item.customization === 'string' ? JSON.parse(item.customization) : item.customization
-                                                        } 
-                                                    })}
-                                                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800 transition-colors shadow-sm active:scale-95"
-                                                >
-                                                    <Palette size={12} /> Modifier mon design
-                                                </button>
-                                            </>
                                         ) : (
-                                            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200">
-                                                <Clock size={12} /> En attente de validation
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold border border-blue-100">
+                                                <Package size={10} /> Standard
                                             </span>
                                         )}
                                     </div>
 
-                                    {item.design_status === 'rejected' && item.rejection_reason && (
+                                    <div className="flex justify-between items-start">
+                                        <h4 className="font-bold text-slate-800 line-clamp-1">
+                                            {item.customization ? (item.name || 'Création personnalisée') : (item.product_name || item.name)}
+                                        </h4>
+                                        <p className="text-sm font-black text-theme-primary">{formatCurrency(item.unit_price || item.price)}</p>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-1">Quantité : <span className="font-bold text-slate-700">{item.quantity}</span></p>
+                                    
+                                    {/* STATUS DU DESIGN PAR ARTICLE (Uniquement si personnalisé) */}
+                                    {item.customization && (
+                                        <div className="mt-3 flex flex-wrap gap-2 items-center">
+                                            {['Validé', 'approved'].includes(item.design_status) ? (
+                                                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100">
+                                                    <CheckCircle2 size={12} /> Design Validé
+                                                </span>
+                                            ) : ['Refusé', 'rejected'].includes(item.design_status) ? (
+                                                <>
+                                                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-bold border border-red-100">
+                                                        <AlertTriangle size={12} /> Action Requise
+                                                    </span>
+                                                    <button 
+                                                        onClick={() => {
+                                                            const customization = typeof item.customization === 'string' ? JSON.parse(item.customization) : item.customization;
+                                                            // 🪄 On récupère la variante et la couleur pour que le customizer s'ouvre sur le même produit
+                                                            const variantId = item.variant_id || customization?.options?.variant_info?.id || customization?.variantId;
+                                                            const colorName = item.color || customization?.options?.color || item.color;
+                                                            const sizeName = item.size || customization?.options?.size || item.size;
+    
+                                                            navigate('/personnaliser/mon-design', { 
+                                                                state: { 
+                                                                    productId: item.product_id, 
+                                                                    variantId: variantId,
+                                                                    colorName: colorName,
+                                                                    sizeName: sizeName, // On passe la taille pour qu'elle soit présélectionnée
+                                                                    orderItemId: item.id,
+                                                                    isEdit: true,
+                                                                    existingDesign: customization
+                                                                } 
+                                                            });
+                                                        }}
+                                                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800 transition-colors shadow-sm active:scale-95"
+                                                    >
+                                                        <Palette size={12} /> Modifier mon design
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold border border-slate-200">
+                                                    <Clock size={12} /> En attente de validation
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {['Refusé', 'rejected'].includes(item.design_status) && item.rejection_reason && (
                                         <div className="mt-2 p-2 bg-red-50 border-l-2 border-red-400 rounded-r-lg text-[10px] text-red-700 italic">
                                             Motif : "{item.rejection_reason}"
                                         </div>
@@ -306,7 +382,7 @@ export const OrderDetails: React.FC = () => {
                     {/* Total */}
                     <div className="bg-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-xl relative overflow-hidden">
                         {/* Décoration d'arrière-plan */}
-                        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-10" style={{ backgroundColor: 'var(--theme-primary)' }}></div>
+                        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-10 bg-theme-primary"></div>
                         
                         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 relative z-10">Résumé Financier</h3>
                         <div className="space-y-4 text-sm mb-6 relative z-10">
@@ -321,7 +397,7 @@ export const OrderDetails: React.FC = () => {
                         </div>
                         <div className="pt-5 border-t border-slate-700/50 flex justify-between items-end relative z-10">
                             <span className="font-bold text-slate-300 uppercase tracking-widest text-xs">Total Payé</span>
-                            <span className="text-2xl md:text-3xl font-black tracking-tight" style={{ color: 'var(--theme-primary)' }}>
+                            <span className="text-2xl md:text-3xl font-black tracking-tight text-theme-primary">
                                 {formatCurrency(order.total_amount)}
                             </span>
                         </div>
@@ -329,14 +405,6 @@ export const OrderDetails: React.FC = () => {
                 </div>
             </div>
 
-            {/* 🪄 STYLES HOVER/FOCUS */}
-            <style>{`
-                .hover-theme-bg:hover {
-                    background-color: var(--theme-primary) !important;
-                    color: white !important;
-                    border-color: var(--theme-primary) !important;
-                }
-            `}</style>
         </div>
     );
 };

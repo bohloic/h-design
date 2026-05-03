@@ -26,6 +26,7 @@ interface NotificationState {
   markAllAsRead: () => Promise<void>;
   removeNotification: (id: string) => Promise<void>;
   getUnreadCount: () => number;
+  clearAllNotifications: () => Promise<void>;
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -102,6 +103,20 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       }
     } catch (error) {
       console.error("Erreur suppression notif:", error);
+    }
+  },
+
+  clearAllNotifications: async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      set({ notifications: [] });
+      return;
+    }
+
+    // On parcourt et on supprime tout (ou via un endpoint bulk si il existait)
+    const allIds = get().notifications.map(n => n.id);
+    for (const id of allIds) {
+      await get().removeNotification(String(id));
     }
   },
 

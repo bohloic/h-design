@@ -1,9 +1,15 @@
 
 export enum OrderStatus {
-  PENDING = 'En attente',
+  PENDING = 'En attente de paiement',
+  WAITING_VALIDATION = 'Validation Design',
+  PAID_WAITING_VALIDATION = 'Payé - Validation Design',
+  PROCESSING = 'En préparation',
   SHIPPED = 'Expédié',
   DELIVERED = 'Livré',
-  CANCELLED = 'Annulé'
+  CANCELLED = 'Annulé',
+  RETURNED = 'Retourné',
+  ACTION_REQUIRED = 'Action Requise',
+  PAID_ACTION_REQUIRED = 'Payé - Action Requise'
 }
 
 export interface Product {

@@ -104,11 +104,11 @@ export const Overview: React.FC = () => {
                   </div>
                   <div>
                     <p className="font-bold text-slate-900 dark:text-pure transition-colors">Commande #HD-{String(ord.id).padStart(5, '0')}</p>
-                    <p className="text-xs text-slate-500 mt-1">{new Date(ord.created_at).toLocaleDateString('fr-FR')}</p>
+                    <p className="text-xs text-slate-500 mt-1">{new Date(ord.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-black" style={{ color: 'var(--theme-primary)' }}>{formatCurrency(ord.total_amount)}</p>
+                  <p className="font-black text-theme-primary">{formatCurrency(ord.total_amount)}</p>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{translateStatus(ord.status)}</p>
                 </div>
               </div>

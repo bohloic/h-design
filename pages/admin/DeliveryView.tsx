@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Edit, Plus, Trash2, XCircle, Truck, Package, Calendar, MapPin, CheckCircle2, User, Search } from 'lucide-react';
 import { authFetch } from '../../src/utils/apiClient';
+import { useToast } from '../../src/utils/context/ToastContext';
 import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
 import Pagination from '../../src/components/tools/Pagination';
 
 export const DeliveryView = () => {
+  const { showToast } = useToast();
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]); 
   const [editingId, setEditingId] = useState<string | number | null>(null);
@@ -20,8 +22,28 @@ export const DeliveryView = () => {
       return `#HD-${String(id).padStart(5, '0')}`;
   };
 
+  const availableOrdersToShip = orders
+      .filter((o: any) => {
+          // 🔒 SÉCURITÉ : Uniquement les commandes confirmées par paiement
+          const isReadyToShip = 
+              o.status === 'Payé' || 
+              o.status === 'En préparation' ||
+              o.status === 'Payé - À Préparer 📦' ||
+              o.status === 'Payé - Validation Design' ||
+              o.status === 'paid' ||
+              o.status === 'processing';
+          
+          const hasNoDeliveryYet = !deliveries.some((d: any) => String(d.order_id) === String(o.id));
+          return isReadyToShip && hasNoDeliveryYet;
+      })
+      // ✅ Tri croissant par ID : les premières commandes (plus anciennes) apparaissent en premier
+      .sort((a: any, b: any) => a.id - b.id);
+
+  // ✅ On trie les livraisons par ID décroissant pour voir les plus récentes en haut
+  const sortedDeliveries = [...deliveries].sort((a, b) => b.id - a.id);
+
   const filteredDeliveries = React.useMemo(() => {
-    return deliveries.filter((delivery: any) => {
+    return sortedDeliveries.filter((delivery: any) => {
         const matchesSearch = 
             formatOrderId(delivery.order_id).toLowerCase().includes(searchTerm.toLowerCase()) ||
             (delivery.carrier_name && delivery.carrier_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -31,7 +53,7 @@ export const DeliveryView = () => {
 
         return matchesSearch && matchesStatus;
     });
-  }, [deliveries, searchTerm, statusFilter]);
+  }, [sortedDeliveries, searchTerm, statusFilter]);
 
   // --- PAGINATION ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -123,9 +145,10 @@ export const DeliveryView = () => {
             fetchData(false); 
             setEditingId(null);
             setFormData({ order_id: '', tracking_number: '', carrier_name: '', status: 'pending', estimated_delivery_date: '' });
+            showToast("Expédition enregistrée !", "success");
         } else {
             const errorData = await response.json();
-            alert("Erreur : " + errorData.message);
+            showToast("Erreur : " + errorData.message, "error");
         }
     } catch (error) {
         console.error(error);
@@ -138,8 +161,9 @@ export const DeliveryView = () => {
         const response = await authFetch(`/api/deliveries/${id}`, { method: 'DELETE' });
         if (response.ok) {
             setDeliveries(prev => prev.filter((d: any) => d.id !== id));
+            showToast("Livraison supprimée", "success");
         } else {
-            alert("Impossible de supprimer.");
+            showToast("Impossible de supprimer.", "error");
         }
     } catch (error) {
         console.error("Erreur suppression :", error);
@@ -170,11 +194,7 @@ export const DeliveryView = () => {
       return orders.find((o: any) => String(o.id) === String(orderId)) || {};
   };
 
-  const availableOrdersToShip = orders.filter((o: any) => {
-      const isPaid = o.status === 'paid' || o.payment_method === 'Espèces';
-      const hasNoDeliveryYet = !deliveries.some((d: any) => String(d.order_id) === String(o.id));
-      return isPaid && hasNoDeliveryYet;
-  });
+
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -182,10 +202,7 @@ export const DeliveryView = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div>
           <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-             <span 
-                className="p-2 rounded-lg"
-                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)', color: 'var(--theme-primary)' }}
-             >
+             <span className="p-2 rounded-lg bg-theme-primary/10 text-theme-primary">
                 <Truck size={24} />
              </span>
              Suivi des Livraisons
@@ -198,8 +215,8 @@ export const DeliveryView = () => {
             setFormData({ order_id: '', tracking_number: '', carrier_name: '', status: 'pending', estimated_delivery_date: '' });
             setIsModalOpen(true);
           }}
-          style={{ backgroundColor: 'var(--theme-primary)' }}
-          className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-all shadow-lg active:scale-95"
+          title="Nouvelle Livraison"
+          className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-all shadow-lg active:scale-95 bg-theme-primary"
         >
           <Plus size={20} /> <span className="hidden sm:inline">Nouvelle Livraison</span><span className="sm:hidden">Ajouter</span>
         </button>
@@ -217,7 +234,7 @@ export const DeliveryView = () => {
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-slate-200 transition-all outline-none"
             />
             {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <button onClick={() => setSearchTerm('')} title="Effacer la recherche" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                     <XCircle size={16} />
                 </button>
             )}
@@ -226,6 +243,7 @@ export const DeliveryView = () => {
         <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+            title="Filtrer par statut"
             className="px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm text-slate-600 focus:ring-2 focus:ring-slate-200 outline-none cursor-pointer sm:w-48"
         >
             <option value="all">Tous les statuts</option>
@@ -240,10 +258,7 @@ export const DeliveryView = () => {
         
         {loading ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center">
-               <div 
-                  className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4"
-                  style={{ borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)', borderTopColor: 'var(--theme-primary)' }}
-               ></div>
+               <div className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4 border-slate-200 border-t-theme-primary"></div>
                Chargement...
             </div>
         ) : deliveries.length === 0 ? (
@@ -298,17 +313,17 @@ export const DeliveryView = () => {
                                 <div className="flex items-center gap-2">
                                     <Calendar size={14} className="text-slate-400"/>
                                     {delivery.estimated_delivery_date 
-                                        ? new Date(delivery.estimated_delivery_date).toLocaleString() 
+                                        ? new Date(delivery.estimated_delivery_date).toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) 
                                         : '—'}
                                 </div>
                             </td>
                             <td className="px-6 py-4 text-right">
                                 <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => handleEditClick(delivery)} className="p-2 text-slate-400 hover:text-slate-900 bg-white hover:bg-slate-100 rounded-lg transition-all border border-transparent hover:border-slate-200"><Edit size={18} /></button>
+                                <button onClick={() => handleEditClick(delivery)} title="Modifier" className="p-2 text-slate-400 hover:text-slate-900 bg-white hover:bg-slate-100 rounded-lg transition-all border border-transparent hover:border-slate-200"><Edit size={18} /></button>
                                 <button 
                                     onClick={() => handleDelete(delivery.id)} 
-                                    className="p-2 text-slate-400 bg-white rounded-lg transition-all border border-transparent hover:border-red-100 hover:bg-red-50"
-                                    style={{ color: 'var(--theme-primary)' }}
+                                    title="Supprimer"
+                                    className="p-2 bg-white rounded-lg transition-all border border-transparent hover:border-red-100 hover:bg-red-50 text-theme-primary"
                                 >
                                     <Trash2 size={18} />
                                 </button>
@@ -360,8 +375,8 @@ export const DeliveryView = () => {
                                 </button>
                                 <button 
                                     onClick={() => handleDelete(delivery.id)} 
-                                    className="flex-1 py-2 text-sm font-bold bg-white border rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2"
-                                    style={{ color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' }}
+                                    title="Supprimer"
+                                    className="flex-1 py-2 text-sm font-bold bg-white border rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-theme-primary border-theme-primary/20"
                                 >
                                     <Trash2 size={16} /> Supprimer
                                 </button>
@@ -389,12 +404,12 @@ export const DeliveryView = () => {
             <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                   {editingId 
-                      ? <Edit size={20} style={{ color: 'var(--theme-primary)' }}/> 
-                      : <Plus size={20} style={{ color: 'var(--theme-primary)' }}/>
+                      ? <Edit size={20} className="text-theme-primary"/> 
+                      : <Plus size={20} className="text-theme-primary"/>
                   }
                   {editingId ? 'Modifier Livraison' : 'Nouvelle Expédition'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
+              <button onClick={() => setIsModalOpen(false)} title="Fermer" className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
                   <XCircle size={20} />
               </button>
             </div>
@@ -410,8 +425,8 @@ export const DeliveryView = () => {
                         onChange={handleChange} 
                         required 
                         disabled={!!editingId}
-                        style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                        className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none appearance-none disabled:opacity-60 transition-all focus:bg-white focus:ring-2"
+                        title="Sélectionner une commande"
+                        className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none appearance-none disabled:opacity-60 transition-all focus:bg-white focus:ring-2 focus:ring-theme-primary/50"
                     >
                         {editingId ? (
                             <option value={formData.order_id}>Commande {formatOrderId(formData.order_id)}</option>
@@ -441,8 +456,7 @@ export const DeliveryView = () => {
                     placeholder="Livreur Moto, DHL..."
                     value={formData.carrier_name} 
                     onChange={handleChange} 
-                    style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none transition-all focus:bg-white focus:ring-2" 
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none transition-all focus:bg-white focus:ring-2 focus:ring-theme-primary/50" 
                   />
                 </div>
                 <div className="space-y-2">
@@ -452,8 +466,7 @@ export const DeliveryView = () => {
                     placeholder="Lien ou Code"
                     value={formData.tracking_number} 
                     onChange={handleChange} 
-                    style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none font-mono transition-all focus:bg-white focus:ring-2" 
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none font-mono transition-all focus:bg-white focus:ring-2 focus:ring-theme-primary/50" 
                   />
                 </div>
               </div>
@@ -466,8 +479,8 @@ export const DeliveryView = () => {
                             name="status" 
                             value={formData.status} 
                             onChange={handleChange} 
-                            style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                            className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none appearance-none transition-all focus:bg-white focus:ring-2"
+                            title="Changer le statut"
+                            className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none appearance-none transition-all focus:bg-white focus:ring-2 focus:ring-theme-primary/50"
                         >
                             <option value="pending">Préparation</option>
                             <option value="in_transit">En route</option>
@@ -484,8 +497,8 @@ export const DeliveryView = () => {
                         name="estimated_delivery_date" 
                         value={formData.estimated_delivery_date} 
                         onChange={handleChange} 
-                        style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                        className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none transition-all focus:bg-white focus:ring-2" 
+                        title="Date de livraison estimée"
+                        className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none transition-all focus:bg-white focus:ring-2 focus:ring-theme-primary/50" 
                     />
                   </div>
               </div>
@@ -493,8 +506,7 @@ export const DeliveryView = () => {
               <button 
                 type="submit" 
                 disabled={!editingId && !formData.order_id}
-                style={{ backgroundColor: 'var(--theme-primary)' }}
-                className="w-full py-4 text-white font-bold rounded-xl opacity-95 hover:opacity-100 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 text-white font-bold rounded-xl opacity-95 hover:opacity-100 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95 mt-4 disabled:opacity-50 disabled:cursor-not-allowed bg-theme-primary"
               >
                 <CheckCircle2 size={20} />
                 {editingId ? 'Sauvegarder' : 'Confirmer l\'expédition'}

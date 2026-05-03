@@ -47,6 +47,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(safeUser);
         setIsAuthenticated(true);
         localStorage.setItem('data', JSON.stringify(safeUser));
+        if (safeUser.role) {
+          localStorage.setItem('role', safeUser.role);
+        }
       } else if (response.status === 401) {
         logout();
       }
@@ -64,6 +67,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (token: string, userData: UserData) => {
     localStorage.setItem('token', token);
     localStorage.setItem('data', JSON.stringify(userData));
+    if (userData.role) {
+      localStorage.setItem('role', userData.role);
+    }
     setUser(userData);
     setIsAuthenticated(true);
   };
@@ -71,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('data');
+    localStorage.removeItem('role');
     setUser(null);
     setIsAuthenticated(false);
     window.location.href = '/login';

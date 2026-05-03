@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { CreditCard, ShieldCheck, CheckCircle2, Wallet, Trash2, PlusCircle } from 'lucide-react';
 import { usePaymentStore, PaymentMethodType } from '@/src/store/usePaymentStore';
+import { useToast } from '@/src/utils/context/ToastContext';
 
 export const Payments: React.FC = () => {
+  const { showToast } = useToast();
   const { preferredMethod, setPreferredMethod, savedCard, saveCard, removeCard } = usePaymentStore();
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,24 +32,24 @@ export const Payments: React.FC = () => {
     e.preventDefault();
 
     if (formData.cardNumber.length < 19) {
-      alert("Numéro de carte invalide (16 chiffres requis)");
+      showToast("Numéro de carte invalide (16 chiffres requis)", "error");
       return;
     }
     if (formData.cvc.length < 3) {
-      alert("Code de sécurité (CVC) invalide");
+      showToast("Code de sécurité (CVC) invalide", "error");
       return;
     }
     
     // Validation de la date (MM/AA)
     const [monthStr, yearStr] = formData.expiryDate.split('/');
     if (!monthStr || !yearStr || monthStr.length < 2 || yearStr.length < 2) {
-      alert("Date d'expiration invalide (format MM/AA)");
+      showToast("Date d'expiration invalide (format MM/AA)", "error");
       return;
     }
     const month = parseInt(monthStr, 10);
     const year = parseInt(yearStr, 10);
     if (month < 1 || month > 12) {
-      alert("Mois d'expiration invalide (1-12)");
+      showToast("Mois d'expiration invalide (1-12)", "error");
       return;
     }
     
@@ -56,7 +58,7 @@ export const Payments: React.FC = () => {
     const currentMonth = currentDate.getMonth() + 1;
     
     if (year < currentYear || (year === currentYear && month < currentMonth)) {
-      alert("La carte est expirée");
+      showToast("La carte est expirée", "error");
       return;
     }
 
@@ -167,16 +169,15 @@ export const Payments: React.FC = () => {
             {/* Option En ligne */}
             <button 
                 onClick={() => handleMethodSelect('Mobile Money')}
-                style={preferredMethod === 'Mobile Money' ? { borderColor: 'var(--theme-primary)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)' } : {}}
                 className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-start gap-3 hover:shadow-md ${
-                    preferredMethod === 'Mobile Money' ? 'shadow-sm' : 'border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'
+                    preferredMethod === 'Mobile Money' ? 'shadow-sm border-theme-primary bg-theme-primary-soft' : 'border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'
                 }`}
             >
                 <div className="flex justify-between items-center w-full">
                     <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                         <CreditCard size={20} />
                     </div>
-                    {preferredMethod === 'Mobile Money' && <CheckCircle2 size={24} style={{ color: 'var(--theme-primary)' }} />}
+                    {preferredMethod === 'Mobile Money' && <CheckCircle2 size={24} className="text-theme-primary" />}
                 </div>
                 <div className="text-left">
                     <h4 className="font-bold text-slate-900 dark:text-pure transition-colors">Paiement en ligne</h4>
@@ -184,25 +185,7 @@ export const Payments: React.FC = () => {
                 </div>
             </button>
 
-            {/* Option Espèces */}
-            <button 
-                onClick={() => handleMethodSelect('Espèces')}
-                style={preferredMethod === 'Espèces' ? { borderColor: 'var(--theme-primary)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)' } : {}}
-                className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-start gap-3 hover:shadow-md ${
-                    preferredMethod === 'Espèces' ? 'shadow-sm' : 'border-slate-100 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'
-                }`}
-            >
-                <div className="flex justify-between items-center w-full">
-                    <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                        <Wallet size={20} />
-                    </div>
-                    {preferredMethod === 'Espèces' && <CheckCircle2 size={24} style={{ color: 'var(--theme-primary)' }} />}
-                </div>
-                <div className="text-left">
-                    <h4 className="font-bold text-slate-900 dark:text-pure transition-colors">Paiement à la livraison</h4>
-                    <p className="text-xs text-slate-500 mt-1">Payez en espèces lorsque le livreur arrive avec votre colis.</p>
-                </div>
-            </button>
+
 
           </div>
         </div>

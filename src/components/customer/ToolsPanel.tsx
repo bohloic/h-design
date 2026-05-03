@@ -71,13 +71,25 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) onAddImage(ev.target.result as string);
-      };
-      reader.readAsDataURL(e.target.files[0]);
+      const file = e.target.files[0];
+      
+      // On peut garder un aperçu local temporaire pour la fluidité (optionnel)
+      // Mais le plus important est d'uploader pour avoir une URL propre
+      try {
+        const { uploadDesignToServer } = await import('../../../src/utils/apiClient');
+        const { BASE_IMG_URL } = await import('../images/VoirImage');
+        const url = await uploadDesignToServer(file);
+        if (url) {
+          // On s'assure d'avoir l'URL complète pour l'affichage dans le Canvas
+          const fullUrl = url.startsWith('http') ? url : BASE_IMG_URL + url;
+          onAddImage(fullUrl);
+        }
+      } catch (error) {
+        console.error("Erreur upload direct:", error);
+        alert("Impossible d'ajouter l'image : erreur de connexion au serveur.");
+      }
     }
   };
 
@@ -97,9 +109,8 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabType)}
-            style={activeTab === tab.id ? { color: 'var(--theme-primary)', borderBottomColor: 'var(--theme-primary)' } : {}}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-all active:bg-gray-50 dark:active:bg-slate-900 ${
-              activeTab === tab.id ? 'border-b-2' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+            className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-all active:bg-gray-50 dark:active:bg-slate-900 tab-button ${
+              activeTab === tab.id ? 'active' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
             }`}
           >
             {tab.icon}
@@ -116,21 +127,17 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div>
               <h3 className="text-sm font-bold text-gray-800 dark:text-pure mb-4 flex items-center gap-2">
-                  <Palette size={16} style={{ color: 'var(--theme-primary)' }}/> Couleur du produit
+                  <Palette size={16} className="text-theme-primary"/> Couleur du produit
               </h3>
               <div className="grid grid-cols-5 gap-3">
                 {colors.map((color) => (
                   <button
                     key={color.hex}
                     onClick={() => onSelectColor(color)}
-                    style={{ 
-                        backgroundColor: color.hex,
-                        ...(selectedColor.hex === color.hex ? { borderColor: 'var(--theme-primary)', '--tw-ring-color': 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' } as React.CSSProperties : {})
-                    }}
-                    className={`aspect-square rounded-full border-2 transition-all shadow-sm relative group ${
-                      selectedColor.hex === color.hex ? 'scale-110 ring-2' : 'border-gray-200'
+                    title={`Couleur ${color.name}`}
+                    className={`aspect-square rounded-full border-2 transition-all shadow-sm relative group color-dot color-bg-${color.hex.replace('#', '')} ${
+                      selectedColor.hex === color.hex ? 'active' : 'border-gray-200'
                     }`}
-                    title={color.name}
                   >
                       {selectedColor.hex === color.hex && (
                           <div className="absolute inset-0 flex items-center justify-center">
@@ -151,6 +158,8 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                 </div>
                 <button
                   onClick={() => setHideBaseDesign(!hideBaseDesign)}
+                  title="Basculer l'affichage du motif d'origine"
+                  aria-label="Cacher le motif d'origine"
                   className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${hideBaseDesign ? 'bg-green-500' : 'bg-gray-300 dark:bg-slate-700'}`}
                 >
                   <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform absolute ${hideBaseDesign ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -176,13 +185,9 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                   <button
                     key={font}
                     onClick={() => setSelectedFont(font)}
-                    className={`shrink-0 px-4 py-2 rounded-xl border text-sm font-medium whitespace-nowrap transition-all ${
-                      selectedFont === font ? 'shadow-md transform scale-105' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
+                    className={`shrink-0 px-4 py-2 rounded-xl border text-sm font-medium whitespace-nowrap transition-all font-button font-family-${font.replace(/\s+/g, '-')} ${
+                      selectedFont === font ? 'active' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
                     }`}
-                    style={{ 
-                        fontFamily: font, 
-                        ...(selectedFont === font ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)', color: 'white' } : {}) 
-                    }}
                   >
                     Aa {font}
                   </button>
@@ -201,7 +206,11 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
               <div className="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Modifier sélection</h3>
-                  <button onClick={() => onDeleteElement(activeElement.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => onDeleteElement(activeElement.id)} 
+                    title="Supprimer cet élément"
+                    className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                  >
                     <Trash2 size={18} />
                   </button>
                 </div>
@@ -218,13 +227,9 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     <button
                       key={font}
                       onClick={() => onUpdateElement(activeElement.id, { fontFamily: font })}
-                      className={`shrink-0 px-4 py-2 rounded-xl border text-xs font-medium whitespace-nowrap transition-all ${
-                        activeElement.fontFamily === font ? 'shadow-md transform scale-105' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
-                      }`}
-                      style={{ 
-                          fontFamily: font, 
-                          ...(activeElement.fontFamily === font ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)', color: 'white' } : {}) 
-                      }}
+                    className={`shrink-0 px-4 py-2 rounded-xl border text-xs font-medium whitespace-nowrap transition-all font-button font-family-${font.replace(/\s+/g, '-')} ${
+                      activeElement.fontFamily === font ? 'active' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
+                    }`}
                     >
                       Aa {font}
                     </button>
@@ -236,8 +241,8 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                       <button 
                         key={c}
                         onClick={() => onUpdateElement(activeElement.id, { color: c })} 
-                        className={`w-10 h-10 rounded-full border shadow-sm shrink-0 transition-transform active:scale-95 ${activeElement.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
-                        style={{ backgroundColor: c }}
+                        title={`Changer couleur en ${c}`}
+                        className={`w-10 h-10 rounded-full border shadow-sm shrink-0 transition-transform active:scale-95 color-bg-${c.replace('#', '')} ${activeElement.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
                       />
                   ))}
                 </div>
@@ -264,7 +269,11 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
               <div className="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Modifier sélection</h3>
-                  <button onClick={() => onDeleteElement(activeElement.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors">
+                  <button 
+                    onClick={() => onDeleteElement(activeElement.id)} 
+                    title="Supprimer l'image"
+                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
+                  >
                     <Trash2 size={18} />
                   </button>
                 </div>
@@ -279,6 +288,8 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     min="0.1" 
                     max="1" 
                     step="0.05" 
+                    title="Ajuster la transparence"
+                    aria-label="Transparence"
                     value={activeElement.opacity ?? 1} 
                     onChange={(e) => onUpdateElement(activeElement.id, { opacity: parseFloat(e.target.value) })}
                     className="w-full accent-[var(--theme-primary)]"
@@ -295,6 +306,8 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     min="0" 
                     max="50" 
                     step="1" 
+                    title="Ajuster les arrondis"
+                    aria-label="Arrondi des angles"
                     value={activeElement.borderRadius ?? 0} 
                     onChange={(e) => onUpdateElement(activeElement.id, { borderRadius: parseFloat(e.target.value) })}
                     className="w-full accent-[var(--theme-primary)]"
@@ -311,25 +324,22 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
             <div className="flex bg-gray-100 dark:bg-slate-900 rounded-xl p-1">
               <button 
                 onClick={() => setAiSubTab('text')}
-                style={aiSubTab === 'text' ? { color: 'var(--theme-primary)' } : {}}
-                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'text' ? 'bg-white dark:bg-slate-800 shadow-sm' : 'text-gray-500'}`}
+                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all subtab-button ${aiSubTab === 'text' ? 'active shadow-sm' : 'text-gray-500'}`}
               >
                 SLOGANS
               </button>
               <button 
                 onClick={() => setAiSubTab('image')}
-                style={aiSubTab === 'image' ? { color: 'var(--theme-primary)' } : {}}
-                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all ${aiSubTab === 'image' ? 'bg-white dark:bg-slate-800 shadow-sm' : 'text-gray-500'}`}
+                className={`flex-1 py-2 text-[10px] font-bold rounded-lg transition-all subtab-button ${aiSubTab === 'image' ? 'active shadow-sm' : 'text-gray-500'}`}
               >
                 IMAGES IA
               </button>
             </div>
 
             <div 
-                className="p-5 rounded-2xl border"
-                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)', borderColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)' }}
+                className="p-5 rounded-2xl border ai-box"
             >
-              <div className="flex items-center gap-2 font-bold text-sm mb-4" style={{ color: 'var(--theme-primary)' }}>
+              <div className="flex items-center gap-2 font-bold text-sm mb-4 text-theme-primary">
                 <Sparkles size={18} />
                 {aiSubTab === 'text' ? 'Générateur de Slogans' : 'Artiste IA (DALL-E)'}
               </div>
@@ -345,8 +355,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                 <button
                   onClick={aiSubTab === 'text' ? handleAiTextSearch : handleAiImageGen}
                   disabled={isAiLoading || !aiPrompt}
-                  style={{ backgroundColor: 'var(--theme-primary)' }}
-                  className="w-full text-white py-3 rounded-xl font-bold text-sm shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95 opacity-95 hover:opacity-100"
+                  className="w-full text-white py-3 rounded-xl font-bold text-sm shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95 ai-button"
                 >
                   {isAiLoading ? <RefreshCw className="animate-spin" size={18}/> : (aiSubTab === 'text' ? 'Trouver des idées' : 'Générer l\'image')}
                 </button>
@@ -381,8 +390,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                   <div className="absolute inset-0 bg-black/10 md:bg-black/40 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity flex items-end pb-4 md:pb-0 md:items-center justify-center md:p-4">
                     <button 
                       onClick={() => onAddImage(generatedImageUrl)}
-                      style={{ color: 'var(--theme-primary)' }}
-                      className="bg-white px-5 py-2.5 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xl transform hover:scale-105 transition-transform"
+                      className="bg-white px-5 py-2.5 md:px-6 md:py-3 rounded-full font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xl transform hover:scale-105 transition-transform text-theme-primary"
                     >
                       <Plus size={18} /> Ajouter au T-shirt
                     </button>
@@ -395,8 +403,49 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
         )}
       </div>
 
-      {/* 🪄 STYLES DYNAMIQUES */}
+      {/* 🪄 STYLES DYNAMIQUES GÉNÉRÉS */}
       <style>{`
+        ${FONTS.map(f => `.font-family-${f.replace(/\s+/g, '-')} { font-family: '${f}', sans-serif; }`).join('\n')}
+        ${colors.map(c => `.color-bg-${c.hex.replace('#', '')} { background-color: ${c.hex}; --ring-color: color-mix(in srgb, ${c.hex} 20%, transparent); }`).join('\n')}
+        ${['#000000', '#FFFFFF', '#DC2626', '#2563EB', '#16A34A', '#F59E0B', '#9333EA'].map(c => `.color-bg-${c.replace('#', '')} { background-color: ${c}; }`).join('\n')}
+
+        .text-theme-primary {
+            color: var(--theme-primary) !important;
+        }
+        .tab-button.active {
+            color: var(--theme-primary) !important;
+            border-bottom: 2px solid var(--theme-primary) !important;
+        }
+        .color-dot.active {
+            scale: 1.1;
+            border-color: var(--theme-primary) !important;
+            box-shadow: 0 0 0 2px var(--ring-color) !important;
+        }
+        .font-button.active {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transform: scale(1.05);
+            background-color: var(--theme-primary) !important;
+            border-color: var(--theme-primary) !important;
+            color: white !important;
+        }
+        .subtab-button.active {
+            color: var(--theme-primary) !important;
+            background-color: rgb(255 255 255 / 1);
+        }
+        .dark .subtab-button.active {
+            background-color: rgb(30 41 59 / 1);
+        }
+        .ai-box {
+            background-color: color-mix(in srgb, var(--theme-primary) 5%, transparent);
+            border-color: color-mix(in srgb, var(--theme-primary) 15%, transparent);
+        }
+        .ai-button {
+            background-color: var(--theme-primary) !important;
+            opacity: 0.95;
+        }
+        .ai-button:hover {
+            opacity: 1;
+        }
         .theme-input-ring:focus {
             border-color: var(--theme-primary) !important;
             box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;

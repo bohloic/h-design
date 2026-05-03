@@ -5,6 +5,7 @@ import { NotificationDropdown } from './NotificationDropdown';
 import { useTheme } from '../../utils/context/ThemeContext';
 import logoLight from '../../assets/logo.png';
 import logoDark from '../../assets/Logo2.png';
+import SafeImage from '../tools/SafeImage';
 
 interface NavbarProps {
   cartCount: number;
@@ -21,7 +22,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
   const { themeMode, toggleThemeMode } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
-  const role = localStorage.getItem('role');
+  const role = user?.role || localStorage.getItem('role');
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
@@ -31,12 +32,12 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
           
           {/* 1. LOGO DYNAMIQUE */}
           <Link to="/" className="flex items-center group" onClick={closeMenu}>
-            <img 
+            <SafeImage 
               src={logoLight} 
               alt="H-Designer Logo" 
               className="h-16 w-auto group-hover:scale-105 transition-transform object-contain dark:hidden"
             />
-            <img 
+            <SafeImage 
               src={logoDark} 
               alt="H-Designer Logo" 
               className="h-16 w-auto group-hover:scale-105 transition-transform object-contain hidden dark:block"
@@ -47,22 +48,19 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
           <div className="hidden md:flex items-center space-x-8 font-bold">
             <Link 
               to="/" 
-              style={isActive('/') ? { color: 'var(--theme-primary)' } : {}}
-              className={`transition-colors ${isActive('/') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
+              className={`transition-colors ${isActive('/') ? 'theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
             >
               Accueil
             </Link>
             <Link 
               to="/boutique" 
-              style={isActive('/boutique') ? { color: 'var(--theme-primary)' } : {}}
-              className={`transition-colors ${isActive('/boutique') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
+              className={`transition-colors ${isActive('/boutique') ? 'theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
             >
               Boutique
             </Link>
             <Link 
               to="/personnaliser/mon-design" 
-              style={isActive('/personnaliser/mon-design') ? { color: 'var(--theme-primary)' } : {}}
-              className={`transition-colors ${isActive('/personnaliser/mon-design') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
+              className={`transition-colors ${isActive('/personnaliser/mon-design') ? 'theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
             >
               Personnalisation
             </Link>
@@ -70,8 +68,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             {isAuthenticated ? (
                <Link 
                 to="/dashboard" 
-                style={isActive('/dashboard') ? { color: 'var(--theme-primary)' } : {}}
-                className={`transition-colors ${isActive('/dashboard') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
+                className={`transition-colors ${isActive('/dashboard') ? 'theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
                >
                  Mon Compte
                </Link>
@@ -85,12 +82,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             {isAuthenticated && role === 'admin' && (
               <Link 
                 to="/admin" 
-                style={{ 
-                  backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)',
-                  color: 'var(--theme-primary)',
-                  borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)'
-                }}
-                className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-black border hover:brightness-95 transition-all"
+                className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-black border theme-bg-primary-soft theme-text-primary theme-border-primary-soft hover:brightness-95 transition-all"
               >
                 <ShieldCheck size={16} /> Admin
               </Link>
@@ -132,8 +124,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
               {cartCount > 0 && (
                 <span 
                   key={cartCount}
-                  className="absolute -top-1 -right-1 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white cart-badge-pop"
-                  style={{ backgroundColor: 'var(--theme-primary)' }}
+                  className="absolute -top-1 -right-1 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white cart-badge-pop theme-bg-primary"
                 >
                   {cartCount}
                 </span>
@@ -159,8 +150,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             <Link 
               to="/" 
               onClick={closeMenu}
-              style={isActive('/') ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' } : {}}
-              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/') ? '' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
+              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/') ? 'theme-bg-primary-soft theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
             >
               Accueil
             </Link>
@@ -168,16 +158,14 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             <Link 
               to="/boutique" 
               onClick={closeMenu}
-              style={isActive('/boutique') ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' } : {}}
-              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/boutique') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-bg-light'}`}
+              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/boutique') ? 'theme-bg-primary-soft theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-bg-light'}`}
             >
               Boutique
             </Link>
             <Link 
               to="/personnaliser/mon-design" 
               onClick={closeMenu}
-              style={isActive('/personnaliser/mon-design') ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' } : {}}
-              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/personnaliser/mon-design') ? '' : 'text-slate-600 dark:text-slate-300 hover-theme-bg-light'}`}
+              className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/personnaliser/mon-design') ? 'theme-bg-primary-soft theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-bg-light'}`}
             >
               Personnalisation
             </Link>
@@ -186,8 +174,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                <Link 
                  to="/admin" 
                  onClick={closeMenu}
-                 style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' }}
-                 className="flex items-center gap-2 px-4 py-3 rounded-xl text-base font-black border border-transparent"
+                 className="flex items-center gap-2 px-4 py-3 rounded-xl text-base font-black border border-transparent theme-bg-primary-soft theme-text-primary"
                >
                  <ShieldCheck size={18} /> Administration
                </Link>
@@ -220,8 +207,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                 <Link 
                   to="/login" 
                   onClick={closeMenu}
-                  style={{ backgroundColor: 'var(--theme-primary)' }}
-                  className="flex items-center justify-center w-full text-white px-4 py-4 rounded-xl font-black mt-4 shadow-lg active:scale-95 transition-transform"
+                  className="flex items-center justify-center w-full text-white px-4 py-4 rounded-xl font-black mt-4 shadow-lg active:scale-95 transition-transform theme-bg-primary"
                 >
                   Se connecter / S'inscrire
                 </Link>
@@ -237,7 +223,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             color: var(--theme-primary) !important;
         }
         .hover-theme-bg-light:hover {
-            background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
+            background-color: rgba(30, 58, 138, 0.1) !important;
             color: var(--theme-primary) !important;
         }
       `}</style>

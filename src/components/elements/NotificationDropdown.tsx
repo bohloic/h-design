@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Check, CheckCircle2, AlertCircle, Info, X, Trash2, ArrowRight } from 'lucide-react';
 import { useNotificationStore } from '../../store/useNotificationStore';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { useAuth } from '../../utils/context/AuthContext';
 
 interface MonTokenCustom {
   userId: string;
@@ -15,6 +16,9 @@ export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+  const isAdminZone = location.pathname.startsWith('/admin');
 
   const token = localStorage.getItem('token');
 
@@ -25,7 +29,8 @@ export const NotificationDropdown: React.FC = () => {
     markAllAsRead, 
     removeNotification,
     fetchNotifications,
-    isLoading
+    isLoading,
+    clearAllNotifications
   } = useNotificationStore();
 
   const unreadCount = getUnreadCount();
@@ -68,6 +73,21 @@ export const NotificationDropdown: React.FC = () => {
 
   const handleNotificationClick = (notif: any) => {
     markAsRead(String(notif.id));
+    
+    // ✅ Redirection intelligente pour les admins vers les commandes
+    const isAdmin = user?.role === 'admin' || localStorage.getItem('role') === 'admin';
+    const isOrderNotif = 
+      notif.title?.toLowerCase().includes('commande') || 
+      notif.message?.toLowerCase().includes('commande') ||
+      notif.title?.toLowerCase().includes('order') ||
+      notif.message?.toLowerCase().includes('order');
+
+    if (isAdmin && isOrderNotif) {
+      navigate('/admin/orders');
+      setIsOpen(false);
+      return;
+    }
+
     if (notif.link) {
       navigate(notif.link);
       setIsOpen(false);
@@ -92,13 +112,14 @@ export const NotificationDropdown: React.FC = () => {
     <div className="relative" ref={dropdownRef}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
+        title="Notifications"
+        aria-label="Voir les notifications"
         className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-pure rounded-full transition-colors relative focus:outline-none"
       >
         <Bell className={unreadCount > 0 ? "w-5 h-5 animate-wiggle" : "w-5 h-5"} />
         {unreadCount > 0 && (
           <span 
-            className="absolute -top-1 -right-1 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-in zoom-in"
-            style={{ backgroundColor: 'var(--theme-primary)' }}
+            className="absolute -top-1 -right-1 bg-theme-primary text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white animate-in zoom-in"
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
@@ -116,13 +137,23 @@ export const NotificationDropdown: React.FC = () => {
                 </span>
               )}
             </h3>
-            {unreadCount > 0 && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); markAllAsRead(); }}
-                className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-pure transition-colors flex items-center gap-1"
-              >
-                Tout lire <Check size={14} />
-              </button>
+            {notifications.length > 0 && (
+              <div className="flex items-center gap-4">
+                {unreadCount > 0 && (
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); markAllAsRead(); }}
+                    className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
+                  >
+                    Tout lire <Check size={12} />
+                  </button>
+                )}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); if(window.confirm("Voulez-vous supprimer toutes les notifications ?")) clearAllNotifications(); }}
+                  className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-red-500 transition-colors flex items-center gap-1"
+                >
+                  Vider <Trash2 size={12} />
+                </button>
+              </div>
             )}
           </div>
 
@@ -140,35 +171,42 @@ export const NotificationDropdown: React.FC = () => {
                 {notifications.map((notif) => (
                   <div 
                     key={notif.id}
-                    className={`p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50 flex gap-3 group relative cursor-pointer ${notif.is_read ? 'opacity-70' : 'bg-slate-100 dark:bg-slate-900/30'}`}
+                    className={`p-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 flex gap-3 group relative cursor-pointer border-b border-slate-50 dark:border-white/5 ${
+                      notif.is_read 
+                        ? 'bg-white dark:bg-carbon' 
+                        : 'bg-blue-50/40 dark:bg-blue-900/10'
+                    }`}
                     onClick={() => handleNotificationClick(notif)}
                   >
+                    {/* Indicateur de non-lu (Point bleu) */}
                     {!notif.is_read && (
-                      <div className="absolute top-1/2 -left-0.5 -translate-y-1/2 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--theme-primary)' }} />
+                      <div 
+                        className="absolute top-6 left-2 w-2 h-2 rounded-full shadow-sm bg-theme-primary" 
+                      />
                     )}
                     
-                    <div className="mt-0.5 shrink-0">
+                    <div className="mt-0.5 shrink-0 ml-1">
                       {getIcon(notif.type)}
                     </div>
                     
                     <div className="flex-1 min-w-0 pr-6">
-                      <p className={`text-sm ${notif.is_read ? 'font-medium text-slate-500 dark:text-slate-400' : 'font-bold text-slate-900 dark:text-pure'} truncate`}>
+                      <p className={`text-sm ${notif.is_read ? 'font-bold text-slate-700 dark:text-slate-200' : 'font-bold text-slate-900 dark:text-pure'} truncate`}>
                         {notif.title}
                       </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 leading-snug">
+                      <p className={`text-sm mt-0.5 line-clamp-2 leading-snug ${notif.is_read ? 'text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>
                         {notif.message}
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-medium">
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-bold uppercase tracking-wider">
                         {timeAgo(notif.created_at)}
                       </p>
                     </div>
 
                     <button 
                       onClick={(e) => { e.stopPropagation(); removeNotification(String(notif.id)); }}
-                      className="absolute right-4 top-4 p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-                      title="Supprimer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-300 dark:text-slate-600 hover:text-red-600 dark:hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
+                      title="Supprimer définitivement"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 ))}
@@ -178,11 +216,11 @@ export const NotificationDropdown: React.FC = () => {
 
           <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-center transition-colors">
             <Link 
-              to="/dashboard" 
+              to={isAdminZone ? "/admin" : "/dashboard"} 
               onClick={() => setIsOpen(false)}
               className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-pure flex items-center gap-1 transition-colors"
             >
-              Aller à mon compte <ArrowRight size={14} />
+              {isAdminZone ? "Tableau de bord admin" : "Aller à mon compte"} <ArrowRight size={14} />
             </Link>
           </div>
         </div>

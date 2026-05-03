@@ -1,8 +1,8 @@
+import html2canvas from 'html2canvas-pro';
+import { X, Maximize2, RotateCcw } from 'lucide-react';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import React, { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react';
 import { DesignElement, Product, ProductColor } from '../../../types';
-import { RotateCcw, Maximize2, X } from 'lucide-react'; 
-import html2canvas from 'html2canvas';
 
 export interface CanvasHandle {
   exportAsImage: () => Promise<Blob | null>;
@@ -33,13 +33,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
 }, ref) => {
   
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  // État pour savoir quel texte est en cours d'édition
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  // 🪄 SCALING ADAPTATIF
-  // La logique entière du canevas repose sur un espace 500x500 pixels (logical space)
-  // afin que le design soit affiché avec précision (en termes de ratio) sur tous les écrans, petit ou grand.
   const [scaleRatio, setScaleRatio] = useState(1);
 
   useEffect(() => {
@@ -47,7 +41,6 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
     const obs = new ResizeObserver((entries) => {
       if (entries.length > 0) {
           const rect = entries[0].contentRect;
-          // on calcule le ratio par rapport au monde logique 500x500
           setScaleRatio(rect.width / 500);
       }
     });
@@ -55,7 +48,6 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
     return () => obs.disconnect();
   }, []);
 
-  // ⚡ GESTION FLUIDE (LOCAL STATE) : Pour éviter la latence sur mobile lors des glissements
   const localTransformRef = useRef<{ id: string, x?: number, y?: number, width?: number, height?: number, fontSize?: number, rotation?: number } | null>(null);
   const [localTransform, setLocalTransform] = useState<{ id: string, x?: number, y?: number, width?: number, height?: number, fontSize?: number, rotation?: number } | null>(null);
 
@@ -64,82 +56,60 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
       setLocalTransform(val);
   };
 
-  // EXPORT IMAGE
   useImperativeHandle(ref, () => ({
     exportAsImage: async () => {
       if (containerRef.current) {
         try {
           onSelectElement(null);
           setEditingId(null);
-          await new Promise(r => setTimeout(r, 100)); 
+          
+          const images = Array.from(containerRef.current.querySelectorAll('img'));
+          await Promise.all(images.map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+              img.onload = resolve;
+              img.onerror = resolve;
+              setTimeout(resolve, 3000);
+            });
+          }));
+
+          await new Promise(r => setTimeout(r, 200)); 
+
+          const originalWidth = containerRef.current.offsetWidth;
+          const originalHeight = containerRef.current.offsetHeight;
 
           const canvas = await html2canvas(containerRef.current, {
             useCORS: true,       
-            scale: 3,            
+            allowTaint: false,   // 🛡️ IMPORTANT: false sinon toBlob() échoue (security error)
+            scale: 2.5,            
             backgroundColor: null, 
-            logging: false,
+            logging: true,
             scrollX: 0,
             scrollY: 0,
-            width: containerRef.current.offsetWidth, 
-            height: containerRef.current.offsetHeight,
             onclone: (clonedDoc) => {
-                // 1. ISOLATION RADICALE : On ne garde que le conteneur du T-shirt dans le body du clone
-                const container = clonedDoc.querySelector('.canvas-container');
-                if (container) {
-                    clonedDoc.body.innerHTML = '';
-                    clonedDoc.body.appendChild(container);
-                    (container as HTMLElement).style.margin = '0';
-                    (container as HTMLElement).style.padding = '0';
-                    (container as HTMLElement).style.transform = 'none';
-                    (container as HTMLElement).style.background = 'transparent';
-                }
+                const actualArea = clonedDoc.getElementById('actual-canvas-area');
+                if (actualArea) {
+                    actualArea.style.width = originalWidth + 'px';
+                    actualArea.style.height = originalHeight + 'px';
+                    actualArea.style.maxWidth = 'none';
+                    actualArea.style.overflow = 'visible';
 
-                // 2. PURGE TEXTUELLE OKLCH PROFONDE : 
-                const oklchRegex = /oklch\([^)]+(\([^)]+\)[^)]*)*\)/g; // Gestion des parenthèses imbriquées
-
-                // A. On purge les balises <style>
-                clonedDoc.querySelectorAll('style').forEach(tag => {
-                    if (tag.textContent) {
-                        tag.textContent = tag.textContent.replace(oklchRegex, '#000');
-                    }
-                });
-
-                // B. On purge tous les attributs "style" HTML (où Tailwind 4 injecte souvent les variables)
-                clonedDoc.querySelectorAll('*').forEach(item => {
-                    const el = item as HTMLElement;
-                    const styleAttr = el.getAttribute('style');
-                    if (styleAttr && styleAttr.includes('oklch')) {
-                        el.setAttribute('style', styleAttr.replace(oklchRegex, 'inherit'));
-                    }
-
-                    // C. Sécurisation du SVG du T-shirt (Zone de crash critique)
-                    if (el.tagName.toLowerCase() === 'svg' || el.tagName.toLowerCase() === 'path') {
-                        el.removeAttribute('class'); // On vire les classes Tailwind/DaisyUI qui portent l'oklch
-                        el.removeAttribute('filter'); // On vire les filtres CSS/SVG
-                        el.style.filter = 'none';
-                        el.style.fill = color.hex; // On force la couleur Hex pure
-                        if (el.tagName.toLowerCase() === 'path') {
-                            el.setAttribute('fill', color.hex); // Backup attributaire
+                    // Stabilisation forcée des SVGs pour html2canvas-pro
+                    const svgs = actualArea.querySelectorAll('svg');
+                    svgs.forEach(svg => {
+                        const originalSvg = containerRef.current?.querySelector('svg');
+                        if (originalSvg) {
+                            const rect = originalSvg.getBoundingClientRect();
+                            svg.setAttribute('width', Math.ceil(rect.width).toString());
+                            svg.setAttribute('height', Math.ceil(rect.height).toString());
                         }
-                    }
+                    });
 
-                    // On force les pointer-events pour que tout soit capturé
-                    if (el.style && el.style.pointerEvents === 'none') {
-                        el.style.pointerEvents = 'auto';
-                    }
-                });
-
-                // 3. CACHE DES OUTILS D'ÉDITION
-                clonedDoc.querySelectorAll('[data-html2canvas-ignore="true"]').forEach(el => {
-                    (el as HTMLElement).style.display = 'none';
-                });
-                
-                // 4. CACHE DE LA BORDURE DE DESIGN
-                clonedDoc.querySelectorAll('.border-dashed, .ring-2').forEach(el => {
-                    (el as HTMLElement).style.setProperty('border', 'none', 'important');
-                    (el as HTMLElement).style.setProperty('outline', 'none', 'important');
-                    (el as HTMLElement).style.setProperty('box-shadow', 'none', 'important');
-                });
+                    // Masquage des éléments d'interface
+                    clonedDoc.querySelectorAll('[data-html2canvas-ignore="true"], .ring-2, .border-dashed').forEach(el => {
+                        (el as HTMLElement).style.display = 'none';
+                    });
+                }
             }
           });
           
@@ -149,7 +119,7 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
             }, 'image/png', 1.0); 
           });
         } catch (error) {
-          console.error("Erreur génération image:", error);
+          console.error("Erreur génération image (html2canvas-pro):", error);
           return null;
         }
       }
@@ -314,7 +284,8 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
       
       <div 
         ref={containerRef}
-        className="relative shadow-2xl rounded-2xl bg-white dark:bg-slate-800 w-full max-w-[350px] md:max-w-[500px] aspect-square transition-colors z-0"
+        id="actual-canvas-area"
+        className="relative shadow-2xl rounded-2xl bg-white dark:bg-slate-800 w-full max-w-[350px] md:max-w-[500px] aspect-square transition-colors z-0 overflow-hidden"
         onClick={() => {
             onSelectElement(null);
             setEditingId(null); 

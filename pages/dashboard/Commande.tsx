@@ -7,6 +7,38 @@ import Pagination from "@/src/components/tools/Pagination";
 
 export const Commande: React.FC = () => {
     const { orders } = useOutletContext<{ orders: any[] }>();
+    const [isPaying, setIsPaying] = useState<number | null>(null);
+
+    const handlePayNow = async (order: any) => {
+        setIsPaying(order.id);
+        try {
+            const response = await fetch('/api/payment/initialize', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    email: order.customer_email || '', 
+                    amount: order.total_amount,
+                    orderId: order.id,
+                    callbackUrl: window.location.origin
+                })
+            });
+
+            const data = await response.json();
+            if (data.success && data.authorization_url) {
+                window.location.href = data.authorization_url;
+            } else {
+                alert(data.message || "Erreur lors de l'initialisation du paiement");
+            }
+        } catch (error) {
+            console.error("Erreur paiement:", error);
+            alert("Erreur technique lors de la redirection vers Paystack");
+        } finally {
+            setIsPaying(null);
+        }
+    };
 
     let total = 0;
     orders?.forEach((o: any) => {
@@ -33,8 +65,7 @@ export const Commande: React.FC = () => {
                 {/* --- STATISTIQUES (Cards) --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <div 
-                        className="p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden"
-                        style={{ backgroundColor: 'var(--theme-primary)' }}
+                        className="p-6 md:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden bg-theme-primary"
                     >
                         <Package className="w-8 h-8 mb-4 opacity-50 absolute right-4 top-4" />
                         <p className="text-white/70 text-xs md:text-sm font-bold uppercase tracking-widest">Total Dépensé</p>
@@ -84,8 +115,8 @@ export const Commande: React.FC = () => {
                                         {paginatedOrders.map((ord: any) => (
                                             <tr key={ord.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                                                 <td className="px-8 py-6 font-bold text-slate-800 dark:text-pure">#HD-{String(ord.id).padStart(5, '0')}</td>
-                                                <td className="px-8 py-6 text-slate-500 dark:text-slate-400">{new Date(ord.created_at).toLocaleDateString('fr-FR')}</td>
-                                                <td className="px-8 py-6 font-black" style={{ color: 'var(--theme-primary)' }}>
+                                                <td className="px-8 py-6 text-slate-500 dark:text-slate-400">{new Date(ord.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                                                <td className="px-8 py-6 font-black text-theme-primary">
                                                     {formatCurrency(ord.total_amount)}
                                                 </td>
                                                 <td className="px-8 py-6">
@@ -95,13 +126,24 @@ export const Commande: React.FC = () => {
                                                     </span>
                                                 </td>
                                                 <td className="px-8 py-6">
-                                                    <Link 
-                                                        to={`/dashboard/orders/HD-${String(ord.id).padStart(5, '0')}`}
-                                                        className="font-bold hover:underline text-sm transition-all" 
-                                                        style={{ color: 'var(--theme-primary)' }}
-                                                    >
-                                                        Détails
-                                                    </Link>
+                                                    <div className="flex items-center gap-4">
+                                                        <Link 
+                                                            to={`/dashboard/orders/HD-${String(ord.id).padStart(5, '0')}`}
+                                                            className="font-bold hover:underline text-sm transition-all text-theme-primary" 
+                                                        >
+                                                            Détails
+                                                        </Link>
+                                                        
+                                                        {(ord.status.includes('attente de paiement') || ord.status.toLowerCase() === 'pending') && (
+                                                            <button 
+                                                                onClick={() => handlePayNow(ord)}
+                                                                disabled={isPaying === ord.id}
+                                                                className="px-4 py-1.5 bg-emerald-500 text-white text-xs font-black rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 disabled:opacity-50"
+                                                            >
+                                                                {isPaying === ord.id ? '...' : 'Payer maintenant ✅'}
+                                                            </button>
+                                                        )}
+                                                     </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -120,13 +162,13 @@ export const Commande: React.FC = () => {
                                             </div>
                                             <div className="flex items-center text-slate-500 dark:text-slate-400 text-sm">
                                                 <Calendar size={14} className="mr-1" />
-                                                {new Date(ord.created_at).toLocaleDateString('fr-FR')}
+                                                {new Date(ord.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center bg-slate-50 dark:bg-[#111] border dark:border-white/5 p-3 rounded-xl">
                                             <div className="flex items-center gap-2">
                                                 <CreditCard size={16} className="text-slate-400 dark:text-slate-500" />
-                                                <span className="font-black" style={{ color: 'var(--theme-primary)' }}>
+                                                <span className="font-black text-theme-primary">
                                                     {formatCurrency(ord.total_amount)}
                                                 </span>
                                             </div>
@@ -135,13 +177,25 @@ export const Commande: React.FC = () => {
                                                 {translateStatus(ord.status)}
                                             </span>
                                         </div>
-                                        <Link 
-                                            to={`/dashboard/orders/HD-${String(ord.id).padStart(5, '0')}`}
-                                            className="w-full flex items-center justify-between text-sm font-bold text-slate-600 pt-1 hover-theme-text transition-colors"
-                                        >
-                                            <span>Voir les détails</span>
-                                            <ChevronRight size={16} />
-                                        </Link>
+                                        <div className="flex items-center justify-between pt-1">
+                                            <Link 
+                                                to={`/dashboard/orders/HD-${String(ord.id).padStart(5, '0')}`}
+                                                className="flex items-center justify-between text-sm font-bold text-slate-600 hover-theme-text transition-colors"
+                                            >
+                                                <span>Voir les détails</span>
+                                                <ChevronRight size={16} />
+                                            </Link>
+
+                                            {(ord.status.includes('attente de paiement') || ord.status.toLowerCase() === 'pending') && (
+                                                <button 
+                                                    onClick={() => handlePayNow(ord)}
+                                                    disabled={isPaying === ord.id}
+                                                    className="px-4 py-2 bg-emerald-500 text-white text-[10px] font-black rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 disabled:opacity-50"
+                                                >
+                                                    {isPaying === ord.id ? '...' : 'Payer maintenant ✅'}
+                                                </button>
+                                            )}
+                                         </div>
                                     </div>
                                 ))}
                             </div>

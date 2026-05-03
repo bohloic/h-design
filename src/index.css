@@ -17,3 +17,15 @@
 
 /* 🌙 STRATÉGIE MODE SOMBRE V4 (Basée sur la classe .dark) */
 @custom-variant dark (&:where(.dark, .dark *));
+
+.theme-input:focus {
+    background-color: transparent !important;
+    border-color: var(--theme-primary) !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-primary) 15%, transparent) !important;
+}
+
+.hover-theme-bg:hover {
+    background-color: var(--theme-primary) !important;
+    color: white !important;
+    border-color: var(--theme-primary) !important;
+}

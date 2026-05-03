@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
         // AJOUTE CECI :
         // allowedHosts: [
-        //   'rosaline-ceroplastic-humblingly.ngrok-free.dev'
+        //   'blinker-partridge-program.ngrok-free.dev'
         // ],
         // AJOUTE TOUT CE BLOC "proxy" :
         proxy: {
@@ -34,6 +34,6 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
         }
       },
-      base: './',
+      base: '/',
     };
 });

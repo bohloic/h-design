@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../src/utils/apiClient';
+import { useToast } from '../../src/utils/context/ToastContext';
 import { ShoppingBag, ChevronDown, Package, User, Calendar, CreditCard, Search, Eye, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationStore } from '../../src/store/useNotificationStore';
@@ -13,20 +14,22 @@ const normalizeStatus = (dbStatus: string) => {
     if (!dbStatus) return OrderStatus.PENDING;
     const s = String(dbStatus).toLowerCase().trim();
     
-    if (s === 'paid_waiting_validation' || s.includes('à valider') || s.includes('validation design')) return OrderStatus.PAID_WAITING_VALIDATION;
-    if (s === 'waiting_validation' || s.includes('non payé')) return OrderStatus.WAITING_VALIDATION;
+    if (s === 'paid_waiting_validation' || s.includes('payé - validation design')) return OrderStatus.PAID_WAITING_VALIDATION;
+    if (s === 'waiting_validation' || s.includes('validation design')) return OrderStatus.WAITING_VALIDATION;
     if (s.includes('préparation') || s.includes('processing')) return OrderStatus.PROCESSING;
     if (s.includes('expédié') || s.includes('shipped')) return OrderStatus.SHIPPED;
     if (s.includes('livré') || s.includes('delivered')) return OrderStatus.DELIVERED;
     if (s.includes('retourné') || s.includes('returned')) return OrderStatus.RETURNED;
     if (s.includes('annulé') || s.includes('cancelled')) return OrderStatus.CANCELLED;
     if (s.includes('payé') || s.includes('paid')) return OrderStatus.PAID;
-    if (s.includes('attente') || s.includes('pending')) return OrderStatus.PENDING;
+    if (s.includes('attente de paiement') || s === 'pending') return OrderStatus.PENDING;
+    if (s === 'en attente') return 'En attente'; // Statut article
     
     return dbStatus; 
 };
 
 export const OrderView = () => {
+  const { showToast } = useToast();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -75,13 +78,19 @@ export const OrderView = () => {
         userId: order.user_id || order.userId,
         customerName: order.nom ? `${order.nom} ${order.prenom}` : (order.customer_name || 'Client Inconnu'),
         customerEmail: order.email || order.customer_email || '—',
-        date: order.created_at ? new Date(order.created_at).toLocaleDateString('fr-FR') : '—',
+        date: order.created_at ? new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—',
         total: typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : order.total_amount,
+        isSeen: order.is_seen,
         // 🪄 ON NORMALISE LE STATUT ICI
         status: normalizeStatus(order.status)
       }));
 
-      setOrders(formattedOrders);
+      setOrders(prevOrders => {
+        if (!showLoader && prevOrders.length > 0 && formattedOrders.length > prevOrders.length) {
+            showToast("🎉 Nouvelle commande reçue !", "success");
+        }
+        return formattedOrders;
+      });
     } catch (error) {
       console.error("Erreur de chargement:", error);
     } finally {
@@ -96,11 +105,11 @@ export const OrderView = () => {
     if (!orderBeingUpdated) return;
 
     // 🔒 SÉCURITÉ DE PAIEMENT : Empêcher de valider une commande non payée
-    const unpaidStatuses = [OrderStatus.PENDING, OrderStatus.WAITING_VALIDATION];
+    const unpaidStatuses = [OrderStatus.PENDING, OrderStatus.WAITING_VALIDATION, 'En attente de paiement ⏳'];
     const advancedStatuses = [OrderStatus.PAID, OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.PAID_WAITING_VALIDATION];
     
     if (unpaidStatuses.includes(orderBeingUpdated.status) && advancedStatuses.includes(newStatus as any)) {
-        alert("🚨 Action bloquée : Cette commande n'a pas encore été payée par le client. Vous ne pouvez pas la marquer comme Payée ou l'expédier tant que le paiement n'est pas effectif.");
+        showToast("🚨 Action bloquée : Cette commande n'a pas encore été payée.", "error");
         return;
     }
 
@@ -151,7 +160,7 @@ export const OrderView = () => {
     } catch (error) {
       console.error("Erreur update", error);
       setOrders(oldOrders);
-      alert("Erreur lors de la mise à jour");
+      showToast("Erreur lors de la mise à jour", "error");
     }
   };
 
@@ -163,10 +172,7 @@ export const OrderView = () => {
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div>
           <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-             <span 
-                 className="p-2 rounded-xl"
-                 style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)', color: 'var(--theme-primary)' }}
-             >
+             <span className="p-2 rounded-xl theme-bg-primary-soft theme-text-primary">
                 <ShoppingBag size={24} />
              </span>
              Gestion des Commandes
@@ -192,6 +198,7 @@ export const OrderView = () => {
                 <select 
                     value={statusFilter}
                     onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                    aria-label="Filtrer par statut"
                     className="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold appearance-none outline-none transition-all shadow-sm focus:border-theme-primary"
                 >
                     <option value="all">Tous les Statuts</option>
@@ -211,10 +218,7 @@ export const OrderView = () => {
         
         {loading ? (
             <div className="p-12 text-center text-slate-400 flex flex-col items-center">
-                <div 
-                    className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4"
-                    style={{ borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)', borderTopColor: 'var(--theme-primary)' }}
-                ></div>
+                <div className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4 theme-border-primary-soft border-t-theme-primary"></div>
                 Chargement des commandes...
             </div>
         ) : orders.length === 0 ? (
@@ -240,8 +244,15 @@ export const OrderView = () => {
                         <tbody className="divide-y divide-slate-100">
                             {paginatedOrders.map((order: any) => (
                                 <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
-                                    <td className="px-6 py-4 font-mono text-slate-500 font-bold">
-                                        #HD-{String(order.id).padStart(5, '0')}
+                                    <td className="px-6 py-4 font-mono text-slate-500 font-bold relative">
+                                        <div className="flex items-center gap-2">
+                                            #HD-{String(order.id).padStart(5, '0')}
+                                            {order.isSeen === 0 && (
+                                                <span className="bg-blue-500 text-white text-[8px] px-1.5 py-0.5 rounded-full animate-pulse shadow-sm shadow-blue-200">
+                                                    NOUVEAU
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div>
@@ -263,6 +274,7 @@ export const OrderView = () => {
                                             <select 
                                                 value={order.status}
                                                 onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                                aria-label={`Changer le statut de la commande #HD-${String(order.id).padStart(5, '0')}`}
                                                 className="appearance-none bg-white border border-slate-200 text-slate-700 text-xs font-bold py-2 pl-3 pr-8 rounded-xl cursor-pointer shadow-sm theme-select"
                                             >
                                                 {Object.values(OrderStatus).map(status => (
@@ -298,8 +310,11 @@ export const OrderView = () => {
                             {/* En-tête Carte */}
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="px-3 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200 font-mono text-sm">
+                                    <div className="px-3 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200 font-mono text-sm relative">
                                         #HD-{String(order.id).padStart(5, '0')}
+                                        {order.isSeen === 0 && (
+                                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm animate-pulse"></span>
+                                        )}
                                     </div>
                                     <div>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Commande</span>
@@ -329,6 +344,7 @@ export const OrderView = () => {
                                     <select 
                                         value={order.status}
                                         onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                        aria-label={`Changer le statut de la commande #HD-${String(order.id).padStart(5, '0')}`}
                                         className="w-full appearance-none bg-white border border-slate-200 text-slate-700 text-sm font-bold py-3 pl-4 pr-10 rounded-xl shadow-sm theme-select"
                                     >
                                         {Object.values(OrderStatus).map(status => (
@@ -344,6 +360,8 @@ export const OrderView = () => {
                                 
                                 <button 
                                     onClick={() => navigate(`/admin/orders/${order.id}`)}
+                                    title="Voir les détails de la commande"
+                                    aria-label="Voir les détails de la commande"
                                     className="px-4 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-slate-800 transition-colors shadow-lg active:scale-95"
                                 >
                                     <Eye size={20} />

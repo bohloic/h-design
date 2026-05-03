@@ -1,19 +1,20 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../../utils/context/AuthContext';
 
 const AdminRoute = () => {
-    const role = localStorage.getItem('role');
-    const token = localStorage.getItem('token');
+    const { isAuthenticated, user, loading } = useAuth();
 
-    // 1. Si l'utilisateur n'est pas connecté (pas de token ou pas de rôle)
-    if (!token || !role) {
-        return <Navigate to="/login" replace />;
+    // 1. En cours de chargement
+    if (loading) {
+        return <div className="flex items-center justify-center min-h-screen">Chargement...</div>;
     }
 
-    // 2. Si l'utilisateur est connecté mais n'est PAS un admin
-    if (role !== 'admin') {
-        // Optionnel : tu pourrais afficher une alerte "Accès refusé" avant de rediriger
-        return <Navigate to="/" replace />;
+    // 2. Si l'utilisateur n'est pas connecté ou n'est pas admin
+    const role = user?.role || localStorage.getItem('role');
+    
+    if (!isAuthenticated || role !== 'admin') {
+        return <Navigate to="/login" replace />;
     }
 
     // 3. Tout est OK, on affiche les routes enfants de l'administration

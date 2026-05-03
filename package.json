@@ -15,6 +15,7 @@
     "@yudiel/react-qr-scanner": "^2.5.1",
     "axios": "^1.13.2",
     "html2canvas": "^1.4.1",
+    "html2canvas-pro": "^2.0.2",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",

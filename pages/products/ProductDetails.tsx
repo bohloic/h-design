@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
     ShoppingCart, Star, Truck,  
     Ruler, Loader2, Palette, Share2, Check, AlertCircle, Heart, ArrowLeft 
@@ -9,6 +9,7 @@ import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import GenderCategorySection from '@/src/components/product/GenderCategorySection';
 import ProductCarousel from '@/src/components/product/ProductCarousel';
 import { useWishlistStore } from '@/src/store/useWishlistStore';
+import { useToast } from '@/src/utils/context/ToastContext';
 
 const TEXTILE_COLORS_MAP: Record<string, string> = {
   "Blanc": "#FFFFFF", "Noir": "#000000", "Gris Chiné": "#9CA3AF", "Gris Anthracite": "#374151",
@@ -54,6 +55,7 @@ interface ProductDetailsProps {
 const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
   const { slug } = useParams();  
   const navigate = useNavigate();
+  const { showToast } = useToast();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,6 +64,8 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const variantRefs = useRef<Record<number | string, HTMLButtonElement | null>>({});
+  
   const toggleWishlist = useWishlistStore(state => state.toggleItem);
   const isInWishlist = useWishlistStore(state => product ? state.isInWishlist(product.id) : false);
 
@@ -79,6 +83,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
         }
     }
   }, [selectedVariant, availableStock]);
+
 
 
   useEffect(() => {
@@ -196,7 +201,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
   const handleAddToCart = () => {
     if (!product || !selectedVariant) return;
     if (isOutOfStock) return; 
-    if (!selectedSize) { alert("⚠️ Veuillez sélectionner une taille !"); return; }
+    if (!selectedSize) { showToast("⚠️ Veuillez sélectionner une taille !", "warning"); return; }
 
     const uniqueCartId = `${product.id}-${selectedVariant.id}-${selectedSize}`;
     const isMainProduct = selectedVariant.id === 'main';
@@ -218,7 +223,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
     onAddToCart(cartItemPayload); 
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin" style={{ color: 'var(--theme-primary)' }} /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-theme-primary" /></div>;
   if (!product) return <div className="min-h-screen flex flex-col items-center justify-center text-slate-500">Produit introuvable</div>;
 
   const displayImage = selectedVariant && selectedVariant.images.length > 0 ? selectedVariant.images[currentImageIndex] : "/placeholder.png";
@@ -263,13 +268,10 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                     <button 
                         key={idx} 
                         onClick={() => setCurrentImageIndex(idx)} 
+                        title={`Image ${idx + 1}`}
                         className={`w-14 h-14 rounded-lg border overflow-hidden flex-shrink-0 transition-all ${
-                            currentImageIndex === idx ? 'ring-1' : 'border-slate-200 hover:border-slate-400 bg-slate-50'
+                            currentImageIndex === idx ? 'ring-1 border-theme-primary ring-theme-primary' : 'border-slate-200 hover:border-slate-400 bg-slate-50'
                         }`}
-                        style={currentImageIndex === idx ? { 
-                            borderColor: 'var(--theme-primary)', 
-                            '--tw-ring-color': 'var(--theme-primary)' 
-                        } as React.CSSProperties : {}}
                     >
                         <img src={img.startsWith('http') ? img : BASE_IMG_URL + img} className="w-full h-full object-contain p-1" alt="" />
                     </button>
@@ -291,13 +293,13 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                         >
                             <Heart size={20} fill={isInWishlist ? "currentColor" : "none"} />
                         </button>
-                        <button className="text-slate-400 hover-theme-text p-1"><Share2 size={20}/></button>
+                        <button className="text-slate-400 hover-theme-text p-1" title="Partager"><Share2 size={20}/></button>
                     </div>
                </div>
                <div className="flex items-center justify-between mt-3">
                    <div className="flex items-center gap-2">
                         {/* 🪄 PRIX DYNAMIQUE */}
-                        <span className="text-3xl font-bold" style={{ color: 'var(--theme-primary)' }}>{formatCurrency(product.price)}</span>
+                        <span className="text-3xl font-bold text-theme-primary">{formatCurrency(product.price)}</span>
                         <span className="text-xs text-slate-500 font-medium">TTC</span>
                    </div>
                    <div className="flex items-center gap-1 text-amber-400 text-sm bg-amber-50 px-2 py-1 rounded-full">
@@ -314,23 +316,23 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {product.variants.map((variant) => (
-                    <button
-                        key={variant.id}
-                        onClick={() => { setSelectedVariant(variant); setCurrentImageIndex(0); }}
-                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border ${
-                            selectedVariant?.id === variant.id ? 'ring-2 ring-offset-2 scale-110 border-transparent' : 'border-slate-200 hover:border-slate-400'
-                        }`}
-                        title={variant.colorName}
-                        style={{ 
-                            backgroundColor: variant.colorCode,
-                            ...(selectedVariant?.id === variant.id ? { '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties : {})
-                        }}
-                    >
-                        {variant.colorName === 'Blanc' && <div className="absolute inset-0 rounded-full border border-black/10 pointer-events-none" />}
-                        {selectedVariant?.id === variant.id && (
-                            <Check size={16} className={['Blanc', 'Jaune'].includes(variant.colorName) ? 'text-slate-900' : 'text-white'} />
-                        )}
-                    </button>
+                        <button
+                            key={variant.id}
+                            ref={el => {
+                                variantRefs.current[variant.id] = el;
+                                if (el) el.style.setProperty('--variant-color', variant.colorCode);
+                            }}
+                            onClick={() => { setSelectedVariant(variant); setCurrentImageIndex(0); }}
+                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border bg-dynamic-variant ${
+                                selectedVariant?.id === variant.id ? 'ring-2 ring-offset-2 scale-110 border-transparent ring-theme-primary' : 'border-slate-200 hover:border-slate-400'
+                            }`}
+                            title={variant.colorName}
+                        >
+                            {variant.colorName === 'Blanc' && <div className="absolute inset-0 rounded-full border border-black/10 pointer-events-none" />}
+                            {selectedVariant?.id === variant.id && (
+                                <Check size={16} className={['Blanc', 'Jaune'].includes(variant.colorName) ? 'text-slate-900' : 'text-white'} />
+                            )}
+                        </button>
                     ))}
                 </div>
             </div>
@@ -339,7 +341,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
             <div>
                 <div className="flex justify-between items-baseline mb-2">
                     <span className="text-sm font-bold text-slate-700">
-                        Taille : <span className="font-normal" style={!selectedSize ? { color: 'var(--theme-primary)' } : {}}>{selectedSize || 'Requise'}</span>
+                        Taille : <span className={`font-normal ${!selectedSize ? 'text-theme-primary' : ''}`}>{selectedSize || 'Requise'}</span>
                     </span>
                     <button className="text-xs text-slate-500 underline hover-theme-text flex items-center gap-1"><Ruler size={12} /> Guide des tailles</button>
                 </div>
@@ -350,10 +352,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                             onClick={() => setSelectedSize(size)} 
                             className={`min-w-[3rem] h-10 px-2 rounded-md text-sm font-bold border transition-colors ${
                                 selectedSize === size 
-                                    ? 'text-white shadow-md' 
+                                    ? 'text-white shadow-md bg-theme-primary border-theme-primary' 
                                     : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
                             }`}
-                            style={selectedSize === size ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
                         >
                             {size}
                         </button>
@@ -416,11 +417,10 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                 <button 
                     onClick={handleCustomize} 
                     disabled={isOutOfStock}
-                    style={!isOutOfStock ? { color: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
                     className={`w-full h-10 border-2 rounded-lg font-bold text-sm uppercase tracking-wide flex items-center justify-center gap-2 transition-all active:scale-95 ${
                         isOutOfStock 
                             ? 'border-slate-200 text-slate-400 cursor-not-allowed' 
-                            : 'bg-white hover:bg-slate-50'
+                            : 'bg-white hover:bg-slate-50 text-theme-primary border-theme-primary'
                     }`}
                 >
                     <Palette size={16} /> Personnaliser ce design
@@ -458,6 +458,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
       <style>{`
         .hover-theme-text:hover {
             color: var(--theme-primary) !important;
+        }
+        .bg-dynamic-variant {
+            background-color: var(--variant-color) !important;
         }
       `}</style>
     </div>

@@ -56,6 +56,7 @@ import { AdminVIPScanner } from './pages/admin/AdminVIPScanner.tsx';
 import ResetPassword from './pages/ResetPassword.tsx';
 import { ThemeProvider, useTheme } from './src/utils/context/ThemeContext.tsx';
 import { AuthProvider, useAuth } from './src/utils/context/AuthContext';
+import { ToastProvider } from './src/utils/context/ToastContext.tsx';
 import { AdminValidationDesigns } from './src/components/admin/AdminValidationDesigns';
 import WhatsAppButton from './src/components/elements/WhatsAppButton';
 
@@ -159,7 +160,7 @@ const AppShell: React.FC<{
 
           {/* --- Routes Invités (Login) --- */}
           <Route element={<GuestRoute />}>
-            <Route path="/login" element={<Auth onLoginSuccess={() => window.location.reload()} />} />
+            <Route path="/login" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
           </Route>
 
@@ -176,9 +177,9 @@ const AppShell: React.FC<{
               <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="/checkout" element={<Checkout cartItems={cart} onClearCart={clearCart} data={user} />} />
-            <Route path="/payment/callback" element={<PaymentCallback />} />
             <Route path="/order-confirmed" element={<OrderConfirmed />} />
           </Route>
+          <Route path="/payment/callback" element={<PaymentCallback />} />
 
           {/* --- Routes Admin --- */}
           <Route element={<AdminRoute />}>
@@ -287,18 +288,20 @@ const App: React.FC = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <AppShell
-            cart={cart}
-            isCartOpen={isCartOpen}
-            onOpenCart={() => setIsCartOpen(true)}
-            onCloseCart={() => setIsCartOpen(false)}
-            onUpdateQuantity={updateQuantity}
-            onRemoveFromCart={removeFromCart}
-            addToCart={addToCart}
-            clearCart={clearCart}
-          />
-        </Router>
+        <ToastProvider>
+          <Router>
+            <AppShell
+              cart={cart}
+              isCartOpen={isCartOpen}
+              onOpenCart={() => setIsCartOpen(true)}
+              onCloseCart={() => setIsCartOpen(false)}
+              onUpdateQuantity={updateQuantity}
+              onRemoveFromCart={removeFromCart}
+              addToCart={addToCart}
+              clearCart={clearCart}
+            />
+          </Router>
+        </ToastProvider>
       </AuthProvider>
     </ThemeProvider>
   );

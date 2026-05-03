@@ -56,8 +56,7 @@ export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ productI
             <div className="space-y-2">
                 {/* 🪄 TITRE DYNAMIQUE */}
                 <h4 
-                    className="text-xs font-bold uppercase flex items-center gap-2"
-                    style={{ color: 'var(--theme-primary)' }}
+                    className="text-xs font-bold uppercase flex items-center gap-2 text-theme-primary"
                 >
                     Fichiers Sources (HD)
                 </h4>
@@ -93,11 +92,7 @@ export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ productI
                              <div className="flex items-center gap-3">
                                 {/* 🪄 ICONE TEXTE DYNAMIQUE */}
                                 <span 
-                                    className="w-10 h-10 flex items-center justify-center rounded font-serif font-bold text-lg shadow-sm"
-                                    style={{ 
-                                        backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', 
-                                        color: 'var(--theme-primary)' 
-                                    }}
+                                    className="w-10 h-10 flex items-center justify-center rounded font-serif font-bold text-lg shadow-sm bg-theme-primary/10 text-theme-primary"
                                 >
                                     T
                                 </span>

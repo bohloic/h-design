@@ -4,6 +4,7 @@ import { authFetch } from '../../src/utils/apiClient';
 import { jwtDecode } from 'jwt-decode';
 import { useNotificationStore } from '../../src/store/useNotificationStore';
 import { useAuth } from '../../src/utils/context/AuthContext';
+import { useToast } from '../../src/utils/context/ToastContext';
 
 interface MonTokenCustom {
   userId: string;
@@ -14,6 +15,7 @@ interface MonTokenCustom {
 
 export const Settings: React.FC = () => {
   const { user, updateUser } = useAuth();
+  const { showToast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -226,7 +228,7 @@ export const Settings: React.FC = () => {
             <h4 className="font-bold text-slate-800 dark:text-pure transition-colors">Offres promotionnelles</h4>
             <p className="text-xs text-slate-500">Recevez nos meilleures offres par email</p>
           </div>
-          <div className="w-12 h-6 bg-green-500 rounded-full cursor-pointer relative transition-colors duration-200 ease-in-out" onClick={() => alert('À venir')}>
+          <div className="w-12 h-6 bg-green-500 rounded-full cursor-pointer relative transition-colors duration-200 ease-in-out" onClick={() => showToast('Fonctionnalité à venir', 'info')}>
             <div className="absolute left-[26px] top-1 w-4 h-4 bg-white rounded-full transition-all duration-200 ease-in-out shadow-sm"></div>
           </div>
         </div>

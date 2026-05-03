@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../../../constants'; 
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import { useWishlistStore } from '@/src/store/useWishlistStore';
+import SafeImage from '../tools/SafeImage';
 
 // 🎨 PALETTE DE COULEURS (Référence)
 const TEXTILE_COLORS_MAP: Record<string, string> = {
@@ -129,11 +130,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
           </div>
         )}
 
-        <img 
-          src={displayImage && displayImage.startsWith('http') ? displayImage : BASE_IMG_URL + displayImage} 
+        <SafeImage 
+          src={displayImage} 
           alt={product.name} 
           className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${isOutOfStock ? 'grayscale opacity-75' : ''}`}
-          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
         />
         
         {product.hasOptions && !isOutOfStock && (

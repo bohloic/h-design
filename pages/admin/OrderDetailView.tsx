@@ -10,12 +10,11 @@ import {
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import { AdminDesignPreview } from '@/src/components/admin/AdminDesignPreview';
 import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
-
-
-
+import { useToast } from '../../src/utils/context/ToastContext';
 export const OrderDetailView = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -58,6 +57,23 @@ export const OrderDetailView = () => {
         if (id) fetchOrderDetails(false);
     }, 10000);
 
+    // 🎨 Applique les couleurs dynamiques aux pastilles (évite les styles inline)
+    useEffect(() => {
+        document.querySelectorAll<HTMLElement>('.item-color-swatch[data-color]').forEach(el => {
+            el.style.backgroundColor = el.dataset.color || '#ccc';
+        });
+
+        // 👁️ Marquer comme vue dès l'ouverture
+        const markAsSeen = async () => {
+            if (order && order.is_seen === 0) {
+                try {
+                    await authFetch(`/api/admin/orders/${id}/seen`, { method: 'PUT' });
+                } catch (e) { /* Discret */ }
+            }
+        };
+        markAsSeen();
+    }, [order, id]);
+
     const handleFinalSubmit = async () => {
         const decisionsArray = order.items.map((item: any) => ({
             id: item.id,
@@ -67,7 +83,7 @@ export const OrderDetailView = () => {
 
         const hasNewDecision = order.items.some((item: any) => itemDecisions[item.id]);
         if (!hasNewDecision) {
-            alert("Aucun changement n'a été effectué.");
+            showToast("Aucun changement n'a été effectué.", "warning");
             return;
         }
 
@@ -83,14 +99,14 @@ export const OrderDetailView = () => {
 
             if (response.ok) {
                 await fetchOrderDetails(false);
-                alert("Décisions enregistrées !");
+                showToast("Décisions enregistrées !", "success");
                 setItemDecisions({});
             } else {
-                alert("Erreur lors de la validation.");
+                showToast("Erreur lors de la validation.", "error");
             }
         } catch (error) {
             console.error(error);
-            alert("Erreur serveur.");
+            showToast("Erreur serveur.", "error");
         } finally {
             setValidating(false);
         }
@@ -99,7 +115,7 @@ export const OrderDetailView = () => {
     if (loading || !order) {
         return (
             <div className="h-screen flex items-center justify-center">
-                <Loader2 className="w-10 h-10 animate-spin" style={{ color: 'var(--theme-primary)' }} />
+                <Loader2 className="w-10 h-10 animate-spin theme-text-primary" />
             </div>
         );
     }
@@ -118,6 +134,19 @@ export const OrderDetailView = () => {
 
     return (
         <div className="p-4 md:p-8 space-y-6 animate-in fade-in duration-500 bg-slate-50 min-h-screen">
+            
+            {/* 🛡️ BANDEAU DE SÉCURITÉ ANTI-FRAUDE */}
+            {(order.status.includes('attente de paiement') || order.status.toLowerCase() === 'pending') && (
+                <div className="bg-red-50 border-2 border-red-200 p-6 rounded-3xl flex items-center gap-4 animate-pulse shadow-lg shadow-red-100">
+                    <div className="p-4 bg-red-500 text-white rounded-2xl">
+                        <AlertTriangle size={32} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-red-700 uppercase">Attention : Commande non payée</h2>
+                        <p className="text-red-600 font-medium">Cette commande a été soumise mais le règlement Paystack n'a pas été confirmé. Ne commencez aucun travail de design ou d'expédition.</p>
+                    </div>
+                </div>
+            )}
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <div>
@@ -163,8 +192,7 @@ export const OrderDetailView = () => {
                             <button
                                 onClick={handleFinalSubmit}
                                 disabled={validating || !order.items.some((item: any) => itemDecisions[item.id])}
-                                style={{ backgroundColor: 'var(--theme-primary)' }}
-                                className="w-full flex items-center justify-center gap-2 text-white py-4 rounded-2xl font-bold shadow-lg opacity-95 hover:opacity-100 transition-opacity disabled:opacity-50"
+                                className="w-full flex items-center justify-center gap-2 text-white py-4 rounded-2xl font-bold shadow-lg opacity-95 hover:opacity-100 transition-opacity disabled:opacity-50 theme-bg-primary"
                             >
                                 {validating ? <Loader2 className="animate-spin" size={20} /> : <ThumbsUp size={20} />}
                                 Confirmer toutes les décisions
@@ -175,7 +203,7 @@ export const OrderDetailView = () => {
                     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                         <div className="p-6 border-b border-slate-100">
                             <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
-                                <Package style={{ color: 'var(--theme-primary)' }} /> Articles commandés ({order.items?.length || 0})
+                                <Package className="theme-text-primary" /> Articles commandés ({order.items?.length || 0})
                             </h3>
                         </div>
 
@@ -211,12 +239,11 @@ export const OrderDetailView = () => {
                                     } catch (e) { console.error("Erreur parsing:", e); }
                                 }
 
-                                let thumbnailSrc = item.image_url ? BASE_IMG_URL + item.image_url : '/placeholder.png';
+                                let thumbnailSrc = getCleanUrl(item.image_url) || '/placeholder.png';
                                 if (maquetteUrl) {
                                     thumbnailSrc = maquetteUrl;
                                 } else if (isCustom && item.image_url) {
-                                    // 🪄 FALLBACK : Si c'est du perso mais pas de maquette (ancien), on montre le produit brut
-                                    thumbnailSrc = BASE_IMG_URL + item.image_url;
+                                    thumbnailSrc = getCleanUrl(item.image_url);
                                 }
 
                                 return (
@@ -240,21 +267,31 @@ export const OrderDetailView = () => {
                                                             </span>
 
                                                             {isCustom && (
-                                                                <div className="flex gap-2 ml-1 border-l border-slate-200 pl-3">
-                                                                    <button 
-                                                                        onClick={() => handleItemAction(item.id, 'rejected')}
-                                                                        className={`p-1.5 rounded-lg transition-colors ${(itemDecisions[item.id]?.status || item.design_status) === 'rejected' ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-400 hover:text-red-500'}`}
-                                                                    >
-                                                                        <ThumbsDown size={14} />
-                                                                    </button>
-                                                                    <button 
-                                                                        onClick={() => handleItemAction(item.id, 'approved')}
-                                                                        className={`p-1.5 rounded-lg transition-colors ${(itemDecisions[item.id]?.status || item.design_status) === 'approved' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 hover:text-emerald-500'}`}
-                                                                    >
-                                                                        <ThumbsUp size={14} />
-                                                                    </button>
-                                                                    {(itemDecisions[item.id]?.status || item.design_status) === 'approved' && <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1"><CheckCircle2 size={12} /> Approuvé</span>}
-                                                                    {(itemDecisions[item.id]?.status || item.design_status) === 'rejected' && <span className="text-[10px] font-bold text-red-600 flex items-center gap-1"><AlertTriangle size={12} /> Refusé</span>}
+                                                                <div className="flex gap-2 ml-1 border-l border-slate-200 pl-3 items-center">
+                                                                    {item.design_status === 'approved' ? (
+                                                                        <span className="text-[10px] font-black text-emerald-600 flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                                                                            <CheckCircle2 size={12} /> Approuvé
+                                                                        </span>
+                                                                    ) : (
+                                                                        <>
+                                                                            <button 
+                                                                                onClick={() => handleItemAction(item.id, 'rejected')}
+                                                                                className={`p-1.5 rounded-lg transition-all shadow-sm ${(itemDecisions[item.id]?.status || item.design_status) === 'rejected' ? 'bg-red-500 text-white scale-110' : 'bg-slate-100 text-slate-400 hover:text-red-500'}`}
+                                                                                title="Refuser ce design"
+                                                                            >
+                                                                                <ThumbsDown size={14} />
+                                                                            </button>
+                                                                            <button 
+                                                                                onClick={() => handleItemAction(item.id, 'approved')}
+                                                                                className={`p-1.5 rounded-lg transition-all shadow-sm ${(itemDecisions[item.id]?.status || item.design_status) === 'approved' ? 'bg-emerald-500 text-white scale-110' : 'bg-slate-100 text-slate-400 hover:text-emerald-500'}`}
+                                                                                title="Approuver ce design"
+                                                                            >
+                                                                                <ThumbsUp size={14} />
+                                                                            </button>
+                                                                            {itemDecisions[item.id]?.status === 'approved' && <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1"><CheckCircle2 size={12} /> Prêt</span>}
+                                                                            {(itemDecisions[item.id]?.status || item.design_status) === 'rejected' && <span className="text-[10px] font-bold text-red-600 flex items-center gap-1"><AlertTriangle size={12} /> Refusé</span>}
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -267,7 +304,7 @@ export const OrderDetailView = () => {
 
                                                 <div className="flex flex-wrap gap-2 mb-4">
                                                     {item.size && <span className="px-3 py-1.5 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100 flex items-center gap-1"><Shirt size={12} className="text-slate-400" /> Taille : {item.size}</span>}
-                                                    {item.color && <span className="px-3 py-1.5 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100 flex items-center gap-2"><Palette size={12} className="text-slate-400" /> Couleur : <span className="w-3 h-3 rounded-full border border-slate-300" style={{ backgroundColor: item.color }}></span> {item.color}</span>}
+                                                    {item.color && <span className="px-3 py-1.5 bg-slate-50 rounded-lg text-xs font-bold text-slate-600 border border-slate-100 flex items-center gap-2"><Palette size={12} className="text-slate-400" /> Couleur : <span className="w-3 h-3 rounded-full border border-slate-300 item-color-swatch" data-color={item.color}></span> {item.color}</span>}
                                                 </div>
 
                                                 {/* DÉTAILS DE LA PERSONNALISATION */}
@@ -275,7 +312,7 @@ export const OrderDetailView = () => {
                                                     <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200 border-dashed mt-4 space-y-6">
                                                         <div>
                                                             <p className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">
-                                                                <Eye size={14} style={{ color: 'var(--theme-primary)' }} /> 1. Maquette Visuelle
+                                                                <Eye size={14} className="theme-text-primary" /> 1. Maquette Visuelle
                                                             </p>
                                                             {maquetteUrl ? (
                                                                 <div className="flex flex-col items-start gap-2">
@@ -328,7 +365,7 @@ export const OrderDetailView = () => {
                                 <div className="w-full md:w-72 border-t border-slate-200 my-2"></div>
                                 <div className="flex justify-between w-full md:w-72 text-xl font-black text-slate-900">
                                     <span>Total</span>
-                                    <span style={{ color: 'var(--theme-primary)' }}>{totalOrderAmount.toLocaleString('fr-FR')} FCFA</span>
+                                    <span className="theme-text-primary">{totalOrderAmount.toLocaleString('fr-FR')} FCFA</span>
                                 </div>
                             </div>
                         </div>
@@ -339,16 +376,11 @@ export const OrderDetailView = () => {
                 <div className="space-y-6">
                     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-50 pb-2">
-                            <User style={{ color: 'var(--theme-primary)' }} size={20} /> Client
+                            <User className="theme-text-primary" size={20} /> Client
                         </h3>
                         <div className="flex items-center gap-4 mb-6">
                             <div
-                                className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl border shadow-sm"
-                                style={{
-                                    backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)',
-                                    color: 'var(--theme-primary)',
-                                    borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)'
-                                }}
+                                className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl border shadow-sm theme-bg-primary-soft theme-text-primary theme-border-primary-soft"
                             >
                                 {(order.prenom || order.customer_name || 'U').charAt(0).toUpperCase()}
                             </div>
@@ -377,7 +409,7 @@ export const OrderDetailView = () => {
 
                     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-50 pb-2">
-                            <MapPin style={{ color: 'var(--theme-primary)' }} size={20} /> Livraison
+                            <MapPin className="theme-text-primary" size={20} /> Livraison
                         </h3>
                         <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
                             {order.shipping_address ? <p className="font-medium">{order.shipping_address}</p> : <span className="italic text-slate-400 flex items-center gap-2"><AlertTriangle size={14} /> Adresse non renseignée</span>}
@@ -387,7 +419,7 @@ export const OrderDetailView = () => {
 
                     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-50 pb-2">
-                            <CreditCard style={{ color: 'var(--theme-primary)' }} size={20} /> Paiement
+                            <CreditCard className="theme-text-primary" size={20} /> Paiement
                         </h3>
                         <div className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-xl border border-slate-100 font-bold">
                             <span className="text-slate-500">Statut</span>

@@ -16,6 +16,9 @@ import {
   X 
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { authFetch } from "@/src/utils/apiClient";
+import { useAutoRefresh } from "@/src/utils/hooks/useAutoRefresh";
 import logoLight from "../../assets/logo.png";
 import logoDark from "../../assets/Logo2.png";
 
@@ -23,11 +26,30 @@ export const Sidebar = ({ onClose }: { onClose?: () => void }) => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  const [badges, setBadges] = useState({ pendingDesigns: 0, pendingOrders: 0 });
+
+  const fetchBadges = async () => {
+    try {
+      const response = await authFetch('/api/admin/badges');
+      if (response.ok) {
+        setBadges(await response.json());
+      }
+    } catch (error) {
+      console.error("Erreur fetch badges:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBadges();
+  }, []);
+
+  useAutoRefresh(fetchBadges, 30000); // Rafraîchissement toutes les 30s
+
   const menuItems = [
     { name: 'Tableau de bord', path: '/admin', icon: LayoutDashboard, group: 'Analytique' },
     { name: 'Produits', path: '/admin/products', icon: Package, group: 'Boutique' },
-    { name: 'Commandes', path: '/admin/orders', icon: ShoppingBag, group: 'Boutique' },
-    { name: 'Validations Design', path: '/admin/validations', icon: Palette, group: 'Boutique' },
+    { name: 'Commandes', path: '/admin/orders', icon: ShoppingBag, group: 'Boutique', badge: badges.pendingOrders },
+    { name: 'Validations Design', path: '/admin/validations', icon: Palette, group: 'Boutique', badge: badges.pendingDesigns },
     { name: 'Clients', path: '/admin/customers', icon: Users, group: 'CRM' },
     { name: 'Fidélité & Scan', path: '/admin/vip-scanner', icon: ScanBarcode, group: 'CRM' },
     { name: 'Collections', path: '/admin/collections', icon: Layers, group: 'Contenu' },
@@ -69,6 +91,7 @@ export const Sidebar = ({ onClose }: { onClose?: () => void }) => {
         {onClose && (
           <button 
             onClick={onClose}
+            title="Fermer le menu"
             className="lg:hidden p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
           >
             <X size={24} />
@@ -82,7 +105,7 @@ export const Sidebar = ({ onClose }: { onClose?: () => void }) => {
           to="/"
           className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-slate-400 border border-slate-700/60 hover:bg-slate-800 hover:text-white transition-all text-sm font-medium"
         >
-          <Store size={15} style={{ color: 'var(--theme-primary)' }} />
+          <Store size={15} className="text-theme-primary" />
           <span>Voir la boutique</span>
           <ExternalLink size={12} className="ml-auto opacity-50" />
         </Link>
@@ -104,19 +127,22 @@ export const Sidebar = ({ onClose }: { onClose?: () => void }) => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    style={isActive ? { 
-                      backgroundColor: 'var(--theme-primary)',
-                      boxShadow: '0 4px 12px color-mix(in srgb, var(--theme-primary) 40%, transparent)'
-                    } : {}}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                       isActive 
-                        ? 'text-white font-bold' 
+                        ? 'text-white font-bold bg-theme-primary shadow-[0_4px_12px_rgba(var(--theme-primary-rgb),0.4)]' 
                         : 'hover:bg-slate-800 hover:text-white text-slate-400'
                     }`}
                   >
                     <Icon size={18} className="flex-shrink-0" />
                     <span className="text-sm font-medium">{item.name}</span>
-                    {isActive && <ChevronRight size={14} className="ml-auto opacity-80" />}
+                    
+                    {item.badge > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] flex items-center justify-center shadow-lg border border-red-600 animate-in zoom-in duration-300">
+                        {item.badge > 99 ? '99+' : item.badge}
+                      </span>
+                    )}
+
+                    {isActive && !item.badge && <ChevronRight size={14} className="ml-auto opacity-80" />}
                   </Link>
                 );
               })}
@@ -129,8 +155,7 @@ export const Sidebar = ({ onClose }: { onClose?: () => void }) => {
       <div className="p-3 border-t border-slate-800/60 flex-shrink-0">
         <div className="bg-slate-800/60 rounded-2xl p-3 flex items-center gap-3">
           <div 
-            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm"
-            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 25%, transparent)', color: 'var(--theme-primary)' }}
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-sm bg-theme-primary/25 text-theme-primary"
           >
             {adminData?.prenom ? adminData.prenom[0].toUpperCase() : 'A'}
           </div>
@@ -139,7 +164,7 @@ export const Sidebar = ({ onClose }: { onClose?: () => void }) => {
               {adminData?.prenom ? `${adminData.prenom} ${adminData.nom || ''}` : 'Administrateur'}
             </p>
             <p className="text-slate-500 text-[10px] flex items-center gap-1">
-              <ShieldCheck size={10} style={{ color: 'var(--theme-primary)' }} />
+              <ShieldCheck size={10} className="text-theme-primary" />
               Super Admin
             </p>
           </div>

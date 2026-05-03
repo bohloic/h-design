@@ -32,16 +32,23 @@ export const analyzeSales = async (orders: any[], products: any[]) => {
 };
 
 // --- MOCKS POUR LE RESTE (Designs, etc.) ---
-export const getDesignSuggestions = async (prompt: string): Promise<string[]> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        `${prompt} - Version Vintage`,
-        `Super ${prompt} 2024`,
-        `I love ${prompt}`
-      ]);
-    }, 1000);
-  });
+export const getDesignSuggestions = async (keyword: string): Promise<string[]> => {
+  try {
+    const response = await authFetch('/ai/generate-slogans', {
+      method: 'POST',
+      body: JSON.stringify({ keyword })
+    });
+
+    if (!response || !response.ok) {
+        throw new Error("Erreur de slogans");
+    }
+
+    const data = await response.json();
+    return data.slogans || [];
+  } catch (error) {
+    console.error("Erreur Slogans IA frontend:", error);
+    return ["Inspiration momentanément indisponible"];
+  }
 };
 
 export const generateDesignImage = async (prompt: string): Promise<string> => {

@@ -7,13 +7,15 @@
     box-shadow: 0 0 0 0 transparent;
   }
   20% { 
-    background-color: color-mix(in srgb, var(--theme-primary, #ef4444) 15%, transparent);
-    box-shadow: 0 0 20px 5px color-mix(in srgb, var(--theme-primary, #ef4444) 30%, transparent);
+    background-color: rgba(239, 68, 68, 0.15);
+    box-shadow: 0 0 20px 5px rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
     border-color: var(--theme-primary, #ef4444);
   }
   80% { 
-    background-color: color-mix(in srgb, var(--theme-primary, #ef4444) 10%, transparent);
-    box-shadow: 0 0 15px 2px color-mix(in srgb, var(--theme-primary, #ef4444) 20%, transparent);
+    background-color: rgba(239, 68, 68, 0.1);
+    box-shadow: 0 0 15px 2px rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
     border-color: var(--theme-primary, #ef4444);
   }
   100% { 
@@ -75,3 +77,55 @@
 }
 
 /* Les couleurs des inputs sont désormais gérées par Tailwind (text-slate-900 dark:text-white) */
+
+/* ====================================================
+   🎨 Utilitaires de Thème Dynamique (var(--theme-primary))
+   ⚠️  color-mix() retiré : compatibilité tous navigateurs
+   Les teintes soft sont obtenues via rgba() + opacity
+   ==================================================== */
+
+.theme-bg-primary {
+  background-color: #ef4444;
+  background-color: var(--theme-primary, #ef4444);
+}
+
+.theme-text-primary {
+  color: #ef4444;
+  color: var(--theme-primary, #ef4444);
+}
+
+.theme-border-primary {
+  border-color: #ef4444;
+  border-color: var(--theme-primary, #ef4444);
+}
+
+/* Soft = ~15% opacity — utilise un pseudo-élément overlay ou rgba direct */
+.theme-bg-primary-soft {
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+/* Soft border = ~20% opacity */
+.theme-border-primary-soft {
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* Darkened text — version foncée de la couleur principale */
+.theme-text-primary-soft {
+  color: #b91c1c;
+}
+
+/* Faint = ~5% opacity */
+.theme-bg-primary-faint {
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+/* 🎨 Pastille couleur dynamique (données article) */
+/* La couleur est appliquée via JS (useEffect + data-color attr) */
+.item-color-swatch {
+  background-color: #cccccc;
+}
+
+/* Overlay dynamique utilisant des variables CSS pour éviter les styles inline directs */
+.dynamic-color-overlay {
+  background-color: var(--dynamic-bg, transparent);
+}

@@ -126,6 +126,7 @@ const SearchBar = () => {
         {query && (
           <button
             onClick={() => { setQuery(''); setResults(null); setIsOpen(false); setErrorStatus(null); }}
+            title="Effacer la recherche"
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
           >
             <X size={14} />
@@ -158,7 +159,7 @@ const SearchBar = () => {
               {results!.orders.length > 0 && (
                 <div>
                   <div className="px-4 pt-3 pb-1 flex items-center gap-2">
-                    <ShoppingBag size={13} style={{ color: 'var(--theme-primary)' }} />
+                    <ShoppingBag size={13} className="text-theme-primary" />
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Commandes</span>
                   </div>
                   {results!.orders.map((order: any) => (
@@ -181,7 +182,7 @@ const SearchBar = () => {
               {results!.products.length > 0 && (
                 <div>
                   <div className="px-4 pt-3 pb-1 flex items-center gap-2">
-                    <Package size={13} style={{ color: 'var(--theme-primary)' }} />
+                    <Package size={13} className="text-theme-primary" />
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Produits</span>
                   </div>
                   {results!.products.map((product: any) => (
@@ -209,7 +210,7 @@ const SearchBar = () => {
               {results!.customers.length > 0 && (
                 <div>
                   <div className="px-4 pt-3 pb-1 flex items-center gap-2">
-                    <Users size={13} style={{ color: 'var(--theme-primary)' }} />
+                    <Users size={13} className="text-theme-primary" />
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clients</span>
                   </div>
                   {results!.customers.map((customer: any) => (
@@ -219,8 +220,7 @@ const SearchBar = () => {
                       className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left group"
                     >
                       <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white flex-shrink-0"
-                        style={{ backgroundColor: 'var(--theme-primary)' }}
+                        className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white flex-shrink-0 bg-theme-primary"
                       >
                         {customer.prenom?.[0]?.toUpperCase()}{customer.nom?.[0]?.toUpperCase()}
                       </div>
@@ -294,9 +294,10 @@ export const Header = ({ title }: { title: string }) => {
         {/* Lien vers la boutique */}
         <button
           onClick={() => navigate('/')}
+          title="Aller sur la boutique"
           className="hidden lg:flex items-center gap-2 px-3 py-2 text-sm font-bold rounded-xl border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all"
         >
-          <Store size={15} style={{ color: 'var(--theme-primary)' }} />
+          <Store size={15} className="text-theme-primary" />
           <span>Boutique</span>
         </button>
 
@@ -307,11 +308,11 @@ export const Header = ({ title }: { title: string }) => {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsProfileOpen(v => !v)}
+            title="Menu profil"
             className="flex items-center gap-2 pl-3 border-l border-slate-200 hover:opacity-80 transition-opacity"
           >
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm text-white flex-shrink-0"
-              style={{ backgroundColor: 'var(--theme-primary)' }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm text-white flex-shrink-0 bg-theme-primary"
             >
               {initials}
             </div>
@@ -330,9 +331,10 @@ export const Header = ({ title }: { title: string }) => {
               </div>
               <button
                 onClick={() => { navigate('/'); setIsProfileOpen(false); }}
+                title="Voir la boutique"
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 transition-colors text-left"
               >
-                <Store size={15} style={{ color: 'var(--theme-primary)' }} />
+                <Store size={15} className="text-theme-primary" />
                 Voir la boutique
               </button>
               <button

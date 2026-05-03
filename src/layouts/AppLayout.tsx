@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from "../components/admin/Header";
 import { Sidebar } from "../components/admin/Sidebar";
-import { Menu, X, LogOut } from 'lucide-react';
+import { Menu, X, LogOut, Store } from 'lucide-react';
+import { NotificationDropdown } from '../components/elements/NotificationDropdown.tsx';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../utils/context/ThemeContext.tsx';
 
@@ -77,20 +78,37 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
                 <button 
                     onClick={() => setSidebarOpen(true)}
                     className="p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                    title="Ouvrir le menu"
+                    aria-label="Ouvrir le menu latéral"
                 >
                     <Menu size={24} />
                 </button>
-                <h1 className="font-bold text-lg text-slate-800 truncate">{title}</h1>
+                <h1 className="font-bold text-lg text-slate-800 truncate max-w-[120px] sm:max-w-none">{title}</h1>
             </div>
-            {/* Bouton déconnexion mobile */}
-            <button 
-                onClick={handleLogout}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
-                title="Déconnexion"
-            >
-                <LogOut size={20} />
-                <span className="text-xs font-bold sm:inline hidden">Déconnexion</span>
-            </button>
+
+            <div className="flex items-center gap-1 sm:gap-2">
+                {/* Boutique mobile */}
+                <button 
+                    onClick={() => navigate('/')}
+                    className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                    title="Aller sur la boutique"
+                >
+                    <Store size={20} />
+                </button>
+
+                {/* Notifications mobile */}
+                <NotificationDropdown />
+
+                {/* Bouton déconnexion mobile */}
+                <button 
+                    onClick={handleLogout}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+                    title="Déconnexion"
+                >
+                    <LogOut size={20} />
+                    <span className="text-xs font-bold sm:inline hidden">Déconnexion</span>
+                </button>
+            </div>
         </div>
 
         {/* Header Desktop (Ton composant Header existant) */}

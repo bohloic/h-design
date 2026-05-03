@@ -3,8 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { authFetch } from '../../src/utils/apiClient';
 import { Edit, Trash2, UserPlus, Gift, Mail, Phone, XCircle, Shield, User as UserIcon, ChevronDown, CheckCircle2, Eye, EyeOff, AlertCircle, Search } from 'lucide-react';
 import Pagination from '../../src/components/tools/Pagination';
+import { useToast } from '../../src/utils/context/ToastContext';
 
 export const CustomerView = () => {
+  const { showToast } = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -112,7 +114,7 @@ export const CustomerView = () => {
     } catch (error) {
       console.error("Erreur rôle:", error);
       setUsers(oldUsers);
-      alert("Erreur lors de la modification du rôle.");
+      showToast("Erreur lors de la modification du rôle.", "error");
     }
   };
 
@@ -193,7 +195,7 @@ export const CustomerView = () => {
         fetchUsers();
       } catch (error) {
         console.error("Erreur suppression", error);
-        alert("Impossible de supprimer l'utilisateur.");
+        showToast("Impossible de supprimer l'utilisateur.", "error");
       }
     }
   };
@@ -205,10 +207,7 @@ export const CustomerView = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div>
           <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <span 
-                className="p-2 rounded-lg"
-                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)', color: 'var(--theme-primary)' }}
-            >
+            <span className="p-2 rounded-lg bg-theme-primary-soft text-theme-primary">
                 <UserPlus size={24} />
             </span>
             Gestion des Utilisateurs
@@ -217,8 +216,7 @@ export const CustomerView = () => {
         </div>
         <button 
           onClick={openCreateModal}
-          style={{ backgroundColor: 'var(--theme-primary)' }}
-          className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-all shadow-lg active:scale-95"
+          className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-all shadow-lg active:scale-95 bg-theme-primary"
         >
           <UserPlus size={20} /> <span className="hidden sm:inline">Ajouter un membre</span><span className="sm:hidden">Ajouter</span>
         </button>
@@ -236,13 +234,14 @@ export const CustomerView = () => {
                 className="w-full pl-10 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-slate-200 transition-all outline-none"
             />
             {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <button onClick={() => setSearchTerm('')} title="Effacer" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                     <XCircle size={16} />
                 </button>
             )}
         </div>
 
         <select 
+            aria-label="Filtrer par rôle"
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
             className="px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm text-slate-600 focus:ring-2 focus:ring-slate-200 outline-none cursor-pointer sm:w-48"
@@ -256,10 +255,7 @@ export const CustomerView = () => {
       {/* Contenu : Grille Responsive */}
       {loading ? (
           <div className="p-12 text-center text-slate-400 flex flex-col items-center">
-              <div 
-                  className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4"
-                  style={{ borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)', borderTopColor: 'var(--theme-primary)' }}
-              ></div>
+              <div className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4 border-theme-primary-soft border-t-theme-primary"></div>
               Chargement...
           </div>
       ) : filteredUsers.length === 0 ? (
@@ -297,7 +293,7 @@ export const CustomerView = () => {
                     
                     <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1"><Gift size={14}/> Fidélité</span>
-                        <span className="font-black" style={{ color: 'var(--theme-primary)' }}>{user.loyalty_points || 0} pts</span>
+                        <span className="font-black text-theme-primary">{user.loyalty_points || 0} pts</span>
                     </div>
 
                     <div className="flex justify-between items-center">
@@ -308,6 +304,7 @@ export const CustomerView = () => {
                         
                         <div className="relative inline-block">
                             <select 
+                                aria-label="Changer le rôle"
                                 value={user.role}
                                 onChange={(e) => handleRoleChange(user.id, e.target.value)}
                                 className={`appearance-none text-xs font-bold py-1.5 pl-3 pr-8 rounded-lg outline-none transition-colors cursor-pointer border ${
@@ -338,8 +335,7 @@ export const CustomerView = () => {
                     </button>
                     <button 
                         onClick={() => handleDelete(user.id)}
-                        className="flex-none px-4 py-2 text-sm font-bold border rounded-xl hover:bg-red-50 flex items-center justify-center transition-colors"
-                        style={{ color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' }}
+                        className="flex-none px-4 py-2 text-sm font-bold border rounded-xl hover:bg-red-50 flex items-center justify-center transition-colors text-theme-primary border-theme-primary-soft"
                         title="Supprimer"
                     >
                         <Trash2 size={16} />
@@ -372,7 +368,7 @@ export const CustomerView = () => {
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 {isEditing ? 'Modifier le profil' : 'Nouveau membre'}
               </h3>
-              <button onClick={closeModal} className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
+              <button onClick={closeModal} title="Fermer" className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
                 <XCircle size={20} />
               </button>
             </div>
@@ -389,42 +385,42 @@ export const CustomerView = () => {
               
               <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500">Prénom</label>
-                      <input className="input-field" type="text" name="prenom" value={formData.prenom} onChange={handleChange} required />
+                      <label htmlFor="prenom" className="text-xs font-bold text-slate-500">Prénom</label>
+                      <input id="prenom" placeholder="Prénom" className="input-field" type="text" name="prenom" value={formData.prenom} onChange={handleChange} required />
                   </div>
                   <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500">Nom</label>
-                      <input className="input-field" type="text" name="nom" value={formData.nom} onChange={handleChange} required />
+                      <label htmlFor="nom" className="text-xs font-bold text-slate-500">Nom</label>
+                      <input id="nom" placeholder="Nom" className="input-field" type="text" name="nom" value={formData.nom} onChange={handleChange} required />
                   </div>
               </div>
 
               <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500">Email</label>
-                  <input className="input-field" type="email" name="email" value={formData.email} onChange={handleChange} required />
+                  <label htmlFor="email" className="text-xs font-bold text-slate-500">Email</label>
+                  <input id="email" placeholder="Email" className="input-field" type="email" name="email" value={formData.email} onChange={handleChange} required />
               </div>
 
               <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500">Téléphone</label>
-                  <input className="input-field" type="tel" name="phone" value={formData.phone} onChange={handleChange} />
+                  <label htmlFor="phone" className="text-xs font-bold text-slate-500">Téléphone</label>
+                  <input id="phone" placeholder="Téléphone" className="input-field" type="tel" name="phone" value={formData.phone} onChange={handleChange} />
               </div>
 
               {!isEditing && (
                   <>
                       <div className="space-y-1">
-                          <label className="text-xs font-bold text-slate-500">Mot de passe</label>
+                          <label htmlFor="password" className="text-xs font-bold text-slate-500">Mot de passe</label>
                           <div className="relative">
-                              <input className="input-field pr-12" type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} required />
-                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+                              <input id="password" placeholder="Mot de passe" className="input-field pr-12" type={showPassword ? "text" : "password"} name="password" value={formData.password} onChange={handleChange} required />
+                              <button type="button" title="Afficher" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
                                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                               </button>
                           </div>
                       </div>
                       
                       <div className="space-y-1">
-                          <label className="text-xs font-bold text-slate-500">Confirmez le mot de passe</label>
+                          <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-500">Confirmez le mot de passe</label>
                           <div className="relative">
-                              <input className="input-field pr-12" type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
-                              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+                              <input id="confirmPassword" placeholder="Confirmez" className="input-field pr-12" type={showConfirmPassword ? "text" : "password"} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
+                              <button type="button" title="Afficher" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
                                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                               </button>
                           </div>
@@ -433,16 +429,15 @@ export const CustomerView = () => {
               )}
 
               <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500">Points Fidélité</label>
-                  <input className="input-field" type="number" name="loyalty_points" value={formData.loyalty_points} onChange={handleChange} />
+                  <label htmlFor="loyalty_points" className="text-xs font-bold text-slate-500">Points Fidélité</label>
+                  <input id="loyalty_points" placeholder="0" className="input-field" type="number" name="loyalty_points" value={formData.loyalty_points} onChange={handleChange} />
               </div>
 
               <div className="pt-4 flex gap-3">
                   <button type="button" onClick={closeModal} className="flex-1 py-3 text-slate-600 font-bold bg-slate-100 rounded-xl hover:bg-slate-200">Annuler</button>
                   <button 
                     type="submit" 
-                    style={{ backgroundColor: 'var(--theme-primary)' }}
-                    className="flex-[2] py-3 text-white font-bold rounded-xl opacity-95 hover:opacity-100 shadow-lg"
+                    className="flex-[2] py-3 text-white font-bold rounded-xl opacity-95 hover:opacity-100 shadow-lg bg-theme-primary"
                   >
                     {isEditing ? 'Mettre à jour' : 'Enregistrer'}
                   </button>

@@ -15,10 +15,12 @@ import {
 } from 'recharts';
 // 🪄 IMPORT DU THEME
 import { useTheme } from '@/src/utils/context/ThemeContext'; // Ajuste le chemin si besoin
+import { useToast } from '@/src/utils/context/ToastContext';
 
 export const DashboardView = () => {
   const [loading, setLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const { showToast } = useToast();
   
   // 🪄 RÉCUPÉRATION DE LA COULEUR DU THEME POUR RECHARTS
   const { themeColor } = useTheme();
@@ -195,7 +197,7 @@ export const DashboardView = () => {
 
     } catch (error) {
       console.error("Erreur d'export:", error);
-      alert("Une erreur est survenue lors de la génération du rapport.");
+      showToast("Une erreur est survenue lors de la génération du rapport.", "error");
     } finally {
       setIsExporting(false);
     }
@@ -204,8 +206,7 @@ export const DashboardView = () => {
   if (loading) {
       return (
           <div className="flex h-[80vh] items-center justify-center text-slate-400 flex-col gap-4">
-              {/* 🪄 Loader dynamique */}
-              <Loader2 size={40} className="animate-spin" style={{ color: 'var(--theme-primary)' }} />
+              <Loader2 size={40} className="animate-spin theme-text-primary" />
               <p className="font-bold">Analyse de vos données en cours...</p>
           </div>
       );
@@ -258,8 +259,8 @@ export const DashboardView = () => {
             <select 
                 value={timeframe}
                 onChange={(e) => setTimeframe(e.target.value)}
-                className="bg-slate-50 border-none text-sm font-medium rounded-lg px-3 py-2 outline-none w-full sm:w-auto cursor-pointer focus:ring-2 transition-all"
-                style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
+                aria-label="Sélectionner la période d'analyse"
+                className="bg-slate-50 border-none text-sm font-medium rounded-lg px-3 py-2 outline-none w-full sm:w-auto cursor-pointer focus:ring-2 focus:ring-red-400 transition-all"
             >
               <option value="7">7 derniers jours</option>
               <option value="30">Ce mois-ci (30j)</option>
@@ -267,6 +268,7 @@ export const DashboardView = () => {
               <option value="365">Cette année</option>
               <option value="all">Tout le temps</option>
             </select>
+
           </div>
           
           <div className="h-56 sm:h-80 w-full min-h-[250px]">
@@ -301,8 +303,7 @@ export const DashboardView = () => {
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-4">
               <div 
-                  className="p-2 rounded-lg backdrop-blur-sm"
-                  style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)', color: 'var(--theme-primary)' }}
+                  className="p-2 rounded-lg backdrop-blur-sm theme-bg-primary-soft theme-text-primary"
               >
                 <Sparkles size={20} />
               </div>
@@ -315,8 +316,7 @@ export const DashboardView = () => {
               {aiTips.length > 0 ? aiTips.map((tip, idx) => (
                 <div key={idx} className="flex gap-3 bg-white/5 p-4 rounded-xl backdrop-blur-sm border border-white/5">
                   <span 
-                      className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg"
-                      style={{ backgroundColor: 'var(--theme-primary)' }}
+                      className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-lg text-white theme-bg-primary"
                   >
                       {idx + 1}
                   </span>
@@ -335,8 +335,7 @@ export const DashboardView = () => {
           <button 
             onClick={handleExportReport}
             disabled={isExporting}
-            style={{ backgroundColor: 'var(--theme-primary)' }}
-            className="relative z-10 mt-8 w-full py-3 flex items-center justify-center gap-2 text-white font-bold rounded-xl opacity-90 hover:opacity-100 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="relative z-10 mt-8 w-full py-3 flex items-center justify-center gap-2 text-white font-bold rounded-xl opacity-90 hover:opacity-100 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed theme-bg-primary"
           >
             {isExporting ? (
               <Loader2 size={20} className="animate-spin" />
@@ -348,8 +347,7 @@ export const DashboardView = () => {
           
           {/* Effets de flou d'arrière-plan colorés selon le thème */}
           <div 
-              className="absolute top-0 right-0 w-48 h-48 rounded-full blur-[60px] -mr-16 -mt-16 pointer-events-none"
-              style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)' }}
+              className="absolute top-0 right-0 w-48 h-48 rounded-full blur-[60px] -mr-16 -mt-16 pointer-events-none theme-bg-primary-soft opacity-60"
           ></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-600/10 rounded-full blur-[40px] -ml-16 -mb-16 pointer-events-none"></div>
         </div>

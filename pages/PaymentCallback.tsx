@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { authFetch } from '../src/utils/apiClient';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useToast } from '../src/utils/context/ToastContext';
 
 const PaymentCallback = () => {
+    const { showToast } = useToast();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const reference = searchParams.get('reference'); 
@@ -39,7 +41,7 @@ const PaymentCallback = () => {
                 setStatus('success');
                 
                 setTimeout(() => {
-                    alert("Paiement validé ! Votre commande est en préparation.");
+                    showToast("Paiement validé ! Votre commande est en préparation.", "success");
                     navigate('/order-confirmed', { 
                         state: { orderId: data.orderId } 
                     });
@@ -60,8 +62,7 @@ const PaymentCallback = () => {
                 <>
                     {/* 🪄 LOADER DYNAMIQUE */}
                     <Loader2 
-                        className="w-16 h-16 animate-spin mb-4" 
-                        style={{ color: 'var(--theme-primary)' }} 
+                        className="w-16 h-16 animate-spin mb-4 text-theme-primary" 
                     />
                     <h2 className="text-xl font-bold text-slate-700 dark:text-pure">Vérification du paiement...</h2>
                     <p className="text-slate-400 dark:text-slate-500 text-sm mt-2">Ne fermez pas cette page.</p>
@@ -87,8 +88,7 @@ const PaymentCallback = () => {
                     {/* 🪄 BOUTON RÉESSAYER DYNAMIQUE */}
                     <button 
                         onClick={() => navigate('/checkout')} 
-                        style={{ backgroundColor: 'var(--theme-primary)' }}
-                        className="mt-6 text-white px-6 py-3 rounded-xl font-bold shadow-lg opacity-95 hover:opacity-100 transition-all active:scale-95"
+                        className="mt-6 text-white px-6 py-3 rounded-xl font-bold shadow-lg opacity-95 hover:opacity-100 transition-all active:scale-95 bg-theme-primary"
                     >
                         Réessayer le paiement
                     </button>

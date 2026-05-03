@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Edit, Plus, Trash2, XCircle, Tag, Check, Calendar, Search, LayoutGrid } from 'lucide-react';
 import { authFetch } from '../../src/utils/apiClient';
+import { useToast } from '../../src/utils/context/ToastContext';
 
 interface Category {
   id: number;
@@ -9,6 +10,7 @@ interface Category {
 }
 
 export const CategoryView = () => {
+  const { showToast } = useToast();
   // --- ÉTATS ---
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,11 +88,11 @@ export const CategoryView = () => {
             resetForm();
         } else {
             const errorData = await response.json();
-            alert("Erreur : " + (errorData.message || "Impossible d'enregistrer"));
+            showToast("Erreur : " + (errorData.message || "Impossible d'enregistrer"), "error");
         }
     } catch (error) {
         console.error(error);
-        alert("Erreur technique");
+        showToast("Erreur technique", "error");
     }
   };
 
@@ -128,11 +130,7 @@ export const CategoryView = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <div>
           <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-            <span 
-                className="p-2 rounded-lg"
-                // 🪄 FOND AVEC TRANSPARENCE ET COULEUR DU THEME
-                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)', color: 'var(--theme-primary)' }}
-            >
+            <span className="p-2 rounded-lg bg-theme-primary-soft text-theme-primary">
                 <LayoutGrid size={24} />
             </span>
             Catégories
@@ -141,8 +139,7 @@ export const CategoryView = () => {
         </div>
         <button 
           onClick={() => { resetForm(); setIsModalOpen(true); }}
-          style={{ backgroundColor: 'var(--theme-primary)' }}
-          className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-opacity shadow-lg active:scale-95"
+          className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-opacity shadow-lg active:scale-95 bg-theme-primary"
         >
           <Plus size={20} /> <span className="hidden sm:inline">Nouvelle Catégorie</span><span className="sm:hidden">Ajouter</span>
         </button>
@@ -153,10 +150,7 @@ export const CategoryView = () => {
         
         {loading ? (
           <div className="p-12 text-center text-slate-400 flex flex-col items-center">
-             <div 
-                className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4"
-                style={{ borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)', borderTopColor: 'var(--theme-primary)' }}
-             ></div>
+             <div className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4 border-theme-primary-soft border-t-theme-primary"></div>
              Chargement...
           </div>
         ) : categories.length === 0 ? (
@@ -185,14 +179,7 @@ export const CategoryView = () => {
                         </td>
                         <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                                <div 
-                                    className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg border"
-                                    style={{ 
-                                        backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', 
-                                        color: 'var(--theme-primary)',
-                                        borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)'
-                                    }}
-                                >
+                                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg border bg-theme-primary-soft text-theme-primary border-theme-primary-soft">
                                     {cat.name.charAt(0).toUpperCase()}
                                 </div>
                                 <span className="font-bold text-slate-700">{cat.name}</span>
@@ -225,14 +212,7 @@ export const CategoryView = () => {
                 {categories.map(cat => (
                     <div key={cat.id} className="p-4 flex items-center justify-between hover:bg-slate-50 active:bg-slate-100 transition-colors">
                         <div className="flex items-center gap-4">
-                            <div 
-                                className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl border shadow-sm flex-shrink-0"
-                                style={{ 
-                                    backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', 
-                                    color: 'var(--theme-primary)',
-                                    borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)'
-                                }}
-                            >
+                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl border shadow-sm flex-shrink-0 bg-theme-primary-soft text-theme-primary border-theme-primary-soft">
                                 {cat.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -246,12 +226,14 @@ export const CategoryView = () => {
                         <div className="flex gap-1">
                             <button 
                                 onClick={() => handleEditClick(cat)}
+                                title="Modifier"
                                 className="p-3 text-slate-400 bg-white border border-slate-100 rounded-xl hover:text-slate-900 active:scale-95 shadow-sm"
                             >
                                 <Edit size={18} />
                             </button>
                             <button 
                                 onClick={() => handleDelete(cat.id)}
+                                title="Supprimer"
                                 className="p-3 text-red-400 bg-red-50 border border-red-100 rounded-xl hover:text-red-600 active:scale-95 shadow-sm"
                             >
                                 <Trash2 size={18} />
@@ -272,12 +254,12 @@ export const CategoryView = () => {
             <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 {editingId 
-                    ? <Edit size={20} style={{ color: 'var(--theme-primary)' }}/> 
-                    : <Plus size={20} style={{ color: 'var(--theme-primary)' }}/>
+                    ? <Edit size={20} className="text-theme-primary"/> 
+                    : <Plus size={20} className="text-theme-primary"/>
                 }
                 {editingId ? 'Modifier' : 'Nouvelle Catégorie'}
               </h3>
-              <button onClick={resetForm} className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
+              <button onClick={resetForm} title="Fermer" className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
                 <XCircle size={20} />
               </button>
             </div>
@@ -290,8 +272,7 @@ export const CategoryView = () => {
                     value={formData.name} 
                     required 
                     onChange={handleChange} 
-                    style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                    className="w-full px-4 py-4 bg-slate-50 border-2 border-transparent rounded-xl outline-none font-medium text-lg placeholder-slate-400 transition-all focus:bg-white focus:ring-2" 
+                    className="w-full px-4 py-4 bg-slate-50 border-2 border-transparent rounded-xl outline-none font-medium text-lg placeholder-slate-400 transition-all focus:bg-white focus:ring-2 focus:ring-theme-primary" 
                     placeholder="Ex: Robes" 
                     autoFocus
                   />
@@ -299,8 +280,7 @@ export const CategoryView = () => {
 
               <button 
                 type="submit" 
-                style={{ backgroundColor: 'var(--theme-primary)' }}
-                className="w-full py-4 text-white font-bold rounded-xl opacity-95 hover:opacity-100 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95"
+                className="w-full py-4 text-white font-bold rounded-xl opacity-95 hover:opacity-100 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95 bg-theme-primary"
               >
                 <Check size={20} />
                 {editingId ? 'Sauvegarder' : 'Créer'}

@@ -1,33 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import { authFetch } from '@/src/utils/apiClient';
+import { useToast } from '@/src/utils/context/ToastContext';
 import { formatCurrency } from '@/constants';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
-import { CheckCircle, XCircle, Palette, Eye, Loader2, AlertCircle, PackageX } from 'lucide-react';
+import { CheckCircle, XCircle, Palette, Eye, Loader2, AlertCircle, PackageX, RefreshCw } from 'lucide-react';
+import { useAutoRefresh } from '@/src/utils/hooks/useAutoRefresh';
 
 export const AdminValidationDesigns = () => {
+    const { showToast } = useToast();
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<number | null>(null);
 
     // 1. CHARGEMENT DES COMMANDES EN ATTENTE DE DESIGN
-    const fetchPendingDesigns = async () => {
+    const fetchPendingDesigns = async (showLoader = true) => {
         try {
-            setLoading(true);
+            if (showLoader) setLoading(true);
             const response = await authFetch('/api/admin/orders'); 
-            const allOrders = await response.json();
-            
-            // L'API filtre déjà pour nous au niveau du backend
-            setPendingOrders(allOrders);
+            if (response.ok) {
+                const allOrders = await response.json();
+                setPendingOrders(allOrders);
+            }
         } catch (error) {
             console.error("Erreur chargement des designs :", error);
         } finally {
-            setLoading(false);
+            if (showLoader) setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchPendingDesigns();
+        fetchPendingDesigns(true);
     }, []);
+
+    // 🔄 Auto-actualisation discrète toutes les 20 secondes
+    useAutoRefresh(() => {
+        fetchPendingDesigns(false);
+    }, 20000);
+
+    // 👁️ Marquer les designs comme vus quand ils sont affichés
+    useEffect(() => {
+        if (pendingOrders.length > 0) {
+            pendingOrders.forEach(async (order) => {
+                if (order.is_seen === 0) {
+                    try {
+                        await authFetch(`/api/admin/orders/${order.id}/seen`, { method: 'PUT' });
+                    } catch (e) { /* Discret */ }
+                }
+            });
+        }
+    }, [pendingOrders]);
 
     // 2. GESTION DES DÉCISIONS PAR ARTICLE
     const [itemDecisions, setItemDecisions] = useState<Record<number, { status: 'approved' | 'rejected' | 'pending', reason?: string }>>({});
@@ -44,14 +65,39 @@ export const AdminValidationDesigns = () => {
 
     // 3. SOUMISSION FINALE DE LA DÉCISION
     const handleFinalSubmit = async (order: any) => {
-        const decisionsArray = order.items.map((item: any) => ({
-            id: item.id,
-            status: itemDecisions[item.id]?.status || 'pending',
-            reason: itemDecisions[item.id]?.reason || ''
-        }));
+        const decisionsArray = order.items
+            .filter((item: any) => itemDecisions[item.id]) // On n'envoie que les nouvelles décisions
+            .map((item: any) => ({
+                id: item.id,
+                status: itemDecisions[item.id]?.status,
+                reason: itemDecisions[item.id]?.reason || ''
+            }));
 
-        if (decisionsArray.some((d: any) => d.status === 'pending')) {
-            if (!window.confirm("Certains articles n'ont pas encore été validés. Voulez-vous continuer ?")) return;
+        if (decisionsArray.length === 0) {
+            showToast("Aucune nouvelle décision à soumettre.", "info");
+            return;
+        }
+
+        const pendingCount = order.items.filter((item: any) => {
+            // On vérifie si l'article est personnalisable
+            let designData: any = null;
+            try {
+                if (item.customization) {
+                    designData = typeof item.customization === 'string' 
+                        ? JSON.parse(item.customization) 
+                        : item.customization;
+                }
+            } catch (e) {}
+            
+            const isCustom = !!(designData?.customizationImage || (designData?.elements && designData.elements.length > 0));
+            
+            // On ne compte que les articles personnalisables qui n'ont pas encore de décision
+            return isCustom && !['Validé', 'approved'].includes(item.design_status) && !itemDecisions[item.id];
+        }).length;
+
+        if (pendingCount > 0) {
+            showToast(`Il reste ${pendingCount} article(s) personnalisable(s) sans décision. Vous devez tous les valider ou refuser avant de confirmer.`, "error");
+            return;
         }
 
         try {
@@ -65,15 +111,23 @@ export const AdminValidationDesigns = () => {
             });
 
             if (response.ok) {
+                showToast("✅ Décisions enregistrées !", "success");
+                
+                // 🪄 On nettoie immédiatement l'affichage local
                 setPendingOrders(prev => prev.filter(o => o.id !== order.id));
+                
                 // Nettoyage des décisions locales pour cette commande
                 setItemDecisions(prev => {
                     const next = { ...prev };
                     order.items.forEach((item: any) => delete next[item.id]);
                     return next;
                 });
+
+                // On relance un fetch discret pour être sûr d'être à jour
+                setTimeout(() => fetchPendingDesigns(false), 500);
             } else {
-                alert("Erreur lors de la mise à jour de la commande.");
+                const errorData = await response.json();
+                showToast(errorData.message || "Erreur lors de la mise à jour.", "error");
             }
         } catch (error) {
             console.error(error);
@@ -152,8 +206,8 @@ export const AdminValidationDesigns = () => {
 
                                     return (
                                         <div key={idx} className={`p-4 rounded-2xl border transition-all relative ${
-                                            decision?.status === 'approved' ? 'bg-emerald-50/50 border-emerald-100' : 
-                                            decision?.status === 'rejected' ? 'bg-red-50/50 border-red-100' : 
+                                            decision?.status === 'approved' || item.design_status === 'approved' || item.design_status === 'Validé' ? 'bg-emerald-50/50 border-emerald-100' : 
+                                            decision?.status === 'rejected' || item.design_status === 'rejected' || item.design_status === 'Refusé' ? 'bg-red-50/50 border-red-100' : 
                                             'bg-slate-50 border-slate-100'
                                         }`}>
                                             <div className="flex justify-between items-start mb-3">
@@ -163,21 +217,34 @@ export const AdminValidationDesigns = () => {
                                                         {isCustomizable ? '✨ Personnalisé' : '📦 Standard'}
                                                     </p>
                                                 </div>
-                                                <div className="flex gap-1">
+                                                <div className="flex gap-1 items-center">
                                                     {isCustomizable && (
                                                         <>
-                                                            <button 
-                                                                onClick={() => handleItemAction(item.id, 'rejected')}
-                                                                className={`p-1.5 rounded-lg transition-colors ${decision?.status === 'rejected' ? 'bg-red-500 text-white' : 'bg-white text-slate-400 hover:text-red-500 border border-slate-100'}`}
-                                                            >
-                                                                <XCircle size={14} />
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => handleItemAction(item.id, 'approved')}
-                                                                className={`p-1.5 rounded-lg transition-colors ${decision?.status === 'approved' ? 'bg-emerald-500 text-white' : 'bg-white text-slate-400 hover:text-emerald-500 border border-slate-100'}`}
-                                                            >
-                                                                <CheckCircle size={14} />
-                                                            </button>
+                                                            {['Validé', 'approved'].includes(item.design_status) ? (
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-wider border border-emerald-200">
+                                                                        <CheckCircle size={12} /> Validé
+                                                                    </span>
+                                                                    <span className="text-[8px] text-slate-400 mt-1 font-bold italic">Décision verrouillée</span>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex gap-2">
+                                                                    <button 
+                                                                        onClick={() => handleItemAction(item.id, 'rejected')}
+                                                                        title="Refuser le design"
+                                                                        className={`p-2 rounded-xl transition-all shadow-sm ${itemDecisions[item.id]?.status === 'rejected' ? 'bg-red-500 text-white scale-110 shadow-red-200' : 'bg-white text-slate-400 hover:text-red-500 border border-slate-100 hover:border-red-100'}`}
+                                                                    >
+                                                                        <XCircle size={16} />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => handleItemAction(item.id, 'approved')}
+                                                                        title="Valider le design"
+                                                                        className={`p-2 rounded-xl transition-all shadow-sm ${itemDecisions[item.id]?.status === 'approved' ? 'bg-emerald-500 text-white scale-110 shadow-emerald-200' : 'bg-white text-slate-400 hover:text-emerald-500 border border-slate-100 hover:border-emerald-100'}`}
+                                                                    >
+                                                                        <CheckCircle size={16} />
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                         </>
                                                     )}
                                                 </div>
@@ -187,7 +254,11 @@ export const AdminValidationDesigns = () => {
                                                 <div className="relative group overflow-hidden rounded-xl border border-slate-200 bg-white">
                                                     <img src={BASE_IMG_URL + imgUrl} alt={isCustomizable ? "Design client" : "Produit standard"} className="w-full h-40 object-contain p-2" />
                                                     <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-sm">
-                                                        <button onClick={() => window.open(BASE_IMG_URL + imgUrl, '_blank')} className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors mb-1">
+                                                        <button 
+                                                            onClick={() => window.open(BASE_IMG_URL + imgUrl, '_blank')} 
+                                                            title="Ouvrir l'image en grand"
+                                                            className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors mb-1"
+                                                        >
                                                             <Eye size={18} />
                                                         </button>
                                                         <span className="text-[9px] font-bold tracking-widest uppercase">Voir en Grand</span>
@@ -213,14 +284,31 @@ export const AdminValidationDesigns = () => {
                             {/* ACTIONS (Boutons au bas de la carte) */}
                             <div className="p-4 border-t border-slate-100 bg-white">
                                 {(() => {
-                                    const hasNewDecision = order.items.some((item: any) => itemDecisions[item.id]);
+                                    const allItemsDecided = order.items.every((item: any) => {
+                                        // On vérifie si l'article est personnalisable
+                                        let designData: any = null;
+                                        try {
+                                            if (item.customization) {
+                                                designData = typeof item.customization === 'string' 
+                                                    ? JSON.parse(item.customization) 
+                                                    : item.customization;
+                                            }
+                                        } catch (e) {}
+                                        
+                                        const isCustom = !!(designData?.customizationImage || (designData?.elements && designData.elements.length > 0));
+                                        
+                                        // Si pas personnalisable, c'est OK par défaut
+                                        if (!isCustom) return true;
+                                        
+                                        // Si personnalisable, il faut soit qu'il soit déjà validé, soit qu'une nouvelle décision soit prise
+                                        return ['Validé', 'approved'].includes(item.design_status) || !!itemDecisions[item.id];
+                                    });
                                     
                                     return (
                                         <button 
                                             onClick={() => handleFinalSubmit(order)}
-                                            disabled={processingId === order.id || !hasNewDecision}
-                                            style={{ backgroundColor: 'var(--theme-primary)' }}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+                                            disabled={processingId === order.id || !allItemsDecided}
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:grayscale theme-bg-primary"
                                         >
                                             {processingId === order.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
                                             Confirmer ma décision

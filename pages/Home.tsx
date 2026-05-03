@@ -12,6 +12,7 @@ import { Product } from '../types';
 import { getGiftAdvice } from '../services/geminiService';
 import CollectionCarousel from '../pages/products/CollectionCarousel';
 import TrendingSection from '@/src/components/product/TrendingProducts';
+import SafeImage from '../src/components/tools/SafeImage';
 
 // Images (Assurez-vous que ces imports fonctionnent, sinon remplacez par vos chemins)
 import imageHome from '@/src/assets/image1.png';
@@ -102,7 +103,7 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
       {/* ================= HERO SECTION ================= */}
       <section className="relative h-[85vh] flex items-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img
+          <SafeImage
             src={imageHome2}
             alt="Hero Fashion"
             className="w-full h-full object-cover object-center animate-slow-zoom"
@@ -172,7 +173,7 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
                 style={{ '--tw-border-opacity': 1, '--hover-border-color': 'var(--theme-primary)' } as React.CSSProperties}
                 className="group relative h-64 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-500"
               >
-                <img src={cat.img} alt={cat.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <SafeImage src={cat.img} alt={cat.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
                 <div className="absolute bottom-6 left-0 right-0 text-center">
                   <span className="text-white font-bold text-xl uppercase tracking-widest border-b-2 border-transparent group-hover:border-[color:var(--hover-border-color)] pb-1 transition-all">
@@ -362,7 +363,7 @@ const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
           </div>
 
           <div className="hidden lg:block w-1/3 animate-in slide-in-from-right-10 duration-1000">
-            <img
+            <SafeImage
               src={imageHome3}
               alt="AI Helper"
               className={`object-contain drop-shadow-2xl hover:scale-105 transition-all duration-700 rounded-[2.5rem] shadow-xl border-4 border-white/20 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { authFetch } from '../src/utils/apiClient';
 import { CreditCard, MapPin, CheckCircle2, ArrowRight, Wallet, Lock, Truck, Loader2, Star, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../constants';
@@ -49,7 +49,9 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const preferredPaymentMethod = usePaymentStore(state => state.preferredMethod);
-  const [paymentMethod, setPaymentMethod] = useState<'Carte' | 'Espèces' | 'Mobile Money' | null>(preferredPaymentMethod);
+  const [paymentMethod, setPaymentMethod] = useState<'Carte' | 'Mobile Money' | null>(
+    (preferredPaymentMethod as string) === 'Espèces' ? null : (preferredPaymentMethod as any)
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
   const [isGuestMode, setIsGuestMode] = useState(false);
@@ -68,6 +70,10 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
     email: data?.email || '',
     city: data?.city || ''
   });
+
+  const progressBarRef = useRef<HTMLDivElement>(null);
+
+
   useEffect(() => {
     if (data && Object.keys(data).length > 0) {
       setFormData(prev => ({
@@ -90,6 +96,13 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
   const shipping = subtotal > 50000 ? 0 : 3000;
   const total = subtotal + shipping - discountAmount;
 
+  useLayoutEffect(() => {
+    if (progressBarRef.current) {
+        const percentage = Math.min(100, (userPoints / pointsRequired) * 100);
+        progressBarRef.current.style.width = `${percentage}%`;
+    }
+  }, [userPoints, pointsRequired]);
+
   const handleNext = () => {
     if (step === 1) {
       if (!formData.nom || !formData.prenom || !formData.address || !formData.phone || !formData.city) {
@@ -111,6 +124,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
   };
 
   const handleFinish = async () => {
+    if (isLoading) return;
     const token = localStorage.getItem('token');
     
     // MODE INVITÉ : pas de token requis si l'email est fourni
@@ -164,47 +178,39 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         }
 
         const newOrderId = orderData.orderId;
+        
+        // 🛒 On vide le panier immédiatement car la commande est déjà en DB
+        onClearCart();
 
-        if (paymentMethod === 'Espèces') {
-            useNotificationStore.getState().addNotification({
-                title: "Commande validée !",
-                message: "Votre commande est confirmée. Préparez-vous pour la livraison en espèces 🚚",
-                type: "success"
-            });
-            onClearCart();
-            navigate('/order-confirmed', { state: { orderId: newOrderId } });
+        const paymentResponse = await authFetch('/api/payment/initialize', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                email: formData.email,
+                amount: total,
+                orderId: newOrderId,
+                callbackUrl: window.location.origin
+            })
+        });
 
+        const paymentData = await paymentResponse.json();
+
+        if (!paymentResponse.ok) {
+            if (paymentData.errorType === 'STOCK_ERROR') {
+                setStockErrors(paymentData.details);
+                setIsLoading(false);
+                return; 
+            }
+            throw new Error(paymentData.message || "Impossible d'initialiser le paiement Paystack");
+        }
+
+        if (paymentData.authorization_url) {
+            window.location.href = paymentData.authorization_url;
         } else {
-            const paymentResponse = await authFetch('/api/payment/initialize', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    email: formData.email,
-                    amount: total,
-                    orderId: newOrderId,
-                    callbackUrl: window.location.origin // Le backend ajoute probablement /payment/callback
-                })
-            });
-
-            const paymentData = await paymentResponse.json();
-
-            if (!paymentResponse.ok) {
-                if (paymentData.errorType === 'STOCK_ERROR') {
-                    setStockErrors(paymentData.details);
-                    setIsLoading(false);
-                    return; 
-                }
-                throw new Error(paymentData.message || "Impossible d'initialiser le paiement Paystack");
-            }
-
-            if (paymentData.authorization_url) {
-                window.location.href = paymentData.authorization_url;
-            } else {
-                throw new Error("Impossible d'initialiser le paiement Paystack");
-            }
+            throw new Error("Impossible d'initialiser le paiement Paystack");
         }
 
     } catch (error: any) {
@@ -268,24 +274,25 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
   };
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     fetchUserProfile();
-    fetchUserPoints(); 
+    if (token) {
+        fetchUserPoints(); 
+    }
   }, []); 
 
   if (cartItems.length === 0 && step !== 3) {
     return (
       <div className="max-w-md mx-auto py-20 px-4 text-center space-y-6">
         <div 
-            className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto"
-            style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' }}
+            className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto bg-theme-primary/10 text-theme-primary"
         >
           <Truck size={40} className="md:w-12 md:h-12" />
         </div>
         <h2 className="text-xl md:text-2xl font-bold">Votre panier est vide !</h2>
         <Link 
             to="/" 
-            style={{ backgroundColor: 'var(--theme-primary)' }}
-            className="inline-block text-white px-6 py-3 md:px-8 md:py-3 rounded-full font-bold opacity-90 hover:opacity-100 transition shadow-lg"
+            className="inline-block text-white px-6 py-3 md:px-8 md:py-3 rounded-full font-bold opacity-90 hover:opacity-100 transition shadow-lg bg-theme-primary"
         >
           Retour à la boutique
         </Link>
@@ -302,16 +309,14 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
           <div key={s} className="flex items-center">
             <div 
                 className={`w-8 h-8 md:w-10 md:h-10 text-sm md:text-base rounded-full flex items-center justify-center font-bold border-2 transition-all ${
-                    step >= s ? 'text-white shadow-lg' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-500'
+                    step >= s ? 'text-white shadow-lg bg-theme-primary border-theme-primary' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-500'
                 }`}
-                style={step >= s ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
             >
               {s}
             </div>
             {s < 3 && (
               <div 
-                  className={`w-8 sm:w-16 md:w-32 h-1 mx-1 md:mx-2 rounded transition-colors ${step > s ? '' : 'bg-slate-200'}`} 
-                  style={step > s ? { backgroundColor: 'var(--theme-primary)' } : {}}
+                  className={`w-8 sm:w-16 md:w-32 h-1 mx-1 md:mx-2 rounded transition-colors ${step > s ? 'bg-theme-primary' : 'bg-slate-200'}`} 
               />
             )}
           </div>
@@ -325,17 +330,17 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
           {step === 1 && (
             <div className="bg-white dark:bg-carbon p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 animate-fade-in transition-colors">
               <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center dark:text-pure">
-                <MapPin className="mr-2 w-5 h-5 md:w-6 md:h-6" style={{ color: 'var(--theme-primary)' }} /> Informations de livraison
+                <MapPin className="mr-2 w-5 h-5 md:w-6 md:h-6 text-theme-primary" /> Informations de livraison
               </h2>
 
               {/* 🛍️ BANNIÈRE MODE INVITÉ */}
               {isGuestMode && (
-                <div className="mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center gap-3 justify-between" style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 6%, transparent)', borderColor: 'color-mix(in srgb, var(--theme-primary) 25%, transparent)' }}>
+                <div className="mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center gap-3 justify-between bg-theme-primary/[.06] border-theme-primary/25">
                   <div>
-                    <p className="font-bold text-sm" style={{ color: 'var(--theme-primary)' }}>👤 Vous commandez en tant qu'invité</p>
+                    <p className="font-bold text-sm text-theme-primary">👤 Vous commandez en tant qu'invité</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Remplissez votre email pour recevoir la confirmation de commande.</p>
                   </div>
-                  <Link to="/login" state={{ from: { pathname: '/checkout' } }} className="text-xs font-black whitespace-nowrap px-3 py-2 rounded-xl transition-all" style={{ backgroundColor: 'var(--theme-primary)', color: 'white' }}>
+                  <Link to="/login" state={{ from: { pathname: '/checkout' } }} className="text-xs font-black whitespace-nowrap px-3 py-2 rounded-xl transition-all bg-theme-primary text-white">
                     Se connecter
                   </Link>
                 </div>
@@ -344,41 +349,40 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Nom</label>
-                  <input type="text" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input" 
+                  <input type="text" placeholder="Votre nom" title="Nom" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input" 
                     value={formData.nom} onChange={(e) => setFormData({...formData, nom: e.target.value})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Prénom</label>
-                  <input type="text" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input" 
+                  <input type="text" placeholder="Votre prénom" title="Prénom" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input" 
                     value={formData.prenom} onChange={(e) => setFormData({...formData, prenom: e.target.value})} />
                 </div>
 
                 <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Ville</label>
-                   <input type="text" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} 
-                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input"/>
+                    <input type="text" placeholder="Ex: Dakar" title="Ville" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} 
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input"/>
                 </div>
                  <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Adresse complète</label>
-                   <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} 
-                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input"/>
+                    <input type="text" placeholder="Votre adresse" title="Adresse complète" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} 
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input"/>
                 </div>
                  <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Téléphone</label>
-                   <input type="text" inputMode="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input"/>
+                    <input type="text" placeholder="Ex: 77 000 00 00" title="Téléphone" inputMode="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input"/>
                 </div>
                  <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Email</label>
-                   <input type="email" inputMode="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                   className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input" readOnly={isAuth}/>
+                    <input type="email" placeholder="votre@email.com" title="Email" inputMode="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input" readOnly={isAuth}/>
                 </div>
 
               </div>
               <button 
                 onClick={handleNext} 
-                style={{ backgroundColor: 'var(--theme-primary)' }}
-                className="mt-8 w-full text-white py-3 md:py-4 rounded-2xl font-bold flex items-center justify-center space-x-2 opacity-95 hover:opacity-100 transition-all shadow-xl active:scale-95"
+                className="mt-8 w-full bg-theme-primary text-white py-3 md:py-4 rounded-2xl font-bold flex items-center justify-center space-x-2 opacity-95 hover:opacity-100 transition-all shadow-xl active:scale-95"
               >
                 <span>Continuer vers le paiement</span>
                 <ArrowRight className="w-5 h-5" />
@@ -390,16 +394,14 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
           {step === 2 && (
             <div className="bg-white dark:bg-carbon p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 animate-fade-in transition-colors">
               <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center dark:text-pure">
-                <CreditCard className="mr-2 w-5 h-5 md:w-6 md:h-6" style={{ color: 'var(--theme-primary)' }} /> Mode de Paiement
+                <CreditCard className="mr-2 w-5 h-5 md:w-6 md:h-6 text-theme-primary" /> Mode de Paiement
               </h2>
               <div className="space-y-3 md:space-y-4">
                 
-                {/* Option Paystack (Wave / Orange / MTN / Moov / Carte) */}
                 <button 
                     onClick={() => setPaymentMethod('Mobile Money')}
-                    style={paymentMethod === 'Mobile Money' ? { borderColor: 'var(--theme-primary)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)' } : {}}
                     className={`w-full p-4 md:p-6 border-2 rounded-3xl flex items-center justify-between transition-all ${
-                        paymentMethod === 'Mobile Money' ? '' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
+                        paymentMethod === 'Mobile Money' ? 'border-theme-primary bg-theme-primary/[.05]' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
                     }`}
                 >
                     <div className="flex flex-col items-start">
@@ -411,29 +413,9 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                         </div>
                     </div>
                     <div 
-                        className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 ${paymentMethod === 'Mobile Money' ? '' : 'border-slate-300 dark:border-slate-600'}`} 
-                        style={paymentMethod === 'Mobile Money' ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
+                        className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 ${paymentMethod === 'Mobile Money' ? 'bg-theme-primary border-theme-primary' : 'border-slate-300 dark:border-slate-600'}`} 
                     />
                 </button>
-
-                {/* Option Espèces */}
-                <button 
-                    onClick={() => setPaymentMethod('Espèces')}
-                    style={paymentMethod === 'Espèces' ? { borderColor: 'var(--theme-primary)', backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)' } : {}}
-                    className={`w-full p-4 md:p-6 border-2 rounded-3xl flex items-center justify-between transition-all ${
-                        paymentMethod === 'Espèces' ? '' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
-                    }`}
-                >
-                    <div className="flex flex-col items-start">
-                        <span className="font-bold text-sm md:text-base dark:text-pure">Paiement à la livraison</span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">Payer en espèces à la réception</span>
-                    </div>
-                    <div 
-                        className={`w-5 h-5 md:w-6 md:h-6 rounded-full border-2 ${paymentMethod === 'Espèces' ? '' : 'border-slate-300 dark:border-slate-600'}`} 
-                        style={paymentMethod === 'Espèces' ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
-                    />
-                </button>
-
               </div>
 
               {/* --- MODULE RÉCOMPENSE VIP H-DESIGNER --- */}
@@ -450,22 +432,20 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
 
                   {canUsePoints ? (
                       <div 
-                          className="p-4 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4"
-                          style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' }}
+                          className="p-4 rounded-2xl border flex flex-col sm:flex-row items-center justify-between gap-4 bg-theme-primary/[.05] border-theme-primary/20"
                       >
                           <div>
-                              <p className="font-bold flex items-center gap-1" style={{ color: 'var(--theme-primary)' }}>🎁 T-Shirt Offert Débloqué !</p>
-                              <p className="text-xs mt-1" style={{ color: 'var(--theme-primary)', opacity: 0.8 }}>Utilisez 200 points pour déduire {discountAmount.toLocaleString()} FCFA de cette commande.</p>
+                              <p className="font-bold flex items-center gap-1 text-theme-primary">🎁 T-Shirt Offert Débloqué !</p>
+                              <p className="text-xs mt-1 text-theme-primary opacity-80">Utilisez 200 points pour déduire {discountAmount.toLocaleString()} FCFA de cette commande.</p>
                           </div>
                           
                           <button 
                               type="button"
                               onClick={() => setUseLoyaltyPoints(!useLoyaltyPoints)}
-                              style={useLoyaltyPoints ? { backgroundColor: 'var(--theme-primary)', color: 'white' } : { backgroundColor: 'white', color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' }}
                               className={`px-4 py-2 rounded-xl font-bold transition-all whitespace-nowrap shadow-sm border ${
                                   useLoyaltyPoints 
-                                  ? '' 
-                                  : 'hover:bg-slate-50'
+                                  ? 'bg-theme-primary text-white' 
+                                  : 'bg-white text-theme-primary border-theme-primary/20 hover:bg-slate-50'
                               }`}
                           >
                               {useLoyaltyPoints ? 'Récompense Appliquée ✓' : 'Appliquer mes points'}
@@ -478,8 +458,8 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                           </p>
                           <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full mt-3 overflow-hidden">
                               <div 
-                                  className="h-full rounded-full transition-all duration-1000" 
-                                  style={{ width: `${Math.min(100, (userPoints / pointsRequired) * 100)}%`, backgroundColor: 'var(--theme-primary)' }}
+                                  ref={progressBarRef}
+                                  className="h-full rounded-full transition-all duration-1000 bg-theme-primary" 
                               ></div>
                           </div>
                       </div>
@@ -491,8 +471,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                 <button 
                     onClick={handleNext} 
                     disabled={!paymentMethod} 
-                    style={paymentMethod ? { backgroundColor: 'var(--theme-primary)' } : {}}
-                    className={`flex-[2] text-white py-3 md:py-4 rounded-2xl font-bold transition-transform ${paymentMethod ? 'opacity-95 hover:opacity-100 active:scale-95 shadow-lg' : 'bg-slate-300 cursor-not-allowed'}`}
+                    className={`flex-[2] text-white py-3 md:py-4 rounded-2xl font-bold transition-transform ${paymentMethod ? 'opacity-95 hover:opacity-100 active:scale-95 shadow-lg bg-theme-primary' : 'bg-slate-300 cursor-not-allowed'}`}
                 >
                     Confirmer
                 </button>
@@ -504,8 +483,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
           {step === 3 && (
             <div className="bg-white dark:bg-carbon p-6 md:p-12 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 text-center space-y-6 md:space-y-8 animate-bounce-in transition-colors">
               <div 
-                  className="w-16 h-16 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto shadow-lg"
-                  style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' }}
+                  className="w-16 h-16 md:w-24 md:h-24 rounded-full flex items-center justify-center mx-auto shadow-lg bg-theme-primary/10 text-theme-primary"
               >
                 <CheckCircle2 size={40} className="md:w-16 md:h-16" />
               </div>
@@ -521,7 +499,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 dark:text-slate-400 font-bold uppercase text-xs">Paiement</span>
-                  <span className="font-bold" style={{ color: 'var(--theme-primary)' }}>{paymentMethod === 'Mobile Money' ? 'Mobile Money / Carte' : paymentMethod}</span>
+                  <span className="font-bold text-theme-primary">Mobile Money / Carte Bancaire</span>
                 </div>
               </div>
 
@@ -585,8 +563,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
           <div className="bg-white dark:bg-carbon p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative lg:sticky lg:top-6 transition-colors">
             <h3 className="text-lg font-bold mb-4 md:mb-6 flex items-center gap-2 dark:text-pure">
               <span 
-                className="p-2 rounded-lg"
-                style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', color: 'var(--theme-primary)' }}
+                className="p-2 rounded-lg bg-theme-primary/10 text-theme-primary"
               >
                 <Wallet size={18} />
               </span>
@@ -646,7 +623,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
             {/* TOTAL FINAL */}
             <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
               <span className="text-base md:text-lg font-bold text-slate-900 dark:text-pure">Total à payer</span>
-              <span className="text-xl md:text-2xl font-black" style={{ color: 'var(--theme-primary)' }}>{formatCurrency(total)}</span>
+              <span className="text-xl md:text-2xl font-black text-theme-primary">{formatCurrency(total)}</span>
             </div>
 
             <div className="mt-6 flex items-center justify-center gap-2 text-[10px] md:text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-900 py-3 rounded-xl border border-slate-100 dark:border-slate-700">
@@ -657,14 +634,6 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         </aside>
       </div>
 
-      {/* 🪄 STYLES MAGIQUES POUR LES INPUTS */}
-      <style>{`
-        .theme-input:focus {
-            background-color: white !important;
-            border-color: var(--theme-primary) !important;
-            box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary) 15%, transparent) !important;
-        }
-      `}</style>
     </div>
   );
 };

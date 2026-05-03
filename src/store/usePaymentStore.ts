@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type PaymentMethodType = 'Carte' | 'Espèces' | 'Mobile Money' | null;
+export type PaymentMethodType = 'Carte' | 'Mobile Money' | null;
 
 interface PaymentState {
   preferredMethod: PaymentMethodType;

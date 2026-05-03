@@ -58,11 +58,7 @@ export const StatCard = ({ label, value, trend, icon: Icon, color, periodText = 
       
       {/* 🪄 GESTION DYNAMIQUE DE L'ICONE */}
       <div 
-        className={`p-3 sm:p-4 rounded-xl flex-shrink-0 ${colorClass}`}
-        style={isTheme ? { 
-            backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)', 
-            color: 'var(--theme-primary)' 
-        } : {}}
+        className={`p-3 sm:p-4 rounded-xl flex-shrink-0 ${isTheme ? 'bg-theme-primary/10 text-theme-primary' : colorClass}`}
       >
         <Icon size={24} className="sm:w-7 sm:h-7" />
       </div>

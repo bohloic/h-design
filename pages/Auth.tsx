@@ -5,6 +5,10 @@ import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2, Shiel
 import { useNotificationStore } from '../src/store/useNotificationStore';
 import { jwtDecode } from 'jwt-decode';
 import logo from '../src/assets/logo.png';
+import loginBg from '../src/assets/image1.png';
+
+import { useAuth } from '../src/utils/context/AuthContext';
+import '../src/styles/Auth.css';
 
 interface MonTokenCustom {
     userId: string;
@@ -13,7 +17,8 @@ interface MonTokenCustom {
     exp: number;
 }
 
-function Auth({ onLoginSuccess }) {
+function Auth() {
+    const { login: authLogin } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -143,11 +148,16 @@ function Auth({ onLoginSuccess }) {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                localStorage.setItem('token', data.token);
-                if (data.user?.role) localStorage.setItem('role', data.user.role);
+                authLogin(data.token, data.user);
                 setStatus({ type: 'success', message: "Email vérifié ! Bienvenue." });
-                if (onLoginSuccess) onLoginSuccess();
-                setTimeout(() => navigate('/dashboard'), 1000);
+                
+                // 🪄 REDIRECTION INTELLIGENTE
+                const state = location.state as any;
+                const destination = data.user?.role === 'admin' 
+                    ? '/admin' 
+                    : (state?.from?.pathname === '/checkout' ? '/checkout' : '/dashboard');
+
+                setTimeout(() => navigate(destination), 1000);
             } else {
                 throw new Error(data.message || "Code invalide.");
             }
@@ -190,10 +200,8 @@ function Auth({ onLoginSuccess }) {
                     setStatus({ type: 'success', message: data.message });
                 }
                 else {
-                    if (data.token) localStorage.setItem('token', data.token);
-                    if (data.user?.role) localStorage.setItem('role', data.user.role);
+                    authLogin(data.token, data.user);
                     setStatus({ type: 'success', message: "Connexion réussie !" });
-                    if (onLoginSuccess) onLoginSuccess();
 
                     let decodedUserId = '';
                     try {
@@ -208,8 +216,13 @@ function Auth({ onLoginSuccess }) {
                         type: "success"
                     });
 
+                    // 🪄 REDIRECTION INTELLIGENTE (Fix Checkout Flow)
                     const state = location.state as any;
-                    setTimeout(() => navigate(data.user?.role === 'admin' ? '/admin' : (state?.from?.pathname || "/dashboard")), 500);
+                    const destination = data.user?.role === 'admin' 
+                        ? '/admin' 
+                        : (state?.from?.pathname === '/checkout' ? '/checkout' : '/dashboard');
+
+                    setTimeout(() => navigate(destination), 500);
                 }
             } else {
                 if (data.requireVerification) {
@@ -234,7 +247,9 @@ function Auth({ onLoginSuccess }) {
 
     const handleContainerClick = () => {
         hiddenInputRef.current?.focus();
-    }; const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    };
+
+    const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value.replace(/\D/g, '').slice(0, 6);
         const newCode = val.split('');
         // Fill the rest with empty strings
@@ -243,8 +258,7 @@ function Auth({ onLoginSuccess }) {
     };
     return (
         <div
-            className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-cover bg-center relative"
-            style={{ backgroundImage: "url('/src/assets/image1.png')" }}
+            className="min-h-screen flex items-center justify-center p-4 md:p-8 bg-cover bg-center relative auth-page-bg"
         >
             {/* Overlay sombre ou flouté pour faire ressortir le formulaire */}
             <div className="absolute inset-0 bg-[#0a1118]/40 backdrop-blur-md"></div>
@@ -255,7 +269,7 @@ function Auth({ onLoginSuccess }) {
                 {/* --- PANNEAU GAUCHE : IMAGE --- */}
                 <div className="relative hidden md:flex md:w-1/2 bg-cover bg-center overflow-hidden">
                     {/* Using the image from assets as requested */}
-                    <img src="/src/assets/image1.png" alt="Gift box" className="absolute inset-0 w-full h-full object-cover" />
+                    <img src={loginBg} alt="Gift box" className="absolute inset-0 w-full h-full object-cover" />
 
                     {/* Logo (cliquable vers l'accueil) superposé sur l'image en haut à gauche */}
                     <div className="absolute top-8 left-8 z-10">
@@ -298,6 +312,22 @@ function Auth({ onLoginSuccess }) {
                                         : isLoginMode ? "Heureux de vous revoir ! Veuillez saisir vos identifiants." : "Veuillez entrer vos informations pour créer un compte."}
                             </p>
                         </div>
+
+                        {/* ℹ️ MESSAGE : DÉJÀ CONNECTÉ (Simplifié comme demandé) */}
+                        {isLoginMode && localStorage.getItem('token') && (
+                            <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3 text-blue-700 text-sm font-bold animate-in fade-in">
+                                <ShieldCheck size={20} />
+                                <div>
+                                    <p>Vous êtes déjà connecté à un compte.</p>
+                                    <button 
+                                        onClick={() => { localStorage.clear(); window.location.reload(); }}
+                                        className="text-[11px] underline uppercase mt-1 hover:text-blue-900"
+                                    >
+                                        Se déconnecter pour changer de compte
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* AFFICHEUR D'ERREURS/SUCCÈS */}
                         {status.message && (
