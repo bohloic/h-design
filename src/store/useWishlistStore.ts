@@ -9,6 +9,7 @@ interface WishlistState {
   toggleItem: (item: any) => void;
   clearWishlist: () => void;
   isInWishlist: (id: string | number) => boolean;
+  reset: () => void;
 }
 
 export const useWishlistStore = create<WishlistState>()(
@@ -38,7 +39,9 @@ export const useWishlistStore = create<WishlistState>()(
       
       isInWishlist: (id) => {
         return get().items.some(i => String(i.id) === String(id));
-      }
+      },
+      
+      reset: () => set({ items: [] })
     }),
     {
       name: 'wishlist-storage', // nom de la clé dans le localStorage

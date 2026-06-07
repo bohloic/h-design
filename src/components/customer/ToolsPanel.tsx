@@ -278,6 +278,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                   </button>
                 </div>
                 
+                {/* 🚫 DÉSACTIVÉ SELON DEMANDE CLIENT : Transparence et Arrondis
                 <div className="space-y-2 bg-gray-50 dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-slate-800">
                   <div className="flex justify-between">
                     <label className="text-xs font-bold text-gray-600 dark:text-gray-300">Transparence</label>
@@ -313,6 +314,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     className="w-full accent-[var(--theme-primary)]"
                   />
                 </div>
+                */}
               </div>
             )}
           </div>

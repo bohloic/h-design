@@ -101,7 +101,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         const percentage = Math.min(100, (userPoints / pointsRequired) * 100);
         progressBarRef.current.style.width = `${percentage}%`;
     }
-  }, [userPoints, pointsRequired]);
+  }, [userPoints, pointsRequired, step]); // Ajout de 'step' pour re-déclencher l'animation au passage à l'étape 2
 
   const handleNext = () => {
     if (step === 1) {
@@ -109,6 +109,14 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         useNotificationStore.getState().addNotification({
             title: "Informations incomplètes",
             message: "Veuillez remplir tous les champs obligatoires pour la livraison.",
+            type: "warning"
+        });
+        return;
+      }
+      if (formData.phone.length !== 10) {
+        useNotificationStore.getState().addNotification({
+            title: "Format téléphone",
+            message: "Le numéro de téléphone doit comporter exactement 10 chiffres.",
             type: "warning"
         });
         return;
@@ -179,8 +187,9 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
 
         const newOrderId = orderData.orderId;
         
-        // 🛒 On vide le panier immédiatement car la commande est déjà en DB
-        onClearCart();
+        // 🛒 SÉCURITÉ : On ne vide plus le panier ici. 
+        // Il sera vidé dans PaymentCallback.tsx uniquement après succès réel du paiement.
+        // onClearCart(); 
 
         const paymentResponse = await authFetch('/api/payment/initialize', {
             method: 'POST',
@@ -326,13 +335,12 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
         <div className="lg:col-span-2 space-y-6 md:space-y-8">
           
-          {/* ÉTAPE 1 : INFOS */}
           {step === 1 && (
-            <div className="bg-white dark:bg-carbon p-5 md:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 animate-fade-in transition-colors">
-              <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 flex items-center dark:text-pure">
-                <MapPin className="mr-2 w-5 h-5 md:w-6 md:h-6 text-theme-primary" /> Informations de livraison
+            <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="bg-white dark:bg-carbon p-6 md:p-12 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 transition-colors">
+              <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-pure mb-6 md:mb-10 flex items-center gap-3">
+                <MapPin className="text-theme-primary" size={28} /> Détails de Livraison
               </h2>
-
+              
               {/* 🛍️ BANNIÈRE MODE INVITÉ */}
               {isGuestMode && (
                 <div className="mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center gap-3 justify-between bg-theme-primary/[.06] border-theme-primary/25">
@@ -346,48 +354,52 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Nom</label>
-                  <input type="text" placeholder="Votre nom" title="Nom" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input" 
-                    value={formData.nom} onChange={(e) => setFormData({...formData, nom: e.target.value})} />
+                  <label htmlFor="prenom" className="text-xs font-bold text-slate-500 uppercase ml-1">Prénom</label>
+                  <input id="prenom" type="text" name="prenom" placeholder="Votre prénom" title="Votre prénom" value={formData.prenom} onChange={(e) => setFormData({...formData, prenom: e.target.value})} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Prénom</label>
-                  <input type="text" placeholder="Votre prénom" title="Prénom" className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input" 
-                    value={formData.prenom} onChange={(e) => setFormData({...formData, prenom: e.target.value})} />
+                  <label htmlFor="nom" className="text-xs font-bold text-slate-500 uppercase ml-1">Nom</label>
+                  <input id="nom" type="text" name="nom" placeholder="Votre nom" title="Votre nom" value={formData.nom} onChange={(e) => setFormData({...formData, nom: e.target.value})} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
                 </div>
-
                 <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Ville</label>
-                    <input type="text" placeholder="Ex: Dakar" title="Ville" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} 
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input"/>
+                  <label htmlFor="email" className="text-xs font-bold text-slate-500 uppercase ml-1">Email</label>
+                  <input id="email" type="email" name="email" placeholder="votre@email.com" title="Votre email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
                 </div>
-                 <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Adresse complète</label>
-                    <input type="text" placeholder="Votre adresse" title="Adresse complète" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} 
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input"/>
+                <div className="space-y-2">
+                  <label htmlFor="phone" className="text-xs font-bold text-slate-500 uppercase ml-1">Téléphone (10 chiffres)</label>
+                  <input 
+                    id="phone"
+                    type="tel" 
+                    name="phone" 
+                    placeholder="0102030405"
+                    title="Téléphone (10 chiffres)"
+                    value={formData.phone} 
+                    onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
+                    className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" 
+                    required 
+                    maxLength={10}
+                  />
                 </div>
-                 <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Téléphone</label>
-                    <input type="text" placeholder="Ex: 77 000 00 00" title="Téléphone" inputMode="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input"/>
+                <div className="md:col-span-2 space-y-2">
+                  <label htmlFor="city" className="text-xs font-bold text-slate-500 uppercase ml-1">Ville</label>
+                  <input id="city" type="text" name="city" placeholder="Ex: Dakar" title="Votre ville" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
                 </div>
-                 <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Email</label>
-                    <input type="email" placeholder="votre@email.com" title="Email" inputMode="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-transparent dark:border-slate-700 rounded-2xl outline-none text-slate-900 dark:text-pure text-sm md:text-base transition-all theme-input" readOnly={isAuth}/>
+                <div className="md:col-span-2 space-y-2">
+                  <label htmlFor="address" className="text-xs font-bold text-slate-500 uppercase ml-1">Adresse Complète</label>
+                  <input id="address" type="text" name="address" placeholder="Rue, Quartier..." title="Votre adresse complète" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
                 </div>
-
               </div>
-              <button 
-                onClick={handleNext} 
-                className="mt-8 w-full bg-theme-primary text-white py-3 md:py-4 rounded-2xl font-bold flex items-center justify-center space-x-2 opacity-95 hover:opacity-100 transition-all shadow-xl active:scale-95"
-              >
-                <span>Continuer vers le paiement</span>
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
+
+              <div className="flex justify-end mt-8 md:mt-12">
+                <button 
+                  type="submit"
+                  className="w-full md:w-auto bg-slate-900 dark:bg-theme-primary text-white px-10 py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all shadow-xl"
+                >
+                  Suivant <ArrowRight size={20} />
+                </button>
+              </div>
+            </form>
           )}
 
           {/* ÉTAPE 2 : PAIEMENT */}

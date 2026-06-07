@@ -70,11 +70,27 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             existingDesign?: any;
         } | null;
         
-        let productToSelect = productsData.length > 0 ? productsData[0] : null;
+        let productToSelect = null;
 
         if (state?.productId) {
             const found = productsData.find((p: Product) => p.id === Number(state.productId));
             if (found) productToSelect = found;
+        } else {
+            // 🎯 RECHERCHE DU T-SHIRT BLANC PAR DÉFAUT
+            productToSelect = productsData.find((p: Product) => 
+                p.name.toLowerCase().includes('t-shirt') && 
+                (p.name.toLowerCase().includes('blanc') || p.name.toLowerCase().includes('vierge'))
+            );
+            
+            // Si pas trouvé, on cherche n'importe quel T-shirt
+            if (!productToSelect) {
+                productToSelect = productsData.find((p: Product) => p.name.toLowerCase().includes('t-shirt'));
+            }
+
+            // Sinon le premier
+            if (!productToSelect) {
+                productToSelect = productsData.length > 0 ? productsData[0] : null;
+            }
         }
 
         if (productToSelect) {
@@ -415,7 +431,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                     className={`appearance-none pl-3 pr-8 py-2 rounded-lg border-2 text-xs font-bold uppercase focus:outline-none cursor-pointer transition-all ${!selectedSize ? 'border-theme-primary/40 bg-theme-primary/5 text-theme-primary' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800'}`}
                   >
                       <option value="" disabled>Taille</option>
-                      {(selectedProduct.sizes && selectedProduct.sizes.length > 0 ? selectedProduct.sizes : ['S', 'M', 'L', 'XL', 'XXL']).map(size => (<option key={size} value={size}>{size}</option>))}
+                      {(selectedProduct.sizes && selectedProduct.sizes.length > 0 ? selectedProduct.sizes : ['S', 'M', 'L', 'XL', 'XXL', '3XL']).map(size => (<option key={size} value={size}>{size}</option>))}
                   </select>
               </div>
                <button 

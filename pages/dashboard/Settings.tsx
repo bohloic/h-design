@@ -5,6 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 import { useNotificationStore } from '../../src/store/useNotificationStore';
 import { useAuth } from '../../src/utils/context/AuthContext';
 import { useToast } from '../../src/utils/context/ToastContext';
+import FormAlert from '../../src/components/elements/FormAlert';
 
 interface MonTokenCustom {
   userId: string;
@@ -92,7 +93,7 @@ export const Settings: React.FC = () => {
         updateUser(formData);
 
         useNotificationStore.getState().addNotification({
-        userId: userId || undefined,
+        user_id: userId || undefined,
         title: "Profil mis à jour",
         message: "Vos informations personnelles ont été enregistrées avec succès.",
         type: "success",
@@ -153,12 +154,11 @@ export const Settings: React.FC = () => {
           </button>
         </div>
 
-        {message && (
-          <div className={`p-4 mb-6 rounded-xl flex items-center gap-2 font-medium text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-            {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-            {message.text}
-          </div>
-        )}
+        <FormAlert 
+          type={message?.type || null} 
+          message={message?.text || null} 
+          onClose={() => setMessage(null)} 
+        />
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-10 opacity-50">

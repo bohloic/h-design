@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { authFetch } from '../apiClient';
+import { useNotificationStore } from '../../store/useNotificationStore';
+import { useWishlistStore } from '../../store/useWishlistStore';
+import { usePaymentStore } from '../../store/usePaymentStore';
 
 interface UserData {
   id?: string;
@@ -27,6 +31,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -78,9 +83,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('token');
     localStorage.removeItem('data');
     localStorage.removeItem('role');
+    
+    // 🧹 Réinitialisation de tous les stores Zustand
+    useNotificationStore.getState().reset();
+    useWishlistStore.getState().reset();
+    usePaymentStore.getState().reset();
+
+    // 🛒 Déclenchement d'un événement pour vider le panier dans App.tsx
+    window.dispatchEvent(new Event('userLoggedOut'));
+
     setUser(null);
     setIsAuthenticated(false);
-    window.location.href = '/login';
+    // Redirection fluide sans rechargement
+    navigate('/login'); 
   };
 
   const updateUser = (newData: Partial<UserData>) => {

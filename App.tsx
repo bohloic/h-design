@@ -243,11 +243,19 @@ const App: React.FC = () => {
         setCart([]);
       }
     };
+    const handleLogoutCleanup = () => {
+      setCart([]);
+      localStorage.removeItem('cart');
+    };
+
     window.addEventListener('cartUpdated', checkCart);
     window.addEventListener('storage', checkCart);
+    window.addEventListener('userLoggedOut', handleLogoutCleanup);
+
     return () => {
       window.removeEventListener('cartUpdated', checkCart);
       window.removeEventListener('storage', checkCart);
+      window.removeEventListener('userLoggedOut', handleLogoutCleanup);
     };
   }, []);
 
@@ -287,22 +295,22 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <ToastProvider>
-          <Router>
-            <AppShell
-              cart={cart}
-              isCartOpen={isCartOpen}
-              onOpenCart={() => setIsCartOpen(true)}
-              onCloseCart={() => setIsCartOpen(false)}
-              onUpdateQuantity={updateQuantity}
-              onRemoveFromCart={removeFromCart}
-              addToCart={addToCart}
-              clearCart={clearCart}
-            />
-          </Router>
-        </ToastProvider>
-      </AuthProvider>
+      <Router>
+        <AuthProvider>
+          <ToastProvider>
+              <AppShell
+                cart={cart}
+                isCartOpen={isCartOpen}
+                onOpenCart={() => setIsCartOpen(true)}
+                onCloseCart={() => setIsCartOpen(false)}
+                onUpdateQuantity={updateQuantity}
+                onRemoveFromCart={removeFromCart}
+                addToCart={addToCart}
+                clearCart={clearCart}
+              />
+          </ToastProvider>
+        </AuthProvider>
+      </Router>
     </ThemeProvider>
   );
 };

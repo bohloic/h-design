@@ -8,6 +8,7 @@ import logo from '../src/assets/logo.png';
 import loginBg from '../src/assets/image1.png';
 
 import { useAuth } from '../src/utils/context/AuthContext';
+import FormAlert from '../src/components/elements/FormAlert';
 import '../src/styles/Auth.css';
 
 interface MonTokenCustom {
@@ -57,7 +58,12 @@ function Auth() {
 
     // --- HANDLERS ---
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        let value = e.target.value;
+        if (e.target.name === 'phone') {
+            // On ne garde que les chiffres et on limite à 10
+            value = value.replace(/\D/g, '').slice(0, 10);
+        }
+        setFormData({ ...formData, [e.target.name]: value });
     };
 
     const toggleMode = () => {
@@ -69,6 +75,8 @@ function Auth() {
         setShowPassword(false);
         setShowConfirmPassword(false);
     };
+
+
 
     // 1. MOT DE PASSE OUBLIÉ
     const handleForgotSubmit = async (e: React.FormEvent) => {
@@ -175,6 +183,10 @@ function Auth() {
 
         if (!isLoginMode && formData.password !== formData.confirmPassword) {
             return setStatus({ type: 'error', message: "Les mots de passe ne correspondent pas." });
+        }
+
+        if (!isLoginMode && formData.phone.length !== 10) {
+            return setStatus({ type: 'error', message: "Le numéro de téléphone doit comporter exactement 10 chiffres." });
         }
 
         setIsLoading(true);
@@ -330,24 +342,35 @@ function Auth() {
                         )}
 
                         {/* AFFICHEUR D'ERREURS/SUCCÈS */}
-                        {status.message && (
-                            <div className={`mb-8 p-4 rounded-xl flex items-start gap-3 text-sm font-bold animate-in slide-in-from-top-2 ${status.type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-green-50 text-green-700 border border-green-100'}`}>
-                                {status.type === 'error' ? <AlertCircle size={20} className="flex-shrink-0" /> : <CheckCircle2 size={20} className="flex-shrink-0" />}
-                                <span>{status.message}</span>
-                            </div>
-                        )}
+                        <FormAlert 
+                            type={status.type as any} 
+                            message={status.message} 
+                            onClose={() => setStatus({ type: '', message: '' })}
+                        />
 
                         {/* --- CONTENU DYNAMIQUE DES FORMULAIRES --- */}
                         <div className="space-y-6">
 
                             {isForgotMode && !showVerification ? (
-                                <form onSubmit={handleForgotSubmit} className="space-y-6 animate-in fade-in duration-500">
+                                <form onSubmit={handleForgotSubmit} className="space-y-6">
                                     <div className="space-y-2">
-                                        <label htmlFor="forgot-email" className="text-[13px] font-bold text-[#0b2e35]">Adresse e-mail</label>
-                                        <input id="forgot-email" type="email" name="email" placeholder="Votre adresse e-mail" value={formData.email} onChange={handleChange} required className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#0b2e35] focus:ring-1 focus:ring-[#0b2e35] transition-all text-[15px] font-medium text-gray-900 placeholder:text-gray-400 placeholder:font-normal" />
+                                        <label className="text-sm font-bold text-slate-700 ml-1">Email</label>
+                                        <div className="relative group">
+                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#0b2e35] transition-colors" size={20} />
+                                            <input 
+                                                type="email" name="email" value={formData.email} onChange={handleChange}
+                                                placeholder="votre@email.com" 
+                                                className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-[#0b2e35] focus:ring-4 focus:ring-[#0b2e35]/10 transition-all outline-none text-slate-800"
+                                            />
+                                        </div>
                                     </div>
-                                    <button type="submit" disabled={isLoading} className="w-full bg-[#0b2e35] text-white py-4 rounded-xl font-bold text-[15px] hover:bg-opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 mt-4">
-                                        {isLoading ? <Loader2 className="animate-spin" /> : 'Recevoir le lien'}
+
+                                    <button 
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full bg-[#0b2e35] text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:bg-opacity-90 active:scale-95 transition-all shadow-xl"
+                                    >
+                                        {isLoading ? <Loader2 className="animate-spin" /> : <><KeyRound size={20} /> Envoyer le lien</>}
                                     </button>
                                     <button type="button" onClick={() => setIsForgotMode(false)} className="w-full text-center text-[14px] text-gray-500 font-bold hover:text-[#0b2e35] transition-colors mt-2">
                                         Annuler

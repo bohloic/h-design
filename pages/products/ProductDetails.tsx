@@ -144,7 +144,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
             category_name: rawData.category_name,
             rating: 4.8, 
             reviewsCount: rawData.view_count || 0,
-            sizes: parsedSizes.length > 0 ? parsedSizes : ['S', 'M', 'L', 'XL', 'XXL'],
+            sizes: parsedSizes.length > 0 ? parsedSizes : ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
             variants: allVariants,
             image_url: rawData.image_url,
             collection_id: rawData.collection_id
@@ -193,7 +193,8 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
     const customizationData = {
       productId: product.id,
       variantId: selectedVariant?.id, 
-      colorName: selectedVariant?.colorName
+      colorName: selectedVariant?.colorName,
+      sizeName: selectedSize // On passe aussi la taille sélectionnée
     };
     navigate('/personnaliser/mon-design', { state: customizationData });
   };
@@ -350,6 +351,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                         <button 
                             key={size} 
                             onClick={() => setSelectedSize(size)} 
+                            aria-label={`Taille ${size}`}
                             className={`min-w-[3rem] h-10 px-2 rounded-md text-sm font-bold border transition-colors ${
                                 selectedSize === size 
                                     ? 'text-white shadow-md bg-theme-primary border-theme-primary' 
@@ -381,6 +383,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                         <button 
                             onClick={() => setQuantity(Math.max(1, quantity - 1))} 
                             disabled={isOutOfStock || quantity <= 1}
+                            title="Diminuer la quantité"
                             className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-100 font-bold text-lg transition-colors"
                         >
                             -
@@ -391,6 +394,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                         <button 
                             onClick={() => setQuantity(Math.min(availableStock, quantity + 1))} 
                             disabled={isOutOfStock || quantity >= availableStock}
+                            title="Augmenter la quantité"
                             className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-100 font-bold text-lg transition-colors"
                         >
                             +

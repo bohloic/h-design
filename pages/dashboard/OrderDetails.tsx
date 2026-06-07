@@ -22,6 +22,29 @@ export const OrderDetails: React.FC = () => {
     const [isPaying, setIsPaying] = useState(false);
     const progressBarRef = useRef<HTMLDivElement>(null);
 
+    const handleCancelOrder = async () => {
+        if (!window.confirm("Êtes-vous sûr de vouloir annuler cette commande ?\n\n⚠️ IMPORTANT : Aucun remboursement ne sera autorisé après l'annulation d'une commande déjà payée.")) {
+            return;
+        }
+
+        try {
+            const response = await authFetch(`/api/orders/${orderId}/cancel`, {
+                method: 'PUT'
+            });
+
+            if (response.ok) {
+                showToast("Votre commande a été annulée.", "success");
+                fetchOrderDetails(); // Rafraîchir l'affichage
+            } else {
+                const data = await response.json();
+                showToast(data.message || "Erreur lors de l'annulation", "error");
+            }
+        } catch (error) {
+            console.error("Erreur annulation:", error);
+            showToast("Impossible d'annuler la commande pour le moment.", "error");
+        }
+    };
+
     const handlePayNow = async () => {
         if (!order) return;
         setIsPaying(true);
@@ -50,7 +73,7 @@ export const OrderDetails: React.FC = () => {
             console.error("Erreur paiement:", error);
             alert("Erreur technique lors de la redirection vers Paystack");
         } finally {
-            setIsPaying(null);
+            setIsPaying(false);
         }
     };
 
@@ -305,6 +328,14 @@ export const OrderDetails: React.FC = () => {
                                         <p className="text-sm font-black text-theme-primary">{formatCurrency(item.unit_price || item.price)}</p>
                                     </div>
                                     <p className="text-xs text-slate-500 mt-1">Quantité : <span className="font-bold text-slate-700">{item.quantity}</span></p>
+                                    <div className="flex gap-4">
+                                        <p className="text-xs text-slate-500 mt-1">Taille : <span className="font-bold text-slate-700">{item.size || 'Unique'}</span></p>
+                                        {item.color && (
+                                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                                                Couleur : <span className="font-bold text-slate-700 uppercase">{item.color}</span>
+                                            </p>
+                                        )}
+                                    </div>
                                     
                                     {/* STATUS DU DESIGN PAR ARTICLE (Uniquement si personnalisé) */}
                                     {item.customization && (
@@ -388,12 +419,18 @@ export const OrderDetails: React.FC = () => {
                         <div className="space-y-4 text-sm mb-6 relative z-10">
                             <div className="flex justify-between text-slate-300 font-medium">
                                 <span>Sous-total articles</span>
-                                <span>{formatCurrency(order.total_amount - (order.shipping_fee || 0))}</span>
+                                <span>{formatCurrency(order.items?.reduce((sum: number, i: any) => sum + (i.unit_price * i.quantity), 0) || 0)}</span>
                             </div>
                             <div className="flex justify-between text-slate-300 font-medium">
                                 <span>Frais de livraison</span>
                                 <span>{formatCurrency(order.shipping_fee || 0)}</span>
                             </div>
+                            {order.points_used > 0 && (
+                                <div className="flex justify-between text-amber-400 font-medium">
+                                    <span>Récompense Fidélité</span>
+                                    <span>- {formatCurrency(order.points_used * 25)}</span>
+                                </div>
+                            )}
                         </div>
                         <div className="pt-5 border-t border-slate-700/50 flex justify-between items-end relative z-10">
                             <span className="font-bold text-slate-300 uppercase tracking-widest text-xs">Total Payé</span>
@@ -402,6 +439,18 @@ export const OrderDetails: React.FC = () => {
                             </span>
                         </div>
                     </div>
+
+                    {/* ✅ BOUTON ANNULATION (Visible uniquement si non expédié/annulé) */}
+                    {!order.status.toLowerCase().includes('expédié') && 
+                     !order.status.toLowerCase().includes('livré') && 
+                     !order.status.toLowerCase().includes('annulé') && (
+                        <button 
+                            onClick={handleCancelOrder}
+                            className="w-full py-4 border-2 border-red-100 text-red-600 rounded-2xl font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <XCircle size={18} /> Annuler ma commande
+                        </button>
+                    )}
                 </div>
             </div>
 

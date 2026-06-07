@@ -11,6 +11,7 @@ import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import { AdminDesignPreview } from '@/src/components/admin/AdminDesignPreview';
 import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
 import { useToast } from '../../src/utils/context/ToastContext';
+
 export const OrderDetailView = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -37,10 +38,6 @@ export const OrderDetailView = () => {
             const response = await authFetch(`/api/orders/${id}`);
             if (!response || !response.ok) throw new Error("Erreur chargement");
             const data = await response.json();
-
-            // 🪄 On normalise le statut dès la réception !
-            // On s'assure que le statut est reconnu par notre utilitaire
-            // data.status = data.status || OrderStatus.PENDING;
             setOrder(data);
         } catch (error) {
             console.error(error);
@@ -57,13 +54,11 @@ export const OrderDetailView = () => {
         if (id) fetchOrderDetails(false);
     }, 10000);
 
-    // 🎨 Applique les couleurs dynamiques aux pastilles (évite les styles inline)
     useEffect(() => {
         document.querySelectorAll<HTMLElement>('.item-color-swatch[data-color]').forEach(el => {
             el.style.backgroundColor = el.dataset.color || '#ccc';
         });
 
-        // 👁️ Marquer comme vue dès l'ouverture
         const markAsSeen = async () => {
             if (order && order.is_seen === 0) {
                 try {
@@ -176,7 +171,7 @@ export const OrderDetailView = () => {
 
                 <div className="xl:col-span-2 space-y-6">
 
-                    {/* MODULE DE VALIDATION DESIGNER (NOUVEAU : Granulaire) */}
+                    {/* MODULE DE VALIDATION DESIGNER */}
                     {order.status.includes('Validation') && (
                         <div className="bg-white border-2 border-fuchsia-200 rounded-3xl p-6 shadow-xl shadow-fuchsia-50 animate-in fade-in slide-in-from-top-4 duration-500">
                             <div className="flex items-center gap-3 mb-6">
@@ -207,7 +202,7 @@ export const OrderDetailView = () => {
                             </h3>
                         </div>
 
-                        <div className="divide-y divide-slate-100">
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/30">
                             {order.items?.map((item: any) => {
                                 let isCustom = false;
                                 let maquetteUrl: string | null = null;
@@ -247,8 +242,8 @@ export const OrderDetailView = () => {
                                 }
 
                                 return (
-                                    <div key={item.id} className="p-6">
-                                        <div className="flex flex-col md:flex-row gap-6">
+                                    <div key={item.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                                        <div className="flex flex-col gap-5">
                                             <div className="w-24 h-24 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex-shrink-0 relative group">
                                                 <img src={thumbnailSrc} alt={item.name || item.product_name} className="w-full h-full object-contain" />
                                                 {isCustom && <span className="absolute top-1 right-1 text-[8px] font-bold text-white bg-fuchsia-600 px-1.5 py-0.5 rounded-full shadow-sm">CUSTOM</span>}
@@ -260,7 +255,7 @@ export const OrderDetailView = () => {
                                                         <h4 className="font-bold text-slate-900 text-lg">{item.name || item.product_name}</h4>
                                                         <p className="text-xs text-slate-400">Réf: {item.product_id}</p>
                                                         
-                                                        {/* INDICATEUR DE STATUT DESIGN (Uniquement si Personnalisé) */}
+                                                        {/* INDICATEUR DE STATUT DESIGN */}
                                                         <div className="mt-2 flex items-center gap-2">
                                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${isCustom ? 'bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-100' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
                                                                 {isCustom ? '✨ Personnalisé' : '📦 Standard'}
@@ -446,3 +441,5 @@ export const OrderDetailView = () => {
         </div>
     );
 };
+
+export default OrderDetailView;

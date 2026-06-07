@@ -27,6 +27,7 @@ interface NotificationState {
   removeNotification: (id: string) => Promise<void>;
   getUnreadCount: () => number;
   clearAllNotifications: () => Promise<void>;
+  reset: () => void;
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -122,5 +123,9 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   getUnreadCount: () => {
     return get().notifications.filter((n) => !n.is_read).length;
+  },
+
+  reset: () => {
+    set({ notifications: [], isLoading: false });
   },
 }));

@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import html2canvas from 'html2canvas-pro';
 import { X, Maximize2, RotateCcw } from 'lucide-react';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
@@ -279,6 +281,57 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
     return el;
   };
 
+  // 🪄 HELPERS POUR ÉVITER LES WARNINGS IDE SUR LES STYLES INLINE
+  const getMaskStyle = () => ({
+    '--mask-url': `url(${bgImage || (product.image_url ? (product.image_url.startsWith('http') ? product.image_url : BASE_IMG_URL + product.image_url) : '')})`,
+    backgroundColor: color.hex,
+    WebkitMaskImage: 'var(--mask-url)',
+    WebkitMaskSize: 'contain',
+    WebkitMaskPosition: 'center',
+    WebkitMaskRepeat: 'no-repeat',
+    maskImage: 'var(--mask-url)',
+    maskSize: 'contain',
+    maskPosition: 'center',
+    maskRepeat: 'no-repeat'
+  } as React.CSSProperties);
+
+  const getElementWrapperStyle = (el: any) => ({
+    '--el-x': `${el.x * scaleRatio}px`,
+    '--el-y': `${el.y * scaleRatio}px`,
+    '--el-w': `${el.width * scaleRatio}px`,
+    '--el-h': el.type === 'text' ? 'auto' : `${(el.height || 0) * scaleRatio}px`,
+    '--el-rot': `${el.rotation}deg`,
+    '--el-op': el.opacity ?? 1,
+    left: 'var(--el-x)',
+    top: 'var(--el-y)',
+    width: 'var(--el-w)',
+    height: 'var(--el-h)',
+    transform: 'rotate(var(--el-rot))',
+    opacity: 'var(--el-op)',
+    ...(activeElementId === el.id && editingId !== el.id ? { '--tw-ring-color': 'var(--theme-primary)' } : {})
+  } as React.CSSProperties);
+
+  const getTextStyle = (el: any) => ({
+    '--el-font': el.fontFamily,
+    '--el-size': `${(el.fontSize || 30) * scaleRatio}px`,
+    '--el-color': el.color,
+    fontFamily: 'var(--el-font)', 
+    fontSize: 'var(--el-size)', 
+    color: 'var(--el-color)',
+    textAlign: 'center',
+    minHeight: '1.2em'
+  } as React.CSSProperties);
+
+  const getImageWrapperStyle = (el: any) => ({ 
+    '--el-sub-op': el.opacity !== undefined ? el.opacity : 1,
+    opacity: 'var(--el-sub-op)' 
+  } as React.CSSProperties);
+
+  const getImageStyle = (el: any) => ({ 
+    '--el-radius': el.borderRadius ? `${el.borderRadius}%` : '0',
+    borderRadius: 'var(--el-radius)' 
+  } as React.CSSProperties);
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 bg-slate-100 dark:bg-slate-900/40 canvas-container relative h-full transition-colors">
       
@@ -303,23 +356,12 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
                 crossOrigin="anonymous"
                 src={bgImage || (product.image_url ? (product.image_url.startsWith('http') ? product.image_url : BASE_IMG_URL + product.image_url) + `?t=${Date.now()}` : '')} 
                 alt={product.name} 
-                className="w-full h-full object-contain md:object-cover select-none transition-opacity duration-300"
-                style={{ opacity: 0.95 }}
+                className="w-full h-full object-contain md:object-cover select-none transition-opacity duration-300 opacity-[0.95]"
               />
               {/* Calque de couleur avec masque CSS pour ne colorer que le T-shirt, pas le fond transparent */}
               <div 
                 className="absolute inset-0 mix-blend-multiply opacity-80 transition-colors duration-500" 
-                style={{ 
-                  backgroundColor: color.hex,
-                  WebkitMaskImage: `url(${bgImage || (product.image_url ? (product.image_url.startsWith('http') ? product.image_url : BASE_IMG_URL + product.image_url) : '')})`,
-                  WebkitMaskSize: 'contain',
-                  WebkitMaskPosition: 'center',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskImage: `url(${bgImage || (product.image_url ? (product.image_url.startsWith('http') ? product.image_url : BASE_IMG_URL + product.image_url) : '')})`,
-                  maskSize: 'contain',
-                  maskPosition: 'center',
-                  maskRepeat: 'no-repeat'
-                }}
+                {...{ style: getMaskStyle() }}
               />
             </>
           )}
@@ -357,44 +399,25 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
                   ? 'z-50 ring-2 ring-offset-2 ring-offset-transparent' 
                   : 'z-10 hover:ring-1 hover:ring-slate-300' 
                 }`}
-                style={{
-                  // 🪄 ADAPTATIF : Multiplier par scaleRatio garantit le rendu proportionnel sur tous les écrans
-                  left: `${el.x * scaleRatio}px`,
-                  top: `${el.y * scaleRatio}px`,
-                  width: `${el.width * scaleRatio}px`,
-                  height: el.type === 'text' ? 'auto' : `${(el.height || 0) * scaleRatio}px`,
-                  transform: `rotate(${el.rotation}deg)`,
-                  opacity: el.opacity ?? 1,
-                  ...(activeElementId === el.id && editingId !== el.id ? { '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties : {})
-                }}
+                {...{ style: getElementWrapperStyle(el) }}
               >
                 {el.type === 'text' ? (
                   editingId === el.id ? (
                       <textarea
                           autoFocus
+                          title="Édition du texte"
+                          placeholder="Saisissez votre texte"
                           value={el.content}
                           onChange={(e) => onUpdateElement(el.id, { content: e.target.value })}
                           onBlur={() => setEditingId(null)} 
                           onMouseDown={(e) => e.stopPropagation()} 
                           className="w-full h-full bg-transparent resize-none outline-none overflow-hidden"
-                          style={{
-                              fontFamily: el.fontFamily, 
-                              fontSize: `${(el.fontSize || 30) * scaleRatio}px`, 
-                              color: el.color,
-                              textAlign: 'center',
-                              minHeight: '1.2em'
-                          }}
+                          {...{ style: getTextStyle(el) }}
                       />
                   ) : (
                       <div 
                         className="whitespace-pre-wrap break-words leading-tight p-2 w-full h-full"
-                        style={{ 
-                          fontFamily: el.fontFamily, 
-                          fontSize: `${(el.fontSize || 30) * scaleRatio}px`, 
-                          color: el.color,
-                          textAlign: 'center',
-                          pointerEvents: 'none' // Pour ne pas interférer avec le glissement de la boîte
-                        }}
+                        {...{ style: getTextStyle(el) }}
                       >
                         {el.content}
                       </div>
@@ -402,14 +425,14 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
                 ) : (
                   <div 
                     className={`absolute w-full h-full flex items-center justify-center overflow-visible transition-opacity ${editingId === el.id ? 'opacity-30' : 'opacity-100'}`}
-                    style={{ opacity: el.opacity !== undefined ? el.opacity : 1 }}
+                    {...{ style: getImageWrapperStyle(el) }}
                   >
                     <img 
                       {...(el.content.startsWith('http') ? { crossOrigin: "anonymous" } : {})}
-                      src={el.content} 
+                      src={el.content.startsWith('http') || el.content.startsWith('data:') ? el.content : BASE_IMG_URL + el.content} 
                       alt="Element" 
                       className="w-full h-full object-contain pointer-events-none" 
-                      style={{ borderRadius: el.borderRadius ? `${el.borderRadius}%` : '0' }} 
+                      {...{ style: getImageStyle(el) }} 
                     />
                   </div>
                 )}

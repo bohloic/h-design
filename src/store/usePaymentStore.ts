@@ -13,6 +13,7 @@ interface PaymentState {
   setPreferredMethod: (method: PaymentMethodType) => void;
   saveCard: (card: { cardNumber: string; expiryDate: string; cardHolder: string }) => void;
   removeCard: () => void;
+  reset: () => void;
 }
 
 export const usePaymentStore = create<PaymentState>()(
@@ -28,7 +29,9 @@ export const usePaymentStore = create<PaymentState>()(
         preferredMethod: 'Mobile Money' // Si on ajoute une carte, on préfère le paiement en ligne
       }),
       
-      removeCard: () => set({ savedCard: null })
+      removeCard: () => set({ savedCard: null }),
+      
+      reset: () => set({ preferredMethod: null, savedCard: null })
     }),
     {
       name: 'payment-preferences',
