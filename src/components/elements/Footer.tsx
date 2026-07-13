@@ -1,6 +1,6 @@
 import React from 'react';
 import { Gift, Facebook, Instagram, Twitter, Mail, Phone, MapPin, ArrowRight, MessageSquare } from 'lucide-react';
-import logoLight from '../../../assets/logo2.png';
+import logoLight from '../../assets/logoo2.png';
 import logoDark from '../../../assets/logo.png';
 import { Link } from 'react-router-dom';
 
