@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from './NotificationDropdown';
 import { useTheme } from '../../utils/context/ThemeContext';
 import logoLight from '../../assets/logo.png';
-import logoDark from '../../assets/Logo2.png';
+import logoDark from '../../assets/logoo2.png';
 import SafeImage from '../tools/SafeImage';
 
 interface NavbarProps {
@@ -29,59 +29,59 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
     <nav className="sticky top-0 z-40 bg-offwhite/90 dark:bg-carbon/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors text-slate-900 dark:text-pure">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          
+
           {/* 1. LOGO DYNAMIQUE */}
           <Link to="/" className="flex items-center group" onClick={closeMenu}>
-            <SafeImage 
-              src={logoLight} 
-              alt="H-Designer Logo" 
+            <SafeImage
+              src={logoLight}
+              alt="H-Designer Logo"
               className="h-16 w-auto group-hover:scale-105 transition-transform object-contain dark:hidden"
             />
-            <SafeImage 
-              src={logoDark} 
-              alt="H-Designer Logo" 
+            <SafeImage
+              src={logoDark}
+              alt="H-Designer Logo"
               className="h-16 w-auto group-hover:scale-105 transition-transform object-contain hidden dark:block"
             />
           </Link>
 
           {/* 2. MENU DESKTOP */}
           <div className="hidden md:flex items-center space-x-8 font-bold">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className={`transition-colors ${isActive('/') ? 'theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
             >
               Accueil
             </Link>
-            <Link 
-              to="/boutique" 
+            <Link
+              to="/boutique"
               className={`transition-colors ${isActive('/boutique') ? 'theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
             >
               Boutique
             </Link>
-            <Link 
-              to="/personnaliser/mon-design" 
+            <Link
+              to="/personnaliser/mon-design"
               className={`transition-colors ${isActive('/personnaliser/mon-design') ? 'theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
             >
               Personnalisation
             </Link>
-            
+
             {isAuthenticated ? (
-               <Link 
-                to="/dashboard" 
+              <Link
+                to="/dashboard"
                 className={`transition-colors ${isActive('/dashboard') ? 'theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-text'}`}
-               >
-                 Mon Compte
-               </Link>
+              >
+                Mon Compte
+              </Link>
             ) : (
-               <Link to="/login" className="text-slate-600 dark:text-slate-300 hover-theme-text transition-colors">
-                 Connexion
-               </Link>
+              <Link to="/login" className="text-slate-600 dark:text-slate-300 hover-theme-text transition-colors">
+                Connexion
+              </Link>
             )}
 
             {/* LIEN ADMIN */}
             {isAuthenticated && role === 'admin' && (
-              <Link 
-                to="/admin" 
+              <Link
+                to="/admin"
                 className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-black border theme-bg-primary-soft theme-text-primary theme-border-primary-soft hover:brightness-95 transition-all"
               >
                 <ShieldCheck size={16} /> Admin
@@ -91,9 +91,9 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
 
           {/* 3. ICONES ACTIONS */}
           <div className="flex items-center space-x-1 md:space-x-3">
-            
+
             {/* Theme Toggle */}
-            <button 
+            <button
               onClick={toggleThemeMode}
               className="p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors hidden sm:block"
               title={themeMode === 'dark' ? "Passer en mode clair" : "Passer en mode sombre"}
@@ -116,13 +116,13 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             )}
 
             {/* Panier avec bulle dynamique et animée */}
-            <button 
+            <button
               onClick={onOpenCart}
               className="p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors relative"
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
-                <span 
+                <span
                   key={cartCount}
                   className="absolute -top-1 -right-1 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white cart-badge-pop theme-bg-primary"
                 >
@@ -132,7 +132,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             </button>
 
             {/* Burger Mobile */}
-            <button 
+            <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg"
             >
@@ -146,24 +146,24 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
       {isMenuOpen && (
         <div className="md:hidden bg-offwhite dark:bg-carbon border-t border-slate-200 dark:border-slate-800 absolute w-full shadow-xl animate-in slide-in-from-top-5 duration-200">
           <div className="px-4 pt-2 pb-6 space-y-2">
-            
-            <Link 
-              to="/" 
+
+            <Link
+              to="/"
               onClick={closeMenu}
               className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/') ? 'theme-bg-primary-soft theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
             >
               Accueil
             </Link>
-            
-            <Link 
-              to="/boutique" 
+
+            <Link
+              to="/boutique"
               onClick={closeMenu}
               className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/boutique') ? 'theme-bg-primary-soft theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-bg-light'}`}
             >
               Boutique
             </Link>
-            <Link 
-              to="/personnaliser/mon-design" 
+            <Link
+              to="/personnaliser/mon-design"
               onClick={closeMenu}
               className={`block px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive('/personnaliser/mon-design') ? 'theme-bg-primary-soft theme-text-primary' : 'text-slate-600 dark:text-slate-300 hover-theme-bg-light'}`}
             >
@@ -171,17 +171,17 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             </Link>
 
             {isAuthenticated && role === 'admin' && (
-               <Link 
-                 to="/admin" 
-                 onClick={closeMenu}
-                 className="flex items-center gap-2 px-4 py-3 rounded-xl text-base font-black border border-transparent theme-bg-primary-soft theme-text-primary"
-               >
-                 <ShieldCheck size={18} /> Administration
-               </Link>
+              <Link
+                to="/admin"
+                onClick={closeMenu}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl text-base font-black border border-transparent theme-bg-primary-soft theme-text-primary"
+              >
+                <ShieldCheck size={18} /> Administration
+              </Link>
             )}
 
             <div className="border-t border-slate-200 dark:border-slate-800 my-2 pt-2">
-              <button 
+              <button
                 onClick={() => { toggleThemeMode(); closeMenu(); }}
                 className="w-full flex items-center px-4 py-3 rounded-xl text-base font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
               >
@@ -189,14 +189,14 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
               </button>
               {isAuthenticated ? (
                 <>
-                  <Link 
-                    to="/dashboard" 
+                  <Link
+                    to="/dashboard"
                     onClick={closeMenu}
                     className="flex items-center px-4 py-3 rounded-xl text-base font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
                   >
                     <User className="w-5 h-5 mr-3" /> {user?.prenom ? `Mon Compte (${user.prenom})` : 'Mon Compte'}
                   </Link>
-                  <button 
+                  <button
                     onClick={() => { onLogout(); closeMenu(); navigate('/'); }}
                     className="w-full flex items-center px-4 py-3 rounded-xl text-base font-bold text-red-600 hover:bg-red-50"
                   >
@@ -204,8 +204,8 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                   </button>
                 </>
               ) : (
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   onClick={closeMenu}
                   className="flex items-center justify-center w-full text-white px-4 py-4 rounded-xl font-black mt-4 shadow-lg active:scale-95 transition-transform theme-bg-primary"
                 >

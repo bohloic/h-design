@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { authFetch } from '../../utils/apiClient'; 
+import { authFetch } from '../../utils/apiClient';
 import { Loader2, Star, Award, QrCode } from 'lucide-react';
-import logo2 from '../../assets/Logo2.png';
+import logo2 from '../../assets/logoo2.png';
 
 export const LoyaltyCard = () => {
     const [loyaltyData, setLoyaltyData] = useState<any>(null);
@@ -14,10 +14,10 @@ export const LoyaltyCard = () => {
 
     const fetchLoyaltyCard = async () => {
         try {
-            const response = await authFetch('/api/loyalty/my-card'); 
-            
+            const response = await authFetch('/api/loyalty/my-card');
+
             if (!response.ok) throw new Error("Impossible de charger la carte VIP.");
-            
+
             const data = await response.json();
             if (data.success) {
                 setLoyaltyData(data);
@@ -52,7 +52,7 @@ export const LoyaltyCard = () => {
     return (
         <div className="relative max-w-sm mx-auto w-full group">
             {/* 🪄 HALO LUMINEUX DYNAMIQUE (Arrière-plan) */}
-            <div 
+            <div
                 className="absolute -inset-4 opacity-20 blur-2xl rounded-full transition-opacity duration-500 group-hover:opacity-40"
                 style={{ backgroundColor: 'var(--theme-primary)' }}
             ></div>
@@ -60,25 +60,25 @@ export const LoyaltyCard = () => {
             <div className="bg-slate-900 rounded-[32px] p-1 shadow-2xl relative overflow-hidden">
                 {/* Effet de brillance (Glassmorphism) */}
                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-20"></div>
-                
+
                 <div className="bg-slate-900 border border-slate-700/50 rounded-[28px] p-6 relative z-10">
                     {/* En-tête de la carte */}
                     <div className="flex justify-between items-start mb-8">
                         <div>
-                        <div className="h-10">
-                            <img src={logo2} alt="H-Designer" className="h-full w-auto object-contain" />
-                            <p 
-                                className="text-[10px] font-black uppercase tracking-[0.3em] mt-1"
-                                style={{ color: 'var(--theme-primary)' }}
-                            >
-                                Membre VIP Privilège
-                            </p>
+                            <div className="h-10">
+                                <img src={logo2} alt="H-Designer" className="h-full w-auto object-contain" />
+                                <p
+                                    className="text-[10px] font-black uppercase tracking-[0.3em] mt-1"
+                                    style={{ color: 'var(--theme-primary)' }}
+                                >
+                                    Membre VIP Privilège
+                                </p>
+                            </div>
                         </div>
-                        </div>
-                        <div 
+                        <div
                             className="p-2.5 rounded-2xl shadow-lg"
-                            style={{ 
-                                backgroundColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)', 
+                            style={{
+                                backgroundColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)',
                                 color: 'var(--theme-primary)',
                                 border: '1px solid color-mix(in srgb, var(--theme-primary) 30%, transparent)'
                             }}
@@ -95,10 +95,10 @@ export const LoyaltyCard = () => {
                             <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 rounded-tr-2xl m-2" style={{ borderColor: 'var(--theme-primary)' }}></div>
                             <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 rounded-bl-2xl m-2" style={{ borderColor: 'var(--theme-primary)' }}></div>
                             <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 rounded-br-2xl m-2" style={{ borderColor: 'var(--theme-primary)' }}></div>
-                            
-                            <img 
-                                src={qrCode} 
-                                alt="QR Code VIP" 
+
+                            <img
+                                src={qrCode}
+                                alt="QR Code VIP"
                                 className="w-36 h-36 object-contain rounded-xl"
                             />
                         </div>
