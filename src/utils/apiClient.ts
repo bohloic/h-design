@@ -1,24 +1,14 @@
 // Fichier : src/utils/apiClient.ts
 
-// ✅ On utilise juste le préfixe. Le proxy Vite (vite.config.ts) fera le lien vers le port 205.
-const API_BASE_URL = '/api'; 
-
 export const authFetch = async (endpoint: string, options: RequestInit = {}) => {
   // 1. CONSTRUIRE L'URL INTELLIGENTE
-  // Si l'endpoint commence déjà par http, on le laisse (ex: image externe)
-  // Sinon, on s'assure qu'il commence par /api pour déclencher le proxy
   let url = endpoint;
   
   if (!endpoint.startsWith('http')) {
-      // On enlève le premier slash s'il existe pour éviter //api
       const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
-      
-      // Si l'endpoint ne contient pas déjà "api/", on l'ajoute
-      if (!cleanEndpoint.startsWith('api/')) {
-          url = `${API_BASE_URL}/${cleanEndpoint}`;
-      } else {
-          url = `/${cleanEndpoint}`;
-      }
+      const apiPath = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      url = `${baseUrl}/${apiPath}`;
   }
 
   // 2. PRÉPARER LES HEADERS
