@@ -63,7 +63,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       // 🕵️ On ajoute un timestamp (?t=...) et 'no-store' pour forcer le navigateur
       // à ignorer le cache et récupérer la version la plus RÉCENTE sur le serveur.
-      const response = await fetch(`/api/collections/active?t=${Date.now()}`, {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${baseUrl}/api/collections/active?t=${Date.now()}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
