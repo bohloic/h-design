@@ -144,7 +144,8 @@ export const Commande: React.FC = () => {
                                                             <button 
                                                                 onClick={() => handlePayNow(ord)}
                                                                 disabled={isPaying === ord.id}
-                                                                className="px-4 py-1.5 bg-emerald-500 text-white text-xs font-black rounded-lg hover:bg-emerald-600 transition-all shadow-md shadow-emerald-200 dark:shadow-none active:scale-95 disabled:opacity-50"
+                                                                style={{ backgroundColor: 'var(--theme-primary)' }}
+                                                                className="px-4 py-1.5 text-white text-xs font-black rounded-lg hover:opacity-90 transition-all shadow-md active:scale-95 disabled:opacity-50"
                                                             >
                                                                 {isPaying === ord.id ? '...' : 'Payer maintenant ✅'}
                                                             </button>

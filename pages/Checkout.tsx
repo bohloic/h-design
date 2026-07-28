@@ -539,7 +539,8 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                   <button
                     onClick={handleFinish}
                     disabled={isLoading || stockErrors.length > 0}
-                    className="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg md:text-xl hover:bg-green-700 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: 'var(--theme-primary)' }}
+                    className="w-full text-white py-4 rounded-2xl font-black text-lg md:text-xl hover:opacity-95 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     {isLoading ? (
                       <>

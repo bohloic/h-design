@@ -239,7 +239,8 @@ export const OrderDetails: React.FC = () => {
                         <button 
                             onClick={handlePayNow}
                             disabled={isPaying}
-                            className="flex items-center gap-2 px-8 py-4 bg-emerald-500 text-white font-black rounded-2xl hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-200 dark:shadow-none active:scale-95 disabled:opacity-50"
+                            style={{ backgroundColor: 'var(--theme-primary)' }}
+                            className="flex items-center gap-2 px-8 py-4 text-white font-black rounded-2xl hover:opacity-90 transition-all shadow-xl active:scale-95 disabled:opacity-50"
                         >
                             {isPaying ? <Loader2 className="animate-spin" /> : <CreditCard size={20} />}
                             {isPaying ? 'Initialisation...' : 'Payer maintenant ✅'}
