@@ -49,10 +49,18 @@ export const OrderDetails: React.FC = () => {
         if (!order) return;
         setIsPaying(true);
         try {
+            let email = order.customer_email;
+            if (!email) {
+                try {
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    email = user.email;
+                } catch(e) {}
+            }
+
             const response = await authFetch('/api/payment/initialize', {
                 method: 'POST',
                 body: JSON.stringify({
-                    email: order.customer_email || '', 
+                    email: email || '', 
                     amount: order.total_amount,
                     orderId: order.id,
                     callbackUrl: window.location.origin
@@ -63,7 +71,7 @@ export const OrderDetails: React.FC = () => {
             if (data?.success && data?.authorization_url) {
                 window.location.href = data.authorization_url;
             } else {
-                alert(data?.message || "Erreur lors de l'initialisation du paiement");
+                alert(data?.message || "Erreur lors de l'initialisation du paiement Paystack");
             }
         } catch (error) {
             console.error("Erreur paiement:", error);

@@ -13,12 +13,9 @@ interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
  * - Gère le basculement automatique sur un fallback propre si l'URL est corrompue.
  */
 const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png', className = '', alt = '', ...props }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
 
-  // ✨ REINITIALISATION FLUIDE : Réinitialise l'animation à chaque mise à jour de l'image (changement de produit, variante ou photo Cloudinary)
   useEffect(() => {
-    setIsLoaded(false);
     setError(false);
   }, [src]);
 
@@ -29,7 +26,6 @@ const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png
 
     // 1. URLs absolues, Data URIs (Base64), Blob URLs
     if (cleanSrc.startsWith('http://') || cleanSrc.startsWith('https://') || cleanSrc.startsWith('data:') || cleanSrc.startsWith('blob:')) {
-      // Optimisation Cloudinary automatique (f_auto, q_auto)
       if (cleanSrc.includes('res.cloudinary.com') && cleanSrc.includes('/upload/') && !cleanSrc.includes('f_auto')) {
         return cleanSrc.replace('/upload/', '/upload/f_auto,q_auto,w_800,c_limit/');
       }
@@ -41,7 +37,7 @@ const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png
       return cleanSrc;
     }
 
-    // 3. Chemins Cloudinary relatifs (ex: h-designer/designs/xyz.png)
+    // 3. Chemins Cloudinary relatifs
     if (cleanSrc.startsWith('h-designer/') || cleanSrc.startsWith('v1')) {
       return `https://res.cloudinary.com/dwyx9e7zw/image/upload/f_auto,q_auto,w_800,c_limit/${cleanSrc}`;
     }
@@ -51,41 +47,19 @@ const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png
   };
 
   return (
-    <div className={`relative overflow-hidden bg-slate-100 dark:bg-slate-800/60 ${className}`}>
-      {/* 🔮 Shimmer Effect : balayage élégant pendant le chargement */}
-      {!isLoaded && !error && (
-        <div className="absolute inset-0 z-10 overflow-hidden skeleton-shimmer">
-          <div className="w-full h-full animate-shimmer bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent" 
-               style={{ backgroundSize: '200% 100%' }} />
-        </div>
-      )}
-
-      <img
-        src={getSource()}
-        alt={alt}
-        loading="lazy"
-        className={`w-full h-full object-cover smooth-image-transition ${
-          isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-95 blur-xs'
-        }`}
-        onLoad={() => setIsLoaded(true)}
-        onError={() => {
-            console.warn(`⚠️ SafeImage: Erreur sur ${src}, bascule sur fallback.`);
-            setError(true);
-            setIsLoaded(true);
-        }}
-        {...props}
-      />
-      
-      <style>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
+    <img
+      src={getSource()}
+      alt={alt}
+      loading="eager"
+      className={`w-full h-full object-cover ${className}`}
+      onError={() => {
+        if (!error) {
+          console.warn(`⚠️ SafeImage: Erreur sur ${src}, bascule sur fallback.`);
+          setError(true);
         }
-        .animate-shimmer {
-          animation: shimmer 1.6s infinite linear;
-        }
-      `}</style>
-    </div>
+      }}
+      {...props}
+    />
   );
 };
 
