@@ -199,3 +199,8 @@
   animation: shimmerPulse 1.8s infinite linear;
 }
 
+/* 🛡️ SÉCURITÉ RESPONSIVE IMAGES (Empêche tout débordement d'image sur mobile & desktop) */
+img {
+  max-width: 100%;
+}
+

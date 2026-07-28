@@ -47,19 +47,21 @@ const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png
   };
 
   return (
-    <img
-      src={getSource()}
-      alt={alt}
-      loading="eager"
-      className={`w-full h-full object-cover ${className}`}
-      onError={() => {
-        if (!error) {
-          console.warn(`⚠️ SafeImage: Erreur sur ${src}, bascule sur fallback.`);
-          setError(true);
-        }
-      }}
-      {...props}
-    />
+    <div className={`relative overflow-hidden max-w-full ${className}`}>
+      <img
+        src={getSource()}
+        alt={alt}
+        loading="eager"
+        className="w-full h-full object-cover max-w-full block"
+        onError={() => {
+          if (!error) {
+            console.warn(`⚠️ SafeImage: Erreur sur ${src}, bascule sur fallback.`);
+            setError(true);
+          }
+        }}
+        {...props}
+      />
+    </div>
   );
 };
 
