@@ -3,6 +3,7 @@ import { authFetch } from '../../src/utils/apiClient';
 import { Edit, Plus, Trash2, XCircle, Tag, Layers, Check, Image as ImageIcon, Search, Palette, Package } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import SafeImage from '../../src/components/tools/SafeImage';
 import Pagination from '../../src/components/tools/Pagination';
 import { useNotificationStore } from '../../src/store/useNotificationStore';
 
@@ -476,7 +477,7 @@ export const ProductView = () => {
                             <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0">
-                                        <img src={BASE_IMG_URL + product.image_url} alt="" className="w-full h-full object-cover" />
+                                        <SafeImage src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                                     </div>
                                     <span className="font-bold text-slate-700">{product.name}</span>
                                 </div>
@@ -508,13 +509,13 @@ export const ProductView = () => {
                 {/* 2. VUE CARTES (MOBILE SEULEMENT) */}
                 <div className="md:hidden divide-y divide-slate-100 bg-slate-50/50 w-full">
                     {paginatedProducts.map((product: any) => (
-                        <div key={product.id} id={`product-card-${product.id}`} className="p-4 bg-white mb-2 shadow-sm first:mt-0 last:mb-0 w-full">
+                        <div key={product.id} id={`product-card-${product.id}`} className="p-4 bg-white mb-2 shadow-sm first:mt-0 last:mb-0 w-full animate-fade-in">
                              
                              {/* En-tête Carte */}
                              <div className="flex justify-between items-start mb-3">
                                 <div className="flex items-center gap-3 overflow-hidden min-w-0 flex-1">
                                     <div className="w-12 h-14 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 flex-shrink-0">
-                                        <img src={BASE_IMG_URL + product.image_url} alt="" className="w-full h-full object-cover" />
+                                        <SafeImage src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Produit</span>

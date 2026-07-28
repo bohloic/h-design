@@ -8,6 +8,7 @@ import {
     ThumbsUp, ThumbsDown, MessageSquare, CheckCircle2
 } from 'lucide-react';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import SafeImage from '../../src/components/tools/SafeImage';
 import { AdminDesignPreview } from '@/src/components/admin/AdminDesignPreview';
 import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
 import { useToast } from '../../src/utils/context/ToastContext';

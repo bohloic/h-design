@@ -1,5 +1,10 @@
 // Fichier : src/utils/apiClient.ts
 
+// URL de fallback par défaut pour la production et le dev local
+const DEFAULT_BACKEND_URL = import.meta.env.DEV 
+  ? 'http://localhost:205' 
+  : 'https://h-design-back-off.vercel.app';
+
 export const authFetch = async (endpoint: string, options: RequestInit = {}) => {
   // 1. CONSTRUIRE L'URL INTELLIGENTE
   let url = endpoint;
@@ -7,24 +12,21 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
   if (!endpoint.startsWith('http')) {
       const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
       const apiPath = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      url = `${baseUrl}/${apiPath}`;
+      const baseUrl = import.meta.env.VITE_API_URL || DEFAULT_BACKEND_URL;
+      url = `${baseUrl.replace(/\/$/, '')}/${apiPath}`;
   }
 
   // 2. PRÉPARER LES HEADERS
   const token = localStorage.getItem('token');
   const headers: Record<string, string> = {
     ...options.headers as Record<string, string>,
-    // ✅ FIX #16 : Header ngrok uniquement en développement (inutile en production)
     ...(import.meta.env.DEV ? { 'ngrok-skip-browser-warning': 'true' } : {}),
   };
 
-  // Ajout du Content-Type JSON sauf si c'est un FormData (pour les images)
   if (!(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
   }
 
-  // Ajout du Token
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -35,7 +37,6 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
       headers,
     });
 
-    // Gestion expiration session
     if (response.status === 401 && window.location.pathname !== '/login') {
       console.warn("Session expirée. Déconnexion...");
       localStorage.removeItem('token');
@@ -47,9 +48,23 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
     return response;
 
   } catch (error) {
-    console.error("Erreur réseau:", error);
+    console.error("Erreur réseau API:", error);
     throw error;
   }
+};
+
+/**
+ * 🛡️ Helper sécurisé pour extraire le JSON de la réponse fetch sans crasher si c'est du HTML (ex: 404/500 Vercel)
+ */
+export const safeParseJson = async (response: Response | null) => {
+  if (!response) return null;
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await response.text();
+    console.warn(`⚠️ Réponse non-JSON reçue (${response.status}):`, text.substring(0, 150));
+    throw new Error(`Le serveur a renvoyé du HTML au lieu de JSON (${response.status})`);
+  }
+  return response.json();
 };
 
 /**
@@ -59,28 +74,24 @@ export const uploadDesignToServer = async (file: File | Blob): Promise<string> =
     const formData = new FormData();
     formData.append('design', file); 
 
-    // ✅ On envoie juste le chemin relatif. 
-    // authFetch va le transformer en "/api/products/upload-design"
-    // Le proxy Vite va l'envoyer à "http://localhost:205/api/products/upload-design"
     const response = await authFetch('/products/upload-design', {
         method: 'POST',
         body: formData
     });
 
     if (!response || !response.ok) {
-        // On lit le message d'erreur du backend si possible
-        const errorData = await response?.json().catch(() => ({})); 
-        throw new Error(errorData.message || `Erreur serveur (${response?.status})`);
+        const errorData = await safeParseJson(response).catch(() => ({})); 
+        throw new Error(errorData?.message || `Erreur serveur (${response?.status})`);
     }
 
-    const data = await response.json();
+    const data = await safeParseJson(response);
     return data.url; 
 };
 
-// Compatibilité pour ton ancien code
+// Compatibilité
 const API = {
-    get: (url: string) => authFetch(url, { method: 'GET' }).then(r => r?.json()),
-    post: (url: string, body: any) => authFetch(url, { method: 'POST', body: JSON.stringify(body) }).then(r => r?.json()),
+    get: (url: string) => authFetch(url, { method: 'GET' }).then(r => safeParseJson(r)),
+    post: (url: string, body: any) => authFetch(url, { method: 'POST', body: JSON.stringify(body) }).then(r => safeParseJson(r)),
 };
 
-export default API;
+export default API;

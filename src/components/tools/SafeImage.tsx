@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BASE_IMG_URL } from '../images/VoirImage';
 
 interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -7,33 +7,34 @@ interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 }
 
 /**
- * 🛡️ COMPOSANT IMAGE SÉCURISÉ (STABILISATION PROD)
- * - Gère l'effet Shimmer (balayage animé) pendant le chargement.
- * - Bascule sur un fallback (/placeholder.png) en cas d'erreur (404, 500, Timeout).
- * - Centralise la logique d'URL (BASE_IMG_URL).
+ * 🛡️ COMPOSANT IMAGE SÉCURISÉ & FLUIDE (STABILISATION PROD + ANIMATION)
+ * - Rallume l'effet Shimmer et la transition fluide à chaque changement de `src` (Mise à jour Cloud / DB).
+ * - Transition ultra-douce (Opacité 0->100% + Échelle 95->100%).
+ * - Gère le basculement automatique sur un fallback propre si l'URL est corrompue.
  */
 const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png', className = '', alt = '', ...props }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState(false);
 
+  // ✨ REINITIALISATION FLUIDE : Réinitialise l'animation à chaque mise à jour de l'image (changement de produit, variante ou photo Cloudinary)
+  useEffect(() => {
+    setIsLoaded(false);
+    setError(false);
+  }, [src]);
+
   const getSource = () => {
     if (error || !src) return fallback;
-    // Si c'est une URL absolue ou un data-uri, on l'utilise direct
     if (src.startsWith('http') || src.startsWith('data:') || src.startsWith('blob:')) return src;
-    
-    // ✅ CORRECTIF PROD : Si l'image vient des assets locaux (Vite), on ne préfixe pas par BASE_IMG_URL
-    // En prod, les assets importés ressemblent à "/assets/name-hash.png"
     if (src.includes('/assets/') || src.startsWith('./') || src.startsWith('../')) return src;
-
     return BASE_IMG_URL + src;
   };
 
   return (
-    <div className={`relative overflow-hidden bg-slate-100 dark:bg-slate-800/50 ${className}`}>
-      {/* 🔮 Shimmer Effect : Visible tant que l'image n'est pas prête */}
+    <div className={`relative overflow-hidden bg-slate-100 dark:bg-slate-800/60 ${className}`}>
+      {/* 🔮 Shimmer Effect : balayage élégant pendant le chargement */}
       {!isLoaded && !error && (
-        <div className="absolute inset-0 z-10 overflow-hidden">
-          <div className="w-full h-full animate-shimmer bg-gradient-to-r from-transparent via-white/20 dark:via-white/5 to-transparent shadow-inner" 
+        <div className="absolute inset-0 z-10 overflow-hidden skeleton-shimmer">
+          <div className="w-full h-full animate-shimmer bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent" 
                style={{ backgroundSize: '200% 100%' }} />
         </div>
       )}
@@ -42,10 +43,12 @@ const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png
         src={getSource()}
         alt={alt}
         loading="lazy"
-        className={`transition-opacity duration-700 ease-in-out ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className}`}
+        className={`w-full h-full object-cover smooth-image-transition ${
+          isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-95 blur-xs'
+        }`}
         onLoad={() => setIsLoaded(true)}
         onError={() => {
-            console.warn(`⚠️ SafeImage: Erreur sur ${src}, bascule sur ${fallback}`);
+            console.warn(`⚠️ SafeImage: Erreur sur ${src}, bascule sur fallback.`);
             setError(true);
             setIsLoaded(true);
         }}
@@ -58,7 +61,7 @@ const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png
           100% { transform: translateX(100%); }
         }
         .animate-shimmer {
-          animation: shimmer 1.8s infinite linear;
+          animation: shimmer 1.6s infinite linear;
         }
       `}</style>
     </div>

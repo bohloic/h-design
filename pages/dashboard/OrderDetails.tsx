@@ -2,7 +2,7 @@ import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Package, Truck, CheckCircle2, MapPin, Download, Phone, ShoppingBag, Clock, XCircle, Loader2, Palette, AlertTriangle, CreditCard } from 'lucide-react';
 import { useToast } from '@/src/utils/context/ToastContext';
 import { formatCurrency } from '@/constants';
-import { authFetch } from '@/src/utils/apiClient';
+import { authFetch, safeParseJson } from '@/src/utils/apiClient';
 import { useAutoRefresh } from '@/src/utils/hooks/useAutoRefresh';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -49,12 +49,8 @@ export const OrderDetails: React.FC = () => {
         if (!order) return;
         setIsPaying(true);
         try {
-            const response = await fetch('/api/payment/initialize', {
+            const response = await authFetch('/api/payment/initialize', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
                 body: JSON.stringify({
                     email: order.customer_email || '', 
                     amount: order.total_amount,
@@ -63,11 +59,11 @@ export const OrderDetails: React.FC = () => {
                 })
             });
 
-            const data = await response.json();
-            if (data.success && data.authorization_url) {
+            const data = await safeParseJson(response);
+            if (data?.success && data?.authorization_url) {
                 window.location.href = data.authorization_url;
             } else {
-                alert(data.message || "Erreur lors de l'initialisation du paiement");
+                alert(data?.message || "Erreur lors de l'initialisation du paiement");
             }
         } catch (error) {
             console.error("Erreur paiement:", error);

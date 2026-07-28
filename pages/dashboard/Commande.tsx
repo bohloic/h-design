@@ -5,6 +5,8 @@ import { Link, useOutletContext } from 'react-router-dom';
 import { translateStatus, getStatusColorClass } from '@/src/utils/statusTranslations';
 import Pagination from "@/src/components/tools/Pagination";
 
+import { authFetch, safeParseJson } from "@/src/utils/apiClient";
+
 export const Commande: React.FC = () => {
     const { orders } = useOutletContext<{ orders: any[] }>();
     const [isPaying, setIsPaying] = useState<number | null>(null);
@@ -12,12 +14,8 @@ export const Commande: React.FC = () => {
     const handlePayNow = async (order: any) => {
         setIsPaying(order.id);
         try {
-            const response = await fetch('/api/payment/initialize', {
+            const response = await authFetch('/api/payment/initialize', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
                 body: JSON.stringify({
                     email: order.customer_email || '', 
                     amount: order.total_amount,
@@ -26,11 +24,11 @@ export const Commande: React.FC = () => {
                 })
             });
 
-            const data = await response.json();
-            if (data.success && data.authorization_url) {
+            const data = await safeParseJson(response);
+            if (data?.success && data?.authorization_url) {
                 window.location.href = data.authorization_url;
             } else {
-                alert(data.message || "Erreur lors de l'initialisation du paiement");
+                alert(data?.message || "Erreur lors de l'initialisation du paiement");
             }
         } catch (error) {
             console.error("Erreur paiement:", error);

@@ -5,9 +5,10 @@ import {
 } from 'lucide-react'; 
 import { useParams, useNavigate } from 'react-router-dom'; 
 import { formatCurrency } from '@/constants';
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { authFetch, safeParseJson } from '@/src/utils/apiClient';
 import GenderCategorySection from '@/src/components/product/GenderCategorySection';
 import ProductCarousel from '@/src/components/product/ProductCarousel';
+import SafeImage from '@/src/components/tools/SafeImage';
 import { useWishlistStore } from '@/src/store/useWishlistStore';
 import { useToast } from '@/src/utils/context/ToastContext';
 
@@ -90,9 +91,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/products/${slug}`);
-        if (!response.ok) throw new Error("Produit introuvable");
-        const rawData = await response.json();
+        const response = await authFetch(`/api/products/${slug}`);
+        if (!response || !response.ok) throw new Error("Produit introuvable");
+        const rawData = await safeParseJson(response);
 
         let parsedSizes = [];
         try {
@@ -250,11 +251,10 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
           <div className="flex flex-col gap-4 md:sticky md:top-24 mb-4 md:mb-0">
             
             <div className="relative w-full h-[40vh] md:h-auto md:aspect-square bg-slate-50 rounded-xl overflow-hidden border border-slate-100 shadow-sm cursor-zoom-in">
-              <img 
-                src={displayImage.startsWith('http') ? displayImage : BASE_IMG_URL + displayImage} 
+              <SafeImage 
+                src={displayImage} 
                 alt={product.name} 
                 className={`w-full h-full object-contain p-4 object-center transition-transform duration-500 hover:scale-105 ${isOutOfStock ? 'grayscale opacity-75' : ''}`}
-                onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
               />
               {isOutOfStock && (
                   <div className="absolute top-4 left-4 bg-red-600/90 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm z-10 flex items-center gap-1.5 backdrop-blur-md">
@@ -274,7 +274,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                             currentImageIndex === idx ? 'ring-1 border-theme-primary ring-theme-primary' : 'border-slate-200 hover:border-slate-400 bg-slate-50'
                         }`}
                     >
-                        <img src={img.startsWith('http') ? img : BASE_IMG_URL + img} className="w-full h-full object-contain p-1" alt="" />
+                        <SafeImage src={img} className="w-full h-full object-contain p-1" alt={`Miniature ${idx + 1}`} />
                     </button>
                 ))}
                 </div>
