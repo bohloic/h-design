@@ -24,9 +24,30 @@ const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png
 
   const getSource = () => {
     if (error || !src) return fallback;
-    if (src.startsWith('http') || src.startsWith('data:') || src.startsWith('blob:')) return src;
-    if (src.includes('/assets/') || src.startsWith('./') || src.startsWith('../')) return src;
-    return BASE_IMG_URL + src;
+    const cleanSrc = typeof src === 'string' ? src.trim() : '';
+    if (!cleanSrc) return fallback;
+
+    // 1. URLs absolues, Data URIs (Base64), Blob URLs
+    if (cleanSrc.startsWith('http://') || cleanSrc.startsWith('https://') || cleanSrc.startsWith('data:') || cleanSrc.startsWith('blob:')) {
+      // Optimisation Cloudinary automatique (f_auto, q_auto)
+      if (cleanSrc.includes('res.cloudinary.com') && cleanSrc.includes('/upload/') && !cleanSrc.includes('f_auto')) {
+        return cleanSrc.replace('/upload/', '/upload/f_auto,q_auto,w_800,c_limit/');
+      }
+      return cleanSrc;
+    }
+
+    // 2. Assets locaux Vite
+    if (cleanSrc.includes('/assets/') || cleanSrc.startsWith('./') || cleanSrc.startsWith('../')) {
+      return cleanSrc;
+    }
+
+    // 3. Chemins Cloudinary relatifs (ex: h-designer/designs/xyz.png)
+    if (cleanSrc.startsWith('h-designer/') || cleanSrc.startsWith('v1')) {
+      return `https://res.cloudinary.com/dwyx9e7zw/image/upload/f_auto,q_auto,w_800,c_limit/${cleanSrc}`;
+    }
+
+    // 4. Images serveur relatives standard
+    return BASE_IMG_URL + cleanSrc;
   };
 
   return (

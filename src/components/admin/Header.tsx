@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { NotificationDropdown } from "../elements/NotificationDropdown";
 import { authFetch } from "../../utils/apiClient";
 import { BASE_IMG_URL } from "../images/VoirImage";
+import SafeImage from '../tools/SafeImage';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface SearchResults {
@@ -193,7 +194,7 @@ const SearchBar = () => {
                     >
                       <div className="w-9 h-9 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
                         {product.image_url && (
-                          <img src={BASE_IMG_URL + product.image_url} alt="" className="w-full h-full object-cover" />
+                          <SafeImage src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">

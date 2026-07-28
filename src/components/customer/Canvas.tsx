@@ -429,7 +429,13 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
                   >
                     <img 
                       {...(el.content.startsWith('http') ? { crossOrigin: "anonymous" } : {})}
-                      src={el.content.startsWith('http') || el.content.startsWith('data:') ? el.content : BASE_IMG_URL + el.content} 
+                      src={
+                        el.content.startsWith('http') || el.content.startsWith('data:') 
+                          ? el.content 
+                          : (el.content.startsWith('h-designer/') 
+                              ? `https://res.cloudinary.com/dwyx9e7zw/image/upload/f_auto,q_auto,w_800,c_limit/${el.content}` 
+                              : BASE_IMG_URL + el.content)
+                      } 
                       alt="Element" 
                       className="w-full h-full object-contain pointer-events-none" 
                       {...{ style: getImageStyle(el) }} 

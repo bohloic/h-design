@@ -417,11 +417,41 @@ export const OrderDetailView = () => {
                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-50 pb-2">
                             <CreditCard className="theme-text-primary" size={20} /> Paiement
                         </h3>
-                        <div className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-xl border border-slate-100 font-bold">
-                            <span className="text-slate-500">Statut</span>
-                            <span className={order.status === OrderStatus.PENDING || order.status === OrderStatus.WAITING_VALIDATION ? 'text-amber-600' : 'text-green-600'}>
-                                {order.status === OrderStatus.PENDING || order.status === OrderStatus.WAITING_VALIDATION ? 'EN ATTENTE ⏳' : 'PAYÉ ✅'}
-                            </span>
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-xl border border-slate-100 font-bold">
+                                <span className="text-slate-500">Mode</span>
+                                <span className="text-slate-800 uppercase text-xs">
+                                    {(() => {
+                                        const method = (order.payment_method || '').toLowerCase();
+                                        if (method.includes('cod') || method.includes('livraison')) return 'À la livraison';
+                                        if (method.includes('mobile')) return 'Mobile Money';
+                                        if (method.includes('card') || method.includes('carte')) return 'Carte Bancaire';
+                                        return order.payment_method || 'Paystack / Carte';
+                                    })()}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm p-3 bg-slate-50 rounded-xl border border-slate-100 font-bold">
+                                <span className="text-slate-500">Statut</span>
+                                <span className={(() => {
+                                    const s = (order.status || '').toLowerCase();
+                                    if (s.includes('annulé') || s === 'cancelled') return 'text-red-600';
+                                    if (s.includes('échoué') || s === 'failed') return 'text-red-600';
+                                    if (s.includes('en attente de paiement') || s === 'pending') return 'text-amber-600';
+                                    if (s.includes('validation design') || (s.includes('à valider') && !s.includes('payé'))) return 'text-amber-600';
+                                    if (s.includes('payé') || s === 'paid' || s === 'delivered' || s === 'shipped' || s.includes('préparation')) return 'text-green-600';
+                                    return 'text-slate-700';
+                                })()}>
+                                    {(() => {
+                                        const s = (order.status || '').toLowerCase();
+                                        if (s.includes('annulé') || s === 'cancelled') return 'ANNULÉ ❌';
+                                        if (s.includes('échoué') || s === 'failed') return 'ÉCHOUÉ ⚠️';
+                                        if (s.includes('en attente de paiement') || s === 'pending') return 'EN ATTENTE ⏳';
+                                        if (s.includes('validation design') || (s.includes('à valider') && !s.includes('payé'))) return 'EN ATTENTE 🎨';
+                                        if (s.includes('payé') || s === 'paid' || s === 'delivered' || s === 'shipped' || s.includes('préparation')) return 'PAYÉ ✅';
+                                        return translateStatus(order.status).toUpperCase();
+                                    })()}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

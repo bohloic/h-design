@@ -387,7 +387,10 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   const getBgImage = () => {
       if(selectedVariant && selectedVariant.images && selectedVariant.images.length > 0) {
           const img = selectedVariant.images[0];
-          return img.startsWith('http') ? img : BASE_IMG_URL + img;
+          if (!img) return '';
+          if (img.startsWith('http') || img.startsWith('data:')) return img;
+          if (img.startsWith('h-designer/')) return `https://res.cloudinary.com/dwyx9e7zw/image/upload/f_auto,q_auto,w_800,c_limit/${img}`;
+          return BASE_IMG_URL + img;
       }
       return '';
   };

@@ -3,6 +3,7 @@ import { authFetch } from '@/src/utils/apiClient';
 import { useToast } from '@/src/utils/context/ToastContext';
 import { formatCurrency } from '@/constants';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import SafeImage from '../tools/SafeImage';
 import { CheckCircle, XCircle, Palette, Eye, Loader2, AlertCircle, PackageX, RefreshCw } from 'lucide-react';
 import { useAutoRefresh } from '@/src/utils/hooks/useAutoRefresh';
 
@@ -252,10 +253,10 @@ export const AdminValidationDesigns = () => {
                                             
                                             {imgUrl ? (
                                                 <div className="relative group overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                                    <img src={BASE_IMG_URL + imgUrl} alt={isCustomizable ? "Design client" : "Produit standard"} className="w-full h-40 object-contain p-2" />
+                                                    <SafeImage src={imgUrl} alt={isCustomizable ? "Design client" : "Produit standard"} className="w-full h-40 object-contain p-2" />
                                                     <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-sm">
                                                         <button 
-                                                            onClick={() => window.open(BASE_IMG_URL + imgUrl, '_blank')} 
+                                                            onClick={() => window.open(imgUrl.startsWith('http') ? imgUrl : (imgUrl.startsWith('h-designer/') ? `https://res.cloudinary.com/dwyx9e7zw/image/upload/${imgUrl}` : BASE_IMG_URL + imgUrl), '_blank')} 
                                                             title="Ouvrir l'image en grand"
                                                             className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors mb-1"
                                                         >

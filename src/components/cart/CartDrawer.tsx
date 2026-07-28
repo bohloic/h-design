@@ -4,6 +4,7 @@ import { X, Trash2, Plus, Minus, ArrowRight, ShoppingCart } from 'lucide-react';
 import { CartItem } from '../../../types';
 import { formatCurrency } from '../../../constants';
 import { BASE_IMG_URL } from '../images/VoirImage';
+import SafeImage from '../tools/SafeImage';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -62,14 +63,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
           ) : (
             items.map((item) => (
               <div key={item.id} className="flex space-x-4 animate-fade-in">
-                {/* 🪄 FIX 1 : Détection intelligente du type d'URL (Base64, Absolue ou Relative) */}
-                <img 
-                    src={(() => {
-                        const img = item.image_url || (item as any).image;
-                        if (!img) return "/placeholder.png";
-                        if (img.startsWith('data:') || img.startsWith('http')) return img;
-                        return BASE_IMG_URL + img;
-                    })()} 
+                <SafeImage 
+                    src={item.image_url || (item as any).image || (item.options as any)?.customizationImage} 
                     alt={item.name} 
                     className="w-20 h-24 object-cover rounded-lg border border-slate-200 dark:border-slate-800" 
                 />

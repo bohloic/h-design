@@ -75,37 +75,40 @@ export const OrderDetails: React.FC = () => {
 
 
 
+    const isPaid = order && (
+        (order.status || '').toLowerCase().includes('payé') ||
+        (order.status || '').toLowerCase().includes('paid') ||
+        order.status === 'delivered' ||
+        order.status === 'shipped' ||
+        (order.status || '').toLowerCase().includes('préparation')
+    );
+
     const handleDownloadInvoice = async () => {
+        if (!isPaid) {
+            showToast("La facture est disponible uniquement après règlement de la commande.", "error");
+            return;
+        }
         try {
             setIsDownloading(true);
-            
-            // ⚠️ Remplace l'URL par la vraie route de ton backend qui génère le PDF
             const response = await authFetch(`/api/orders/${orderId}/invoice`); 
             
-            if (!response.ok) throw new Error("Erreur lors du téléchargement");
+            if (!response || !response.ok) {
+                const errData = await safeParseJson(response);
+                throw new Error(errData?.message || "Impossible de télécharger la facture.");
+            }
 
-            // 🪄 1. On transforme la réponse en "Blob" (fichier binaire PDF)
             const blob = await response.blob();
-            
-            // 🪄 2. On crée un lien virtuel caché dans le navigateur
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            
-            // 🪄 3. On lui donne le nom officiel du fichier
             link.setAttribute('download', `Facture_${orderSlug}.pdf`);
-            
-            // 🪄 4. On simule un clic sur ce lien pour lancer le téléchargement
             document.body.appendChild(link);
             link.click();
-            
-            // 🪄 5. On nettoie les traces
             link.parentNode?.removeChild(link);
             window.URL.revokeObjectURL(url);
-            
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erreur de téléchargement :", error);
-            showToast("Impossible de télécharger la facture pour le moment.", "error");
+            showToast(error.message || "Impossible de télécharger la facture pour le moment.", "error");
         } finally {
             setIsDownloading(false);
         }
@@ -189,13 +192,18 @@ export const OrderDetails: React.FC = () => {
                 {/* BOUTON FACTURE */}
                 <button 
                     onClick={handleDownloadInvoice}
-                    disabled={isDownloading}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm hover:shadow-md hover-theme-bg disabled:opacity-50 disabled:cursor-not-allowed bg-white text-theme-primary border-2 border-theme-primary/20"
+                    disabled={isDownloading || !isPaid}
+                    title={isPaid ? "Télécharger ma facture PDF" : "La facture est téléchargeable uniquement après règlement de la commande"}
+                    className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm ${
+                        isPaid 
+                        ? "hover:shadow-md bg-white text-theme-primary border-2 border-theme-primary/20 hover-theme-bg cursor-pointer"
+                        : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-75"
+                    }`}
                 >
                     {isDownloading ? (
                         <><Loader2 size={18} className="animate-spin" /> Génération...</>
                     ) : (
-                        <><Download size={18} /> Télécharger la facture</>
+                        <><Download size={18} /> {isPaid ? "Télécharger la facture" : "Facture non disponible (Impayée)"}</>
                     )}
                 </button>
             </div>

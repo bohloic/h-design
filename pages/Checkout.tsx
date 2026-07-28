@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { authFetch } from '../src/utils/apiClient';
+import { authFetch, safeParseJson } from '../src/utils/apiClient';
 import { CreditCard, MapPin, CheckCircle2, ArrowRight, Wallet, Lock, Truck, Loader2, Star, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../constants';
 import { Link, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import SafeImage from '../src/components/tools/SafeImage';
 import { usePaymentStore } from '@/src/store/usePaymentStore';
 import { useNotificationStore } from '../src/store/useNotificationStore';
 
@@ -135,17 +136,15 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
     if (isLoading) return;
     const token = localStorage.getItem('token');
     
-    // MODE INVITÉ : pas de token requis si l'email est fourni
-    if (!token) {
-        if (!formData.email || !formData.nom) {
-            useNotificationStore.getState().addNotification({
-                title: "Mode invité",
-                message: "Veuillez fournir un mail et un nom valide pour recevoir votre confirmation.",
-                type: "warning"
-            });
-            return;
-        }
-        // On continue en mode invité (userId = null)
+    const userEmail = (formData.email || '').trim();
+    if (!userEmail || !userEmail.includes('@')) {
+        useNotificationStore.getState().addNotification({
+            title: "Email requis",
+            message: "Veuillez fournir une adresse email valide pour la réception de votre confirmation et le paiement.",
+            type: "warning"
+        });
+        setStep(1); // Retour à l'étape 1 pour remplir l'email
+        return;
     }
 
     let finalUserId = formData.userId || null;
@@ -165,61 +164,51 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         const URL_ORDER = '/api/orders'; 
         const orderResponse = await authFetch(URL_ORDER, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({
                 userId: finalUserId,
                 cartItems: cartItems,
-                shippingDetails: formData,
+                shippingDetails: { ...formData, email: userEmail },
                 paymentMethod: paymentMethod, 
                 totalAmount: total,
                 useLoyaltyPoints: useLoyaltyPoints
             })
         });
 
-        const orderData = await orderResponse.json();
+        const orderData = await safeParseJson(orderResponse);
 
-        if (!orderResponse.ok) {
-            throw new Error(orderData.message || "Erreur lors de la création de la commande");
+        if (!orderResponse || !orderResponse.ok) {
+            throw new Error(orderData?.message || "Erreur lors de la création de la commande");
         }
 
         const newOrderId = orderData.orderId;
-        
-        // 🛒 SÉCURITÉ : On ne vide plus le panier ici. 
-        // Il sera vidé dans PaymentCallback.tsx uniquement après succès réel du paiement.
-        // onClearCart(); 
 
+        // 💳 Initialisation du paiement Paystack (Carte / Mobile Money)
         const paymentResponse = await authFetch('/api/payment/initialize', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({
-                email: formData.email,
+                email: userEmail,
                 amount: total,
                 orderId: newOrderId,
                 callbackUrl: window.location.origin
             })
         });
 
-        const paymentData = await paymentResponse.json();
+        const paymentData = await safeParseJson(paymentResponse);
 
-        if (!paymentResponse.ok) {
-            if (paymentData.errorType === 'STOCK_ERROR') {
-                setStockErrors(paymentData.details);
+        if (!paymentResponse || !paymentResponse.ok) {
+            if (paymentData?.errorType === 'STOCK_ERROR') {
+                setStockErrors(paymentData.details || []);
                 setIsLoading(false);
                 return; 
             }
-            throw new Error(paymentData.message || "Impossible d'initialiser le paiement Paystack");
+            throw new Error(paymentData?.message || "Impossible d'initialiser le paiement Paystack");
         }
 
-        if (paymentData.authorization_url) {
+        if (paymentData?.authorization_url) {
+            console.log("🔗 Redirection automatique vers Paystack:", paymentData.authorization_url);
             window.location.href = paymentData.authorization_url;
         } else {
-            throw new Error("Impossible d'initialiser le paiement Paystack");
+            throw new Error("L'URL de paiement Paystack est manquante.");
         }
 
     } catch (error: any) {
@@ -587,8 +576,8 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
               {cartItems.map((item, index) => (
                 <div key={`${item.product_id}-${index}`} className="flex gap-3 py-2 border-b border-slate-50 dark:border-slate-800 last:border-0">
                   <div className="w-14 h-14 md:w-16 md:h-16 bg-slate-50 dark:bg-slate-900 rounded-xl overflow-hidden flex-shrink-0 border border-slate-100 dark:border-slate-700">
-                    <img 
-                      src={BASE_IMG_URL + item.image} 
+                    <SafeImage 
+                      src={(item as any).image_url || item.image || (item.options as any)?.customizationImage} 
                       alt={item.name} 
                       className="w-full h-full object-cover" 
                     />

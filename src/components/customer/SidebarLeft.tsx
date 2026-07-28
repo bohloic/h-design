@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Product, Category } from '../../../types'; 
 import { Grid, Search } from 'lucide-react'; 
 import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import SafeImage from '../tools/SafeImage';
 
 interface SidebarLeftProps {
   products: Product[];
@@ -105,8 +106,8 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
                 }`}
                 >
                     <div className="w-16 h-16 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-100 relative">
-                        <img 
-                            src={product.image_url ? (product.image_url.startsWith('http') ? product.image_url : BASE_IMG_URL + product.image_url) : ''} 
+                        <SafeImage 
+                            src={product.image_url} 
                             alt={product.name} 
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
