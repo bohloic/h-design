@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
     ShoppingCart, Star, Truck,  
     Ruler, Loader2, Palette, Share2, Check, AlertCircle, Heart, ArrowLeft 
@@ -9,6 +9,7 @@ import { authFetch, safeParseJson } from '@/src/utils/apiClient';
 import GenderCategorySection from '@/src/components/product/GenderCategorySection';
 import ProductCarousel from '@/src/components/product/ProductCarousel';
 import SafeImage from '@/src/components/tools/SafeImage';
+import ClothingRecolorCanvas from '@/src/components/product/ClothingRecolorCanvas';
 import { useWishlistStore } from '@/src/store/useWishlistStore';
 import { useToast } from '@/src/utils/context/ToastContext';
 
@@ -192,9 +193,10 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
   const [isCustomColor, setIsCustomColor] = useState(false);
   const [customHex, setCustomHex] = useState('#FF5733');
   const [pantoneCode, setPantoneCode] = useState('');
+  const [canvasSuccess, setCanvasSuccess] = useState(false);
 
-  // 🎨 Convertit un code HEX en degrés de teinte HSL pour le filtre CSS
-  const hexToHueDeg = (hex: string): number => {
+  // 🎨 Filtre CSS de secours si le canvas CORS échoue
+  const hexToHueDeg = useCallback((hex: string): number => {
     try {
       const r = parseInt(hex.slice(1, 3), 16) / 255;
       const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -209,16 +211,16 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
       else h = ((r - g) / d + 4) / 6;
       return Math.round(h * 360);
     } catch { return 0; }
-  };
+  }, []);
 
-  // 🎨 Filtre CSS dynamique appliqué sur le wrapper image (sans CORS)
-  const imageColorFilter: string = (() => {
-    if (!isCustomColor || !customHex || customHex.length < 7) return 'none';
-    // sepia(1) base hue ≈ 37°, on décale vers la teinte cible
-    const targetHue = hexToHueDeg(customHex);
-    const hueRotate = targetHue - 37;
-    return `grayscale(0.15) sepia(0.9) hue-rotate(${hueRotate}deg) saturate(2.5) brightness(0.92)`;
+  const fallbackCssFilter: string = (() => {
+    if (!isCustomColor || !customHex || customHex.length < 7 || canvasSuccess) return 'none';
+    const hueRotate = hexToHueDeg(customHex) - 37;
+    return `grayscale(0.1) sepia(0.9) hue-rotate(${hueRotate}deg) saturate(2.5) brightness(0.92)`;
   })();
+
+  // Réinitialiser le succès canvas à chaque changement d'image ou de couleur
+  useEffect(() => { setCanvasSuccess(false); }, [displayImage, customHex]);
 
   const handleCustomize = () => {
     if (!product) return;
@@ -289,13 +291,27 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
             
             <div className="relative w-full h-[40vh] md:h-auto md:aspect-square bg-slate-50 rounded-xl overflow-hidden border border-slate-100 shadow-sm cursor-zoom-in">
               
-              {/* 🎨 RECOLORING IA : filtre CSS direct sans CORS — marche sur toutes images */}
+              {/* 🎨 CANVAS RECOLORING : pixel-par-pixel, vêtement uniquement */}
+              {isCustomColor && (
+                <ClothingRecolorCanvas
+                  src={displayImage}
+                  targetHex={customHex}
+                  enabled={isCustomColor}
+                  onReady={(ok) => setCanvasSuccess(ok)}
+                  className="absolute inset-0 p-4 object-contain"
+                  alt={product.name}
+                />
+              )}
+
+              {/* Image normale (visible si pas de mode custom OU canvas en cours de chargement) */}
               <div
                 style={{
-                  filter: imageColorFilter,
+                  filter: fallbackCssFilter,
                   transition: 'filter 0.25s ease',
                   width: '100%',
                   height: '100%',
+                  // Masqué quand le canvas a réussi (canvas prend le dessus)
+                  display: (isCustomColor && canvasSuccess) ? 'none' : 'block',
                 }}
               >
                 <SafeImage 
@@ -307,14 +323,11 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
 
               {/* Badge couleur active */}
               {isCustomColor && (
-                <div
-                  className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-md border border-slate-100"
-                >
-                  <div
-                    className="w-4 h-4 rounded-full border border-white shadow-inner flex-shrink-0"
-                    style={{ backgroundColor: customHex }}
-                  />
+                <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-md border border-slate-100">
+                  <div className="w-4 h-4 rounded-full border border-white shadow-inner flex-shrink-0" style={{ backgroundColor: customHex }} />
                   <span className="text-xs font-bold text-slate-700">{customHex.toUpperCase()}</span>
+                  {!canvasSuccess && isCustomColor && <span className="text-[10px] text-amber-500 font-medium">filtre</span>}
+                  {canvasSuccess && <span className="text-[10px] text-green-600 font-medium">✔ IA</span>}
                 </div>
               )}
 
