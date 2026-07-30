@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
     ShoppingCart, Star, Truck,  
     Ruler, Loader2, Palette, Share2, Check, AlertCircle, Heart, ArrowLeft 
@@ -9,9 +9,9 @@ import { authFetch, safeParseJson } from '@/src/utils/apiClient';
 import GenderCategorySection from '@/src/components/product/GenderCategorySection';
 import ProductCarousel from '@/src/components/product/ProductCarousel';
 import SafeImage from '@/src/components/tools/SafeImage';
-import ClothingRecolorCanvas from '@/src/components/product/ClothingRecolorCanvas';
 import { useWishlistStore } from '@/src/store/useWishlistStore';
 import { useToast } from '@/src/utils/context/ToastContext';
+
 
 const TEXTILE_COLORS_MAP: Record<string, string> = {
   "Blanc": "#FFFFFF", "Noir": "#000000", "Gris Chiné": "#9CA3AF", "Gris Anthracite": "#374151",
@@ -193,34 +193,31 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
   const [isCustomColor, setIsCustomColor] = useState(false);
   const [customHex, setCustomHex] = useState('#FF5733');
   const [pantoneCode, setPantoneCode] = useState('');
-  const [canvasSuccess, setCanvasSuccess] = useState(false);
 
-  // 🎨 Filtre CSS de secours si le canvas CORS échoue
-  const hexToHueDeg = useCallback((hex: string): number => {
-    try {
-      const r = parseInt(hex.slice(1, 3), 16) / 255;
-      const g = parseInt(hex.slice(3, 5), 16) / 255;
-      const b = parseInt(hex.slice(5, 7), 16) / 255;
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      if (max === min) return 0;
-      const d = max - min;
-      let h = 0;
-      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-      else if (max === g) h = ((b - r) / d + 2) / 6;
-      else h = ((r - g) / d + 4) / 6;
-      return Math.round(h * 360);
-    } catch { return 0; }
-  }, []);
+  /**
+   * 🎨 Construit les valeurs de la matrice SVG feColorMatrix
+   * Algorithme : grayscale (luminance) × couleur cible
+   * Résultat : seuls les pixels non-transparents du PNG sont colorisés,
+   * le fond transparent reste intact, les ombres sont proportionnelles.
+   */
+  const buildColorMatrix = (hex: string): string => {
+    if (!hex || hex.length < 7) return '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0';
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    // Matrice combinée = [couleur cible] * [luminance perceptuelle]
+    // Chaque ligne: R_out = r*(0.299*Rin + 0.587*Gin + 0.114*Bin)
+    return [
+      `${(r*0.299).toFixed(4)} ${(r*0.587).toFixed(4)} ${(r*0.114).toFixed(4)} 0 0`,
+      `${(g*0.299).toFixed(4)} ${(g*0.587).toFixed(4)} ${(g*0.114).toFixed(4)} 0 0`,
+      `${(b*0.299).toFixed(4)} ${(b*0.587).toFixed(4)} ${(b*0.114).toFixed(4)} 0 0`,
+      `0 0 0 1 0`,
+    ].join('  ');
+  };
 
-  const fallbackCssFilter: string = (() => {
-    if (!isCustomColor || !customHex || customHex.length < 7 || canvasSuccess) return 'none';
-    const hueRotate = hexToHueDeg(customHex) - 37;
-    return `grayscale(0.1) sepia(0.9) hue-rotate(${hueRotate}deg) saturate(2.5) brightness(0.92)`;
-  })();
+  const svgFilterId = product ? `recolor-shirt-${product.id}` : 'recolor-shirt';
+  const svgFilterValues = isCustomColor && customHex.length === 7 ? buildColorMatrix(customHex) : null;
 
-  // Réinitialiser le succès canvas à chaque changement d'image ou de couleur
-  useEffect(() => { setCanvasSuccess(false); }, [selectedVariant?.id, currentImageIndex, customHex]);
 
   const handleCustomize = () => {
     if (!product) return;
@@ -290,28 +287,27 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
           <div className="flex flex-col gap-4 md:sticky md:top-24 mb-4 md:mb-0">
             
             <div className="relative w-full h-[40vh] md:h-auto md:aspect-square bg-slate-50 rounded-xl overflow-hidden border border-slate-100 shadow-sm cursor-zoom-in">
-              
-              {/* 🎨 CANVAS RECOLORING : pixel-par-pixel, vêtement uniquement */}
-              {isCustomColor && (
-                <ClothingRecolorCanvas
-                  src={displayImage}
-                  targetHex={customHex}
-                  enabled={isCustomColor}
-                  onReady={(ok) => setCanvasSuccess(ok)}
-                  className="absolute inset-0 p-4 object-contain"
-                  alt={product.name}
-                />
+
+              {/* 🎨 FILTRE SVG INVISIBLE — injecté dans le DOM, recolore uniquement le vêtement */}
+              {svgFilterValues && (
+                <svg
+                  aria-hidden
+                  style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}
+                >
+                  <defs>
+                    <filter id={svgFilterId} colorInterpolationFilters="sRGB" x="0" y="0" width="100%" height="100%">
+                      <feColorMatrix type="matrix" values={svgFilterValues} />
+                    </filter>
+                  </defs>
+                </svg>
               )}
 
-              {/* Image normale (visible si pas de mode custom OU canvas en cours de chargement) */}
+              {/* Image produit avec filtre SVG appliqué quand mode couleur custom actif */}
               <div
+                className="w-full h-full"
                 style={{
-                  filter: fallbackCssFilter,
-                  transition: 'filter 0.25s ease',
-                  width: '100%',
-                  height: '100%',
-                  // Masqué quand le canvas a réussi (canvas prend le dessus)
-                  display: (isCustomColor && canvasSuccess) ? 'none' : 'block',
+                  filter: svgFilterValues ? `url(#${svgFilterId})` : 'none',
+                  transition: 'filter 0.2s ease',
                 }}
               >
                 <SafeImage 
@@ -326,8 +322,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                 <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-md border border-slate-100">
                   <div className="w-4 h-4 rounded-full border border-white shadow-inner flex-shrink-0" style={{ backgroundColor: customHex }} />
                   <span className="text-xs font-bold text-slate-700">{customHex.toUpperCase()}</span>
-                  {!canvasSuccess && isCustomColor && <span className="text-[10px] text-amber-500 font-medium">filtre</span>}
-                  {canvasSuccess && <span className="text-[10px] text-green-600 font-medium">✔ IA</span>}
+                  <span className="text-[10px] text-violet-600 font-semibold">✨ IA</span>
                 </div>
               )}
 
