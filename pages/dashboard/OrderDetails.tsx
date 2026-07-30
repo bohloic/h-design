@@ -424,34 +424,48 @@ export const OrderDetails: React.FC = () => {
                     </div>
 
                     {/* Total */}
-                    <div className="bg-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-xl relative overflow-hidden">
-                        {/* Décoration d'arrière-plan */}
-                        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-10 bg-theme-primary"></div>
-                        
-                        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 relative z-10">Résumé Financier</h3>
-                        <div className="space-y-4 text-sm mb-6 relative z-10">
-                            <div className="flex justify-between text-slate-300 font-medium">
-                                <span>Sous-total articles</span>
-                                <span>{formatCurrency(order.items?.reduce((sum: number, i: any) => sum + (i.unit_price * i.quantity), 0) || 0)}</span>
-                            </div>
-                            <div className="flex justify-between text-slate-300 font-medium">
-                                <span>Frais de livraison</span>
-                                <span>{formatCurrency(order.shipping_fee || 0)}</span>
-                            </div>
-                            {order.points_used > 0 && (
-                                <div className="flex justify-between text-amber-400 font-medium">
-                                    <span>Récompense Fidélité</span>
-                                    <span>- {formatCurrency(order.points_used * 25)}</span>
+                    {(() => {
+                        const itemsSubtotal = order.items?.reduce((sum: number, i: any) => sum + (Number(i.unit_price || i.price || 0) * Number(i.quantity || 1)), 0) || 0;
+                        const pointsUsed = Number(order.points_used || 0);
+                        const loyaltyDiscount = pointsUsed > 0 ? pointsUsed * 25 : 0;
+                        const totalAmount = Number(order.total_amount || 0);
+                        const rawShippingFee = Number(order.shipping_fee || order.shippingFee || order.delivery_fee || 0);
+                        const calculatedShippingFee = Math.max(0, totalAmount + loyaltyDiscount - itemsSubtotal);
+                        const shippingFee = rawShippingFee > 0 ? rawShippingFee : calculatedShippingFee;
+
+                        return (
+                            <div className="bg-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-xl relative overflow-hidden">
+                                {/* Décoration d'arrière-plan */}
+                                <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-10 bg-theme-primary"></div>
+                                
+                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 relative z-10">Résumé Financier</h3>
+                                <div className="space-y-4 text-sm mb-6 relative z-10">
+                                    <div className="flex justify-between text-slate-300 font-medium">
+                                        <span>Sous-total articles</span>
+                                        <span>{formatCurrency(itemsSubtotal)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-slate-300 font-medium">
+                                        <span>Frais de livraison</span>
+                                        <span className={shippingFee > 0 ? "text-slate-200 font-bold" : "text-emerald-400 font-bold"}>
+                                            {shippingFee > 0 ? formatCurrency(shippingFee) : 'Gratuit'}
+                                        </span>
+                                    </div>
+                                    {loyaltyDiscount > 0 && (
+                                        <div className="flex justify-between text-amber-400 font-medium">
+                                            <span>Récompense Fidélité</span>
+                                            <span>- {formatCurrency(loyaltyDiscount)}</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                        <div className="pt-5 border-t border-slate-700/50 flex justify-between items-end relative z-10">
-                            <span className="font-bold text-slate-300 uppercase tracking-widest text-xs">Total Payé</span>
-                            <span className="text-2xl md:text-3xl font-black tracking-tight text-theme-primary">
-                                {formatCurrency(order.total_amount)}
-                            </span>
-                        </div>
-                    </div>
+                                <div className="pt-5 border-t border-slate-700/50 flex justify-between items-end relative z-10">
+                                    <span className="font-bold text-slate-300 uppercase tracking-widest text-xs">Total Payé</span>
+                                    <span className="text-2xl md:text-3xl font-black tracking-tight text-theme-primary">
+                                        {formatCurrency(totalAmount)}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {/* ✅ BOUTON ANNULATION (Visible uniquement si non expédié/annulé) */}
                     {!order.status.toLowerCase().includes('expédié') && 
