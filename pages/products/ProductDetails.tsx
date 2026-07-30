@@ -220,7 +220,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
   })();
 
   // Réinitialiser le succès canvas à chaque changement d'image ou de couleur
-  useEffect(() => { setCanvasSuccess(false); }, [displayImage, customHex]);
+  useEffect(() => { setCanvasSuccess(false); }, [selectedVariant?.id, currentImageIndex, customHex]);
 
   const handleCustomize = () => {
     if (!product) return;
