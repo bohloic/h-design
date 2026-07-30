@@ -189,46 +189,58 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
       } catch (error) { console.error(error); }
   }, [product, slug]);
 
+  const [isCustomColor, setIsCustomColor] = useState(false);
+  const [customHex, setCustomHex] = useState('#FF5733');
+  const [pantoneCode, setPantoneCode] = useState('');
+
+  const activeColorHex = isCustomColor ? customHex : (selectedVariant?.colorCode || '#FFFFFF');
+
   const handleCustomize = () => {
     if (!product) return;
     const customizationData = {
       productId: product.id,
       variantId: selectedVariant?.id, 
-      colorName: selectedVariant?.colorName,
-      sizeName: selectedSize // On passe aussi la taille sélectionnée
+      colorName: isCustomColor ? customHex : selectedVariant?.colorName,
+      sizeName: selectedSize
     };
     navigate('/personnaliser/mon-design', { state: customizationData });
   };
 
   const handleAddToCart = () => {
-    if (!product || !selectedVariant) return;
-    if (isOutOfStock) return; 
+    if (!product || (!selectedVariant && !isCustomColor)) return;
+    if (isOutOfStock && !isCustomColor) return; 
     if (!selectedSize) { showToast("⚠️ Veuillez sélectionner une taille !", "warning"); return; }
 
-    const uniqueCartId = `${product.id}-${selectedVariant.id}-${selectedSize}`;
-    const isMainProduct = selectedVariant.id === 'main';
+    const colorName = isCustomColor ? `Personnalisé (${customHex.toUpperCase()})` : selectedVariant?.colorName;
+    const colorCode = isCustomColor ? customHex : selectedVariant?.colorCode;
+
+    const uniqueCartId = `${product.id}-${isCustomColor ? customHex.replace('#', '') : selectedVariant?.id}-${selectedSize}`;
+    const isMainProduct = selectedVariant?.id === 'main';
 
     const cartItemPayload = {
       id: uniqueCartId, 
       product_id: product.id,
-      name: product.name,
+      name: isCustomColor ? `${product.name} (Couleur Sur Mesure)` : product.name,
       price: product.price,
       quantity: quantity,
-      image: selectedVariant.images[0],
+      image: selectedVariant?.images[0] || product.image_url,
       options: {
         size: selectedSize,
-        color: selectedVariant.colorName, 
-        variant_id: isMainProduct ? null : selectedVariant.id, 
-        customization: null, 
+        color: colorName, 
+        colorHex: colorCode,
+        isCustomColor: isCustomColor,
+        variant_id: isMainProduct ? null : selectedVariant?.id, 
+        customization: isCustomColor ? JSON.stringify({ customColorHex: customHex, pantone: pantoneCode, type: 'custom_recolor' }) : null, 
       }
     };
     onAddToCart(cartItemPayload); 
+    showToast("✅ Article ajouté au panier avec succès !", "success");
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-theme-primary" /></div>;
   if (!product) return <div className="min-h-screen flex flex-col items-center justify-center text-slate-500">Produit introuvable</div>;
 
-  const displayImage = selectedVariant && selectedVariant.images.length > 0 ? selectedVariant.images[currentImageIndex] : "/placeholder.png";
+  const displayImage = selectedVariant && selectedVariant.images.length > 0 ? selectedVariant.images[currentImageIndex] : (product.image_url || "/placeholder.png");
 
   return (
     <div className="bg-white min-h-screen pb-16 animate-in fade-in duration-500">
@@ -247,16 +259,37 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
         {/* VUE PRINCIPALE */}
         <div className="md:grid md:grid-cols-2 md:gap-8 lg:gap-12 items-start">
           
-          {/* --- GAUCHE : VISUEL --- */}
+          {/* --- GAUCHE : VISUEL AVEC RECOLORING IA --- */}
           <div className="flex flex-col gap-4 md:sticky md:top-24 mb-4 md:mb-0">
             
             <div className="relative w-full h-[40vh] md:h-auto md:aspect-square bg-slate-50 rounded-xl overflow-hidden border border-slate-100 shadow-sm cursor-zoom-in">
               <SafeImage 
                 src={displayImage} 
                 alt={product.name} 
-                className={`w-full h-full object-contain p-4 object-center transition-transform duration-500 hover:scale-105 ${isOutOfStock ? 'grayscale opacity-75' : ''}`}
+                className={`w-full h-full object-contain p-4 object-center transition-transform duration-500 hover:scale-105 ${isOutOfStock && !isCustomColor ? 'grayscale opacity-75' : ''}`}
               />
-              {isOutOfStock && (
+
+              {/* 🎨 CALQUE DE RECOLORATION IA DYNAMIQUE TEMPS RÉEL */}
+              {activeColorHex && activeColorHex.toUpperCase() !== '#FFFFFF' && (
+                <div 
+                  className="absolute inset-0 pointer-events-none transition-colors duration-300 z-10 p-4"
+                  style={{
+                    backgroundColor: activeColorHex,
+                    mixBlendMode: 'multiply',
+                    opacity: 0.75,
+                    WebkitMaskImage: `url(${displayImage})`,
+                    maskImage: `url(${displayImage})`,
+                    WebkitMaskSize: 'contain',
+                    maskSize: 'contain',
+                    WebkitMaskPosition: 'center',
+                    maskPosition: 'center',
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskRepeat: 'no-repeat'
+                  }}
+                />
+              )}
+
+              {isOutOfStock && !isCustomColor && (
                   <div className="absolute top-4 left-4 bg-red-600/90 text-white font-bold px-3 py-1.5 rounded-lg shadow-sm z-10 flex items-center gap-1.5 backdrop-blur-md">
                       <AlertCircle size={16} /> ÉPUISÉ
                   </div>
@@ -299,7 +332,6 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                </div>
                <div className="flex items-center justify-between mt-3">
                    <div className="flex items-center gap-2">
-                        {/* 🪄 PRIX DYNAMIQUE */}
                         <span className="text-3xl font-bold text-theme-primary">{formatCurrency(product.price)}</span>
                         <span className="text-xs text-slate-500 font-medium">TTC</span>
                    </div>
@@ -310,32 +342,64 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                </div>
              </div>
 
-            {/* Sélecteur Couleur */}
+            {/* Sélecteur Couleur & Mode Recoloring IA */}
             <div>
-                <div className="flex justify-between items-baseline mb-2">
-                    <span className="text-sm font-bold text-slate-700">Couleur : <span className="font-normal capitalize">{selectedVariant?.colorName}</span></span>
+                <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm font-bold text-slate-700">
+                        Couleur : <span className="font-normal capitalize">{isCustomColor ? `Sur mesure (${customHex.toUpperCase()})` : selectedVariant?.colorName}</span>
+                    </span>
+                    <button 
+                        onClick={() => setIsCustomColor(!isCustomColor)}
+                        className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 hover:bg-amber-100 transition-colors flex items-center gap-1"
+                    >
+                        <Palette size={12} />
+                        {isCustomColor ? 'Voir pastilles stock' : 'Créer ma couleur IA 🎨'}
+                    </button>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    {product.variants.map((variant) => (
-                        <button
-                            key={variant.id}
-                            ref={el => {
-                                variantRefs.current[variant.id] = el;
-                                if (el) el.style.setProperty('--variant-color', variant.colorCode);
-                            }}
-                            onClick={() => { setSelectedVariant(variant); setCurrentImageIndex(0); }}
-                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border bg-dynamic-variant ${
-                                selectedVariant?.id === variant.id ? 'ring-2 ring-offset-2 scale-110 border-transparent ring-theme-primary' : 'border-slate-200 hover:border-slate-400'
-                            }`}
-                            title={variant.colorName}
-                        >
-                            {variant.colorName === 'Blanc' && <div className="absolute inset-0 rounded-full border border-black/10 pointer-events-none" />}
-                            {selectedVariant?.id === variant.id && (
-                                <Check size={16} className={['Blanc', 'Jaune'].includes(variant.colorName) ? 'text-slate-900' : 'text-white'} />
-                            )}
-                        </button>
-                    ))}
-                </div>
+
+                {!isCustomColor ? (
+                    <div className="flex flex-wrap gap-2">
+                        {product.variants.map((variant) => (
+                            <button
+                                key={variant.id}
+                                ref={el => {
+                                    variantRefs.current[variant.id] = el;
+                                    if (el) el.style.setProperty('--variant-color', variant.colorCode);
+                                }}
+                                onClick={() => { setSelectedVariant(variant); setCurrentImageIndex(0); }}
+                                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border bg-dynamic-variant ${
+                                    selectedVariant?.id === variant.id ? 'ring-2 ring-offset-2 scale-110 border-transparent ring-theme-primary' : 'border-slate-200 hover:border-slate-400'
+                                }`}
+                                title={variant.colorName}
+                            >
+                                {variant.colorName === 'Blanc' && <div className="absolute inset-0 rounded-full border border-black/10 pointer-events-none" />}
+                                {selectedVariant?.id === variant.id && (
+                                    <Check size={16} className={['Blanc', 'Jaune'].includes(variant.colorName) ? 'text-slate-900' : 'text-white'} />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-3 bg-amber-500/10 p-3.5 rounded-2xl border border-amber-500/20">
+                        <div className="flex items-center gap-3">
+                            <input
+                              type="color"
+                              value={customHex}
+                              onChange={(e) => setCustomHex(e.target.value)}
+                              className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 bg-transparent"
+                            />
+                            <div className="flex-1">
+                              <input
+                                type="text"
+                                value={customHex.toUpperCase()}
+                                onChange={(e) => setCustomHex(e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs font-mono font-bold bg-white border border-slate-200 rounded-lg"
+                                placeholder="#FF5733"
+                              />
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Sélecteur Taille */}
@@ -365,11 +429,11 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
             </div>
 
             {/* MESSAGE DE STOCK */}
-            {isOutOfStock ? (
+            {isOutOfStock && !isCustomColor ? (
                 <div className="text-red-600 bg-red-50 p-3 rounded-lg flex items-center gap-2 text-sm font-bold border border-red-100">
                     <AlertCircle size={18} /> Rupture de stock pour cette couleur.
                 </div>
-            ) : (availableStock <= 5 && availableStock > 0) ? (
+            ) : (availableStock <= 5 && availableStock > 0 && !isCustomColor) ? (
                 <div className="text-amber-600 bg-amber-50 p-3 rounded-lg flex items-center gap-2 text-sm font-bold border border-amber-100">
                     <AlertCircle size={18} /> Plus que {availableStock} article(s) en stock !
                 </div>
@@ -382,18 +446,18 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                     <div className="flex items-center border border-slate-300 rounded-lg w-28 bg-white flex-shrink-0 overflow-hidden">
                         <button 
                             onClick={() => setQuantity(Math.max(1, quantity - 1))} 
-                            disabled={isOutOfStock || quantity <= 1}
+                            disabled={isOutOfStock && !isCustomColor || quantity <= 1}
                             title="Diminuer la quantité"
                             className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-100 font-bold text-lg transition-colors"
                         >
                             -
                         </button>
-                        <span className={`flex-1 text-center font-bold text-base ${isOutOfStock ? 'text-slate-400' : 'text-slate-900'}`}>
-                            {isOutOfStock ? 0 : quantity}
+                        <span className={`flex-1 text-center font-bold text-base ${isOutOfStock && !isCustomColor ? 'text-slate-400' : 'text-slate-900'}`}>
+                            {isOutOfStock && !isCustomColor ? 0 : quantity}
                         </span>
                         <button 
-                            onClick={() => setQuantity(Math.min(availableStock, quantity + 1))} 
-                            disabled={isOutOfStock || quantity >= availableStock}
+                            onClick={() => setQuantity(Math.min(availableStock || 99, quantity + 1))} 
+                            disabled={isOutOfStock && !isCustomColor}
                             title="Augmenter la quantité"
                             className="w-8 h-full flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-100 font-bold text-lg transition-colors"
                         >
@@ -403,17 +467,16 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
                     
                     <button 
                         onClick={handleAddToCart} 
-                        disabled={!selectedSize || isOutOfStock} 
-                        className={`flex-1 rounded-lg font-bold text-sm uppercase tracking-wide flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 ${
-                            isOutOfStock
+                        disabled={!selectedSize || (isOutOfStock && !isCustomColor)} 
+                        style={{ backgroundColor: selectedSize ? 'var(--theme-primary)' : undefined }}
+                        className={`flex-1 rounded-lg font-bold text-sm uppercase tracking-wide flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 text-white ${
+                            (isOutOfStock && !isCustomColor) || !selectedSize
                             ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                            : !selectedSize 
-                                ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed' 
-                                : 'bg-green-600 text-white hover:bg-green-700'
+                            : 'hover:opacity-95'
                         }`}
                     >
                         <ShoppingCart size={18} />
-                        {isOutOfStock ? 'Épuisé' : (selectedSize ? 'Ajouter' : 'Choisir Taille')}
+                        {(isOutOfStock && !isCustomColor) ? 'Épuisé' : (selectedSize ? 'Ajouter au panier' : 'Choisir Taille')}
                     </button>
                 </div>
 
