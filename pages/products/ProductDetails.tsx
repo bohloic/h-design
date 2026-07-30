@@ -193,7 +193,32 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
   const [customHex, setCustomHex] = useState('#FF5733');
   const [pantoneCode, setPantoneCode] = useState('');
 
-  const activeColorHex = isCustomColor ? customHex : (selectedVariant?.colorCode || '#FFFFFF');
+  // 🎨 Convertit un code HEX en degrés de teinte HSL pour le filtre CSS
+  const hexToHueDeg = (hex: string): number => {
+    try {
+      const r = parseInt(hex.slice(1, 3), 16) / 255;
+      const g = parseInt(hex.slice(3, 5), 16) / 255;
+      const b = parseInt(hex.slice(5, 7), 16) / 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      if (max === min) return 0;
+      const d = max - min;
+      let h = 0;
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (max === g) h = ((b - r) / d + 2) / 6;
+      else h = ((r - g) / d + 4) / 6;
+      return Math.round(h * 360);
+    } catch { return 0; }
+  };
+
+  // 🎨 Filtre CSS dynamique appliqué sur le wrapper image (sans CORS)
+  const imageColorFilter: string = (() => {
+    if (!isCustomColor || !customHex || customHex.length < 7) return 'none';
+    // sepia(1) base hue ≈ 37°, on décale vers la teinte cible
+    const targetHue = hexToHueDeg(customHex);
+    const hueRotate = targetHue - 37;
+    return `grayscale(0.15) sepia(0.9) hue-rotate(${hueRotate}deg) saturate(2.5) brightness(0.92)`;
+  })();
 
   const handleCustomize = () => {
     if (!product) return;
@@ -263,30 +288,34 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
           <div className="flex flex-col gap-4 md:sticky md:top-24 mb-4 md:mb-0">
             
             <div className="relative w-full h-[40vh] md:h-auto md:aspect-square bg-slate-50 rounded-xl overflow-hidden border border-slate-100 shadow-sm cursor-zoom-in">
-              <SafeImage 
-                src={displayImage} 
-                alt={product.name} 
-                className={`w-full h-full object-contain p-4 object-center transition-transform duration-500 hover:scale-105 ${isOutOfStock && !isCustomColor ? 'grayscale opacity-75' : ''}`}
-              />
-
-              {/* 🎨 CALQUE DE RECOLORATION IA DYNAMIQUE TEMPS RÉEL */}
-              {activeColorHex && activeColorHex.toUpperCase() !== '#FFFFFF' && (
-                <div 
-                  className="absolute inset-0 pointer-events-none transition-colors duration-300 z-10 p-4"
-                  style={{
-                    backgroundColor: activeColorHex,
-                    mixBlendMode: 'multiply',
-                    opacity: 0.75,
-                    WebkitMaskImage: `url(${displayImage})`,
-                    maskImage: `url(${displayImage})`,
-                    WebkitMaskSize: 'contain',
-                    maskSize: 'contain',
-                    WebkitMaskPosition: 'center',
-                    maskPosition: 'center',
-                    WebkitMaskRepeat: 'no-repeat',
-                    maskRepeat: 'no-repeat'
-                  }}
+              
+              {/* 🎨 RECOLORING IA : filtre CSS direct sans CORS — marche sur toutes images */}
+              <div
+                style={{
+                  filter: imageColorFilter,
+                  transition: 'filter 0.25s ease',
+                  width: '100%',
+                  height: '100%',
+                }}
+              >
+                <SafeImage 
+                  src={displayImage} 
+                  alt={product.name} 
+                  className={`w-full h-full object-contain p-4 object-center transition-transform duration-500 hover:scale-105 ${isOutOfStock && !isCustomColor ? 'opacity-60' : ''}`}
                 />
+              </div>
+
+              {/* Badge couleur active */}
+              {isCustomColor && (
+                <div
+                  className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1 shadow-md border border-slate-100"
+                >
+                  <div
+                    className="w-4 h-4 rounded-full border border-white shadow-inner flex-shrink-0"
+                    style={{ backgroundColor: customHex }}
+                  />
+                  <span className="text-xs font-bold text-slate-700">{customHex.toUpperCase()}</span>
+                </div>
               )}
 
               {isOutOfStock && !isCustomColor && (
