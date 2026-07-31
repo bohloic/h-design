@@ -196,17 +196,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
     setSearchQuery('');
   };
 
-  if (loading) {
-    return (
-      <div className="h-screen flex flex-col items-center justify-center bg-offwhite dark:bg-carbon text-slate-900 dark:text-pure">
-        <div
-          className="w-16 h-16 border-4 border-slate-200 dark:border-slate-100 rounded-full animate-spin mb-4"
-          style={{ borderTopColor: 'var(--theme-primary)' }}
-        ></div>
-        <p className="text-slate-500 dark:text-slate-400 font-medium tracking-widest uppercase text-sm">Chargement...</p>
-      </div>
-    );
-  }
+  // (Loading géré directement avec Skeleton Loaders dans le composant principal)
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12 min-h-screen bg-offwhite dark:bg-carbon text-slate-900 dark:text-pure transition-colors">
@@ -385,7 +375,21 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
         {/* MAIN */}
         <main className="flex-1 min-h-[50vh]">
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 pb-12">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 animate-pulse flex flex-col h-80">
+                  <div className="w-full h-48 bg-slate-200 dark:bg-slate-800 rounded-xl mb-4" />
+                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2" />
+                  <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-auto" />
+                  <div className="flex justify-between items-center mt-4">
+                    <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
+                    <div className="w-8 h-8 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-24 bg-slate-50 dark:bg-slate-900/40 rounded-[2rem] flex flex-col items-center justify-center animate-in fade-in zoom-in-95 mx-4 border border-slate-200 dark:border-slate-800 transition-colors">
               <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-6 transition-colors">
                 <Search className="w-8 h-8 text-slate-400" />

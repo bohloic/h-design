@@ -32,10 +32,20 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
   }
 
   try {
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       ...options,
       headers,
     });
+
+    // 🛡️ FALLBACK INTEL : Si /api/products direct renvoie 404, basculer sur /api/products/shop
+    if (response.status === 404 && url.endsWith('/api/products')) {
+      const fallbackUrl = `${url}/shop`;
+      console.warn(`⚠️ 404 sur ${url}, fallback sur ${fallbackUrl}`);
+      response = await fetch(fallbackUrl, {
+        ...options,
+        headers,
+      });
+    }
 
     if (response.status === 401 && window.location.pathname !== '/login') {
       console.warn("Session expirée. Déconnexion...");

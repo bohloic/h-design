@@ -79,6 +79,18 @@ const hexToRgbaFactor = (hex: string): [number, number, number, number] => {
     return [r, g, b, 1];
 };
 
+/**
+ * Valide et garantit un format #RRGGBB valide pour les éléments HTML <input type="color">
+ * afin d'éviter les avertissements de la console du navigateur.
+ */
+const ensureValidHex = (hex: string, fallback: string = '#FF5733'): string => {
+    if (!hex) return fallback;
+    let clean = hex.trim();
+    if (!clean.startsWith('#')) clean = '#' + clean;
+    if (/^#[0-9A-Fa-f]{6}$/.test(clean)) return clean;
+    return fallback;
+};
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ProductVariant {
     id: number | string;
@@ -347,6 +359,8 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
 
         // Attributs model-viewer spécifiques
         mv.setAttribute('camera-controls', '');
+        mv.setAttribute('ar', '');
+        mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
         mv.setAttribute('shadow-intensity', '1.2');
         mv.setAttribute('shadow-softness', '0.8');
         mv.setAttribute('exposure', '1.0');
@@ -472,8 +486,26 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
 
     // ─── Rendu ───────────────────────────────────────────────────────────────
     if (loading) return (
-        <div className="min-h-screen flex items-center justify-center">
-            <Loader2 className="w-10 h-10 animate-spin text-theme-primary" />
+        <div className="bg-white dark:bg-carbon min-h-screen pb-16 animate-pulse">
+            <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="w-36 h-5 bg-slate-200 dark:bg-slate-800 rounded mb-8" />
+                <div className="md:grid md:grid-cols-2 md:gap-12 items-start">
+                    <div className="w-full aspect-square bg-slate-200 dark:bg-slate-800 rounded-3xl mb-6 md:mb-0" />
+                    <div className="space-y-6">
+                        <div className="w-3/4 h-8 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+                        <div className="w-1/3 h-6 bg-slate-200 dark:bg-slate-800 rounded" />
+                        <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                            <div className="w-1/4 h-4 bg-slate-200 dark:bg-slate-800 rounded" />
+                            <div className="flex gap-3">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <div key={i} className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800" />
+                                ))}
+                            </div>
+                        </div>
+                        <div className="w-full h-14 bg-slate-200 dark:bg-slate-800 rounded-2xl mt-8" />
+                    </div>
+                </div>
+            </div>
         </div>
     );
     if (!product) return (
@@ -737,9 +769,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
                                                 if (el) el.style.setProperty('--variant-color', variant.colorCode);
                                             }}
                                             onClick={() => handleVariantSelect(variant)}
-                                            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all border bg-dynamic-variant ${
+                                            className={`w-11 h-11 sm:w-10 sm:h-10 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center transition-all border bg-dynamic-variant ${
                                                 selectedVariant?.id === variant.id
-                                                    ? 'ring-2 ring-offset-2 scale-110 border-transparent ring-theme-primary'
+                                                    ? 'ring-2 ring-offset-2 scale-110 border-transparent ring-theme-primary shadow-md'
                                                     : 'border-slate-200 hover:border-slate-400'
                                             }`}
                                             title={variant.colorName}
@@ -764,7 +796,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
                                     <div className="flex items-center gap-3">
                                         <input
                                             type="color"
-                                            value={customHex}
+                                            value={ensureValidHex(customHex, '#FF5733')}
                                             onChange={(e) => {
                                                 setCustomHex(e.target.value);
                                                 syncHiddenColor(e.target.value);
@@ -799,7 +831,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="color"
-                                            defaultValue={selectedVariant?.colorCode || '#FFFFFF'}
+                                            value={ensureValidHex(selectedVariant?.colorCode || '#FFFFFF', '#FFFFFF')}
                                             onChange={(e) => applyColorToModel(e.target.value)}
                                             className="w-9 h-9 rounded-lg cursor-pointer border border-slate-200 p-0.5 bg-transparent"
                                             title="Choisir une couleur libre"
@@ -829,9 +861,9 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
                                         key={size}
                                         onClick={() => setSelectedSize(size)}
                                         aria-label={`Taille ${size}`}
-                                        className={`min-w-[3rem] h-10 px-2 rounded-md text-sm font-bold border transition-colors ${
+                                        className={`min-w-[3.25rem] h-11 min-h-[44px] px-3.5 rounded-lg text-sm font-bold border transition-all ${
                                             selectedSize === size
-                                                ? 'text-white shadow-md bg-theme-primary border-theme-primary'
+                                                ? 'text-white shadow-md bg-theme-primary border-theme-primary scale-105'
                                                 : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
                                         }`}
                                     >

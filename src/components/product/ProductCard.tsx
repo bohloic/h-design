@@ -93,12 +93,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
       setDisplayImage(img);
   }, [product]);
 
+  const [isAdded, setIsAdded] = useState(false);
+
   const handleQuickAction = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (product.hasOptions) {
       navigate(`/boutique/produit/${product.slug}`);
     } else {
-      if (!isOutOfStock) onAddToCart(product); 
+      if (!isOutOfStock) {
+        onAddToCart(product);
+        setIsAdded(true);
+        setTimeout(() => setIsAdded(false), 1500);
+      }
     }
   };
 
@@ -155,23 +161,29 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
             <button 
                 onClick={handleQuickAction}
                 disabled={isOutOfStock && !product.hasOptions}
-                className={`p-2.5 rounded-full shadow-lg transition-colors flex items-center gap-2 px-4 ${
+                className={`p-2.5 rounded-full shadow-lg transition-all duration-300 flex items-center gap-2 px-4 ${
                   isOutOfStock && !product.hasOptions
                     ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                    : isAdded
+                    ? 'bg-emerald-600 text-white scale-105'
                     : 'bg-slate-800 dark:bg-slate-900 text-white card-hover-theme-btn'
                 }`}
                 title={isOutOfStock && !product.hasOptions ? "Épuisé" : (product.hasOptions ? "Choisir options" : "Ajouter au panier")}
             >
                 {isOutOfStock && !product.hasOptions ? (
                     <AlertCircle size={18} />
+                ) : isAdded ? (
+                    <span className="inline-flex items-center gap-1 font-bold text-xs"><span className="w-2 h-2 rounded-full bg-white animate-ping"></span>Ajouté !</span>
                 ) : product.hasOptions ? (
                     <Eye size={18} />
                 ) : (
                     <ShoppingCart size={18} />
                 )}
-                <span className="text-xs font-bold hidden sm:inline">
-                    {isOutOfStock && !product.hasOptions ? 'Épuisé' : (product.hasOptions ? 'Voir' : 'Ajouter')}
-                </span>
+                {!isAdded && (
+                  <span className="text-xs font-bold hidden sm:inline">
+                      {isOutOfStock && !product.hasOptions ? 'Épuisé' : (product.hasOptions ? 'Voir' : 'Ajouter')}
+                  </span>
+                )}
             </button>
         </div>
       </div>
