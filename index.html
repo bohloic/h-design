@@ -10,6 +10,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Google model-viewer : visualiseur 3D GLTF/GLB temps réel (Three.js WebGL) -->
+    <!-- Chargé en module ES pour ne pas bloquer le thread principal -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -18,6 +23,14 @@
 
         .signature-font {
             font-family: 'Great Vibes', cursive;
+        }
+
+        /* Conteneur model-viewer : fond transparent pour superposition CSS */
+        model-viewer {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            --poster-color: transparent;
         }
     </style>
 
