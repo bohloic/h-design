@@ -288,34 +288,32 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({onAddToCart}) => {
             
             <div className="relative w-full h-[40vh] md:h-auto md:aspect-square bg-slate-50 rounded-xl overflow-hidden border border-slate-100 shadow-sm cursor-zoom-in">
 
-              {/* 🎨 FILTRE SVG INVISIBLE — injecté dans le DOM, recolore uniquement le vêtement */}
+              {/* 🎨 FILTRE SVG INVISIBLE — injecté dans le DOM, ciblé sur le tag <img> directement */}
               {svgFilterValues && (
                 <svg
                   aria-hidden
                   style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}
                 >
                   <defs>
-                    <filter id={svgFilterId} colorInterpolationFilters="sRGB" x="0" y="0" width="100%" height="100%">
+                    <filter id={svgFilterId} colorInterpolationFilters="sRGB" x="0%" y="0%" width="100%" height="100%">
                       <feColorMatrix type="matrix" values={svgFilterValues} />
                     </filter>
                   </defs>
                 </svg>
               )}
 
-              {/* Image produit avec filtre SVG appliqué quand mode couleur custom actif */}
-              <div
-                className="w-full h-full"
-                style={{
-                  filter: svgFilterValues ? `url(#${svgFilterId})` : 'none',
-                  transition: 'filter 0.2s ease',
-                }}
-              >
-                <SafeImage 
-                  src={displayImage} 
-                  alt={product.name} 
-                  className={`w-full h-full object-contain p-4 object-center transition-transform duration-500 hover:scale-105 ${isOutOfStock && !isCustomColor ? 'opacity-60' : ''}`}
-                />
-              </div>
+              {/* Image produit : filtre appliqué directement sur le <img> via SafeImage ...props
+                  ✅ Seuls les pixels opaques (vêtement) sont colorisés
+                  ✅ Le fond transparent du PNG reste inchangé  */}
+              <SafeImage 
+                src={displayImage} 
+                alt={product.name} 
+                className={`w-full h-full object-contain p-4 object-center transition-transform duration-500 hover:scale-105 ${isOutOfStock && !isCustomColor ? 'opacity-60' : ''}`}
+                style={svgFilterValues
+                  ? { filter: `url(#${svgFilterId})`, transition: 'filter 0.2s ease' }
+                  : { transition: 'filter 0.2s ease' }
+                }
+              />
 
               {/* Badge couleur active */}
               {isCustomColor && (
