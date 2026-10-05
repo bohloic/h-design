@@ -33,7 +33,7 @@ const OrderConfirmed = () => {
       } catch (e) { }
 
       useNotificationStore.getState().addNotification({
-        userId: currentUserId,
+        user_id: currentUserId,
         title: "Commande confirmée ! 🎉",
         message: `Votre commande #HD-${String(orderId).padStart(5, '0')} a bien été traitée et sera expédiée bientôt.`,
         type: "success",

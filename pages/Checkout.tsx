@@ -8,6 +8,7 @@ import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
 import SafeImage from '../src/components/tools/SafeImage';
 import { usePaymentStore } from '@/src/store/usePaymentStore';
 import { useNotificationStore } from '../src/store/useNotificationStore';
+import { sanitizeFormData, isValidEmail } from '../src/utils/security';
 
 export interface CartItem {
   id: string | number;
@@ -137,13 +138,13 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
     const token = localStorage.getItem('token');
 
     const userEmail = (formData.email || '').trim();
-    if (!userEmail || !userEmail.includes('@')) {
+    if (!userEmail || !isValidEmail(userEmail)) {
       useNotificationStore.getState().addNotification({
-        title: "Email requis",
+        title: "Email invalide",
         message: "Veuillez fournir une adresse email valide pour la réception de votre confirmation et le paiement.",
         type: "warning"
       });
-      setStep(1); // Retour à l'étape 1 pour remplir l'email
+      setStep(1);
       return;
     }
 
@@ -160,6 +161,9 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
     setIsLoading(true);
     setStockErrors([]);
 
+    // 🔐 Sanitisation anti-XSS avant envoi au serveur
+    const safeFormData = sanitizeFormData(formData);
+
     try {
       const URL_ORDER = '/api/orders';
       const orderResponse = await authFetch(URL_ORDER, {
@@ -167,7 +171,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
         body: JSON.stringify({
           userId: finalUserId,
           cartItems: cartItems,
-          shippingDetails: { ...formData, email: userEmail },
+          shippingDetails: { ...safeFormData, email: userEmail },
           paymentMethod: paymentMethod,
           totalAmount: total,
           useLoyaltyPoints: useLoyaltyPoints
@@ -351,8 +355,30 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
                   <input id="nom" type="text" name="nom" placeholder="Votre nom" title="Votre nom" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-xs font-bold text-slate-500 uppercase ml-1">Email</label>
-                  <input id="email" type="email" name="email" placeholder="votre@email.com" title="Votre email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
+                  <label htmlFor="email" className="text-xs font-bold text-slate-500 uppercase ml-1">
+                    Email {isAuth && <span className="text-green-600 font-medium normal-case">(vérifié ✓)</span>}
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="email"
+                      type="email"
+                      name="email"
+                      placeholder="votre@email.com"
+                      title={isAuth ? "L'email est verrouillé pour éviter les erreurs de paiement" : "Votre email"}
+                      value={formData.email}
+                      onChange={(e) => !isAuth && setFormData({ ...formData, email: e.target.value })}
+                      readOnly={isAuth}
+                      className={`w-full p-3 md:p-4 border-2 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none ${
+                        isAuth
+                          ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                          : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 text-slate-800 dark:text-pure'
+                      }`}
+                      required
+                    />
+                    {isAuth && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" title="Champ verrouillé">🔒</span>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="phone" className="text-xs font-bold text-slate-500 uppercase ml-1">Téléphone (10 chiffres)</label>

@@ -23,7 +23,7 @@ import {
     Ruler, Loader2, Palette, Share2, Check, AlertCircle, Heart, ArrowLeft,
     Box, Image as ImageIcon
 } from 'lucide-react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { formatCurrency } from '@/constants';
 import { authFetch, safeParseJson } from '@/src/utils/apiClient';
 import GenderCategorySection from '@/src/components/product/GenderCategorySection';
@@ -131,7 +131,11 @@ interface ProductDetailsProps {
 const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
     const { slug } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { showToast } = useToast();
+    
+    // 🎯 Couleur pré-sélectionnée depuis la boutique (ProductCard → navigate state)
+    const preSelectedColor = (location.state as { preSelectedColor?: string } | null)?.preSelectedColor ?? null;
 
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
@@ -251,7 +255,17 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
                 };
 
                 setProduct(cleanProduct);
-                if (allVariants.length > 0) setSelectedVariant(allVariants[0]);
+                
+                // 🎯 Pré-sélection de la variante depuis la boutique (si demandée)
+                let variantToSelect = allVariants[0];
+                if (preSelectedColor) {
+                    const found = allVariants.find(
+                        v => v.colorName.toLowerCase() === preSelectedColor.toLowerCase()
+                    );
+                    if (found) variantToSelect = found;
+                }
+                if (variantToSelect) setSelectedVariant(variantToSelect);
+                
                 // Si pas de modèle 3D disponible → basculer en vue 2D directement
                 if (!cleanProduct.model_url) setViewMode('2d');
 

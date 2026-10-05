@@ -12,11 +12,22 @@ export interface Product {
   description: string;
   price: number;
   image_url: string; // Image par défaut
+  image?: string;   // Alias legacy
   category_name: string; // Vient de ta requête SQL
+  category?: string;    // Alias legacy
   collection_name?: string;
   variants: ProductVariant[]; // La liste des couleurs disponibles
-    sizes?: string[];     
-    colors?: string[];
+  sizes?: string[];     
+  colors?: string[];
+  isFeatured?: boolean;
+  isNew?: boolean;
+  gender?: string;
+  slug?: string;
+  stock_quantity?: number;
+  hasOptions?: boolean;
+  collection?: string;
+  mainColor?: string;
+  [key: string]: any; // Champs dynamiques côté API
 }
 
 export interface Category {

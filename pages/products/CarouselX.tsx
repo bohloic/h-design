@@ -6,7 +6,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import '../../src/styles/Carousel.css';
-import ProductCardX from '@/src/components/product/ProductCardX';
+import ProductCard from '@/src/components/product/ProductCard';
 
 const CarouselX = ({ data }) => {
   const filteredProducts = data;
@@ -54,7 +54,7 @@ const CarouselX = ({ data }) => {
       >
         {filteredProducts.map((product) => (
           <SwiperSlide key={product.id}>
-            <ProductCardX product={product} />
+            <ProductCard product={product} onAddToCart={() => {}} />
           </SwiperSlide>
         ))}
       </Swiper>

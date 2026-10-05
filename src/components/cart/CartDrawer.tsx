@@ -64,7 +64,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
             items.map((item) => (
               <div key={item.id} className="flex space-x-4 animate-fade-in">
                 <SafeImage 
-                    src={item.image_url || (item as any).image || (item.options as any)?.customizationImage} 
+                    src={item.image_url || (item as any).image || (item as any).options?.customizationImage} 
                     alt={item.name} 
                     className="w-20 h-24 object-cover rounded-lg border border-slate-200 dark:border-slate-800" 
                 />

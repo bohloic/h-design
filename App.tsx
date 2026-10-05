@@ -7,6 +7,7 @@ import Navbar from './src/components/elements/Navbar.tsx';
 import CartDrawer from './src/components/cart/CartDrawer.tsx';
 import Footer from './src/components/elements/Footer.tsx';
 import ScrollToTop from './src/components/tools/ScrollToTop.tsx';
+import PageTransition from './src/components/tools/PageTransition.tsx';
 import ChatWidget from './src/components/chatbot/ChatWidget.jsx';
 import { BackToTop } from './src/components/elements/BackToTop.tsx';
 import WelcomeTour from './src/components/tools/WelcomeTour.tsx';
@@ -150,54 +151,56 @@ const AppShell: React.FC<{
 
       {/* 📄 Contenu principal */}
       <main className="flex-grow">
-        <Routes>
-          {/* --- Routes Publiques --- */}
-          <Route path="/" element={<Home onAddToCart={addToCart} />} />
-          <Route path="/boutique" element={<Shop onAddToCart={addToCart} />} />
-          <Route path="/boutique/produit/:slug" element={<ProductDetails onAddToCart={addToCart} />} />
-          <Route path="/personnaliser/mon-design" element={<ProductCustomizer onAddToCart={addToCart} />} />
-          <Route path="/aide-sav" element={<HelpSupport />} />
+        <PageTransition>
+          <Routes>
+            {/* --- Routes Publiques --- */}
+            <Route path="/" element={<Home onAddToCart={addToCart} />} />
+            <Route path="/boutique" element={<Shop onAddToCart={addToCart} />} />
+            <Route path="/boutique/produit/:slug" element={<ProductDetails onAddToCart={addToCart} />} />
+            <Route path="/personnaliser/mon-design" element={<ProductCustomizer onAddToCart={addToCart} />} />
+            <Route path="/aide-sav" element={<HelpSupport />} />
 
-          {/* --- Routes Invités (Login) --- */}
-          <Route element={<GuestRoute />}>
-            <Route path="/login" element={<Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-          </Route>
-
-          {/* --- Routes Privées (Clients) --- */}
-          <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<Dashboard onAddToCart={addToCart} />}>
-              <Route index element={<Navigate to="overview" replace />} />
-              <Route path="overview" element={<Overview />} />
-              <Route path="orders" element={<Commande />} />
-              <Route path="orders/:id" element={<OrderDetails />} />
-              <Route path="loyalty" element={<LoyaltyTab />} />
-              <Route path="wishlist" element={<Wishlist />} />
-              <Route path="payments" element={<Payments />} />
-              <Route path="settings" element={<Settings />} />
+            {/* --- Routes Invités (Login) --- */}
+            <Route element={<GuestRoute />}>
+              <Route path="/login" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
             </Route>
-            <Route path="/checkout" element={<Checkout cartItems={cart} onClearCart={clearCart} data={user} />} />
-            <Route path="/order-confirmed" element={<OrderConfirmed />} />
-          </Route>
-          <Route path="/payment/callback" element={<PaymentCallback />} />
 
-          {/* --- Routes Admin --- */}
-          <Route element={<AdminRoute />}>
-            <Route path="/admin" element={<AppLayout title="Tableau de bord"><DashboardView /></AppLayout>} />
-            <Route path="/admin/products" element={<AppLayout title="Inventaire Produits"><ProductView /></AppLayout>} />
-            <Route path="/admin/orders" element={<AppLayout title="Gestion des Ventes"><OrderView /></AppLayout>} />
-            <Route path="/admin/orders/:id" element={<AppLayout title="Détails de la Commande"><OrderDetailView /></AppLayout>} />
-            <Route path="/admin/validations" element={<AppLayout title="Validation des Designs"><AdminValidationDesigns /></AppLayout>} />
-            <Route path="/admin/customers" element={<AppLayout title="Gestion Clients"><CustomerView /></AppLayout>} />
-            <Route path="/admin/vip-scanner" element={<AppLayout title="Fidélité & Scan VIP"><AdminVIPScanner /></AppLayout>} />
-            <Route path="/admin/collections" element={<AppLayout title="Thèmes & Collections"><CollectionView /></AppLayout>} />
-            <Route path="/admin/categories" element={<AppLayout title="Catégories"><CategoryView /></AppLayout>} />
-            <Route path="/admin/deliveries" element={<AppLayout title="Livraisons"><DeliveryView /></AppLayout>} />
-          </Route>
+            {/* --- Routes Privées (Clients) --- */}
+            <Route element={<PrivateRoute />}>
+              <Route path="/dashboard" element={<Dashboard onAddToCart={addToCart} />}>
+                <Route index element={<Navigate to="overview" replace />} />
+                <Route path="overview" element={<Overview />} />
+                <Route path="orders" element={<Commande />} />
+                <Route path="orders/:id" element={<OrderDetails />} />
+                <Route path="loyalty" element={<LoyaltyTab />} />
+                <Route path="wishlist" element={<Wishlist />} />
+                <Route path="payments" element={<Payments />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
+              <Route path="/checkout" element={<Checkout cartItems={cart} onClearCart={clearCart} data={user} />} />
+              <Route path="/order-confirmed" element={<OrderConfirmed />} />
+            </Route>
+            <Route path="/payment/callback" element={<PaymentCallback />} />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* --- Routes Admin --- */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AppLayout title="Tableau de bord"><DashboardView /></AppLayout>} />
+              <Route path="/admin/products" element={<AppLayout title="Inventaire Produits"><ProductView /></AppLayout>} />
+              <Route path="/admin/orders" element={<AppLayout title="Gestion des Ventes"><OrderView /></AppLayout>} />
+              <Route path="/admin/orders/:id" element={<AppLayout title="Détails de la Commande"><OrderDetailView /></AppLayout>} />
+              <Route path="/admin/validations" element={<AppLayout title="Validation des Designs"><AdminValidationDesigns /></AppLayout>} />
+              <Route path="/admin/customers" element={<AppLayout title="Gestion Clients"><CustomerView /></AppLayout>} />
+              <Route path="/admin/vip-scanner" element={<AppLayout title="Fidélité & Scan VIP"><AdminVIPScanner /></AppLayout>} />
+              <Route path="/admin/collections" element={<AppLayout title="Thèmes & Collections"><CollectionView /></AppLayout>} />
+              <Route path="/admin/categories" element={<AppLayout title="Catégories"><CategoryView /></AppLayout>} />
+              <Route path="/admin/deliveries" element={<AppLayout title="Livraisons"><DeliveryView /></AppLayout>} />
+            </Route>
+
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </PageTransition>
       </main>
 
       {/* 🔝 Bouton Retour en haut */}

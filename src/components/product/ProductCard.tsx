@@ -95,10 +95,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
 
   const [isAdded, setIsAdded] = useState(false);
 
+  const [selectedColorName, setSelectedColorName] = useState<string>('');
+
   const handleQuickAction = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (product.hasOptions) {
-      navigate(`/boutique/produit/${product.slug}`);
+      // 🎯 On passe la couleur affichée pour qu'elle soit pré-sélectionnée sur ProductDetails
+      navigate(`/boutique/produit/${product.slug}`, {
+        state: { preSelectedColor: selectedColorName || null }
+      });
     } else {
       if (!isOutOfStock) {
         onAddToCart(product);
@@ -108,14 +113,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
     }
   };
 
-  const handleVariantHover = (e: React.MouseEvent, variantImage: string) => {
+  const handleVariantHover = (e: React.MouseEvent, variantImage: string, colorName?: string) => {
     e.stopPropagation();
     if (variantImage) setDisplayImage(variantImage);
+    if (colorName) setSelectedColorName(colorName);
   };
 
   const handleMouseLeave = () => {
       const baseImg = product.image || product.image_url || '';
       setDisplayImage(baseImg);
+      setSelectedColorName('');
   };
 
   return (
@@ -148,7 +155,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
             </div>
         )}
 
-        {/* ACTIONS */}
         <div className={`absolute bottom-3 left-0 right-0 flex justify-center gap-3 transition-all duration-300 transform z-20 ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
             <button 
                 onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
@@ -168,7 +174,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                     ? 'bg-emerald-600 text-white scale-105'
                     : 'bg-slate-800 dark:bg-slate-900 text-white card-hover-theme-btn'
                 }`}
-                title={isOutOfStock && !product.hasOptions ? "Épuisé" : (product.hasOptions ? "Choisir options" : "Ajouter au panier")}
+                title={isOutOfStock && !product.hasOptions ? "Épuisé" : (product.hasOptions ? "Voir le produit" : "Ajouter au panier")}
             >
                 {isOutOfStock && !product.hasOptions ? (
                     <AlertCircle size={18} />
@@ -208,10 +214,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                             className={`w-4 h-4 rounded-full border border-slate-200 shadow-sm transition-transform hover:scale-125 focus:outline-none ring-1 ring-transparent hover:ring-slate-300 relative ${v.colorName === 'Blanc' ? 'bg-white' : ''}`}
                             style={{ backgroundColor: v.finalColor }}
                             title={v.colorName}
-                            onMouseEnter={(e) => v.image && handleVariantHover(e, v.image)}
+                            onMouseEnter={(e) => v.image && handleVariantHover(e, v.image, v.colorName)}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if(v.image) setDisplayImage(v.image);
+                                setSelectedColorName(v.colorName);
                             }}
                         />
                     ))}

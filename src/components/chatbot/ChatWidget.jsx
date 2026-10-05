@@ -10,13 +10,13 @@ import { useChatStore } from '@/src/store/useChatStore';
 const ChatWidget = () => {
   const { isOpen, setIsOpen } = useChatStore();
   const [messages, setMessages] = useState([
-    { text: "Bonjour ! Je suis l'IA de **H-Designer**. Dites-moi ce que vous cherchez (ex: 'Sacs à main' ou 'T-shirt XL').", sender: 'bot' }
+    { text: "Bonjour ! Je suis l'assistant **H-Designer**. Comment puis-je vous aider ? (ex: 'Quelles sont vos catégories ?' ou 'Je cherche un T-shirt XL')", sender: 'bot' }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  // 🪄 Correction 1 : On enlève <HTMLDivElement>
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
   const navigate = useNavigate();
 
   const scrollToBottom = () => {
@@ -25,7 +25,13 @@ const ChatWidget = () => {
 
   useEffect(() => { scrollToBottom(); }, [messages, isOpen]);
 
-  // 🪄 Correction 2 : On enlève : React.FormEvent
+  // 🎯 Focus l'input automatiquement quand le chat s'ouvre
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => inputRef.current?.focus(), 150);
+    }
+  }, [isOpen]);
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -41,10 +47,18 @@ const ChatWidget = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             message: userMessage,
-            history: messages.map(m => ({
+            // 🧠 Instruction système injectée en premier dans l'historique
+            // → Ecrase tout prompt "Noël" résiduel côté backend
+            history: [
+              {
+                role: 'model',
+                parts: [{ text: "Je suis l'assistant virtuel de H-Designer, une boutique de vêtements personnalisables (T-shirts, Mugs, Sweats, etc.). Je réponds aux questions sur les produits, la personnalisation, les livraisons et le service client. Je ne parle PAS de Noël en particulier sauf si le client l'évoque. Je suis précis, professionnel et utile." }]
+              },
+              ...messages.map(m => ({
                 role: m.sender === 'user' ? 'user' : 'model',
                 parts: [{ text: m.text }]
-            }))
+              }))
+            ]
         })
       });
 
@@ -64,7 +78,6 @@ const ChatWidget = () => {
     }
   };
 
-  // 🪄 Correction 3 : On enlève : any
   const handleProductClick = (product) => {
       setIsOpen(false);
       const identifier = product.slug || product.id;
@@ -72,14 +85,15 @@ const ChatWidget = () => {
   };
 
   return (
+    // 🔑 sticky bottom — fixé sur mobile et desktop, visible même après défilement
     <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[1002] flex flex-col items-end font-sans">
       
       {isOpen && (
-        <div className="bg-white w-[calc(100vw-2rem)] md:w-96 h-[70vh] md:h-[500px] rounded-2xl shadow-2xl border border-slate-100 flex flex-col mb-4 overflow-hidden animate-in slide-in-from-bottom-5">
+        <div className="bg-white w-[calc(100vw-2rem)] md:w-96 h-[75vh] max-h-[600px] rounded-2xl shadow-2xl border border-slate-100 flex flex-col mb-4 overflow-hidden animate-in slide-in-from-bottom-5">
           
           {/* Header */}
           <div 
-            className="p-4 flex justify-between items-center text-white shadow-md transition-colors duration-500"
+            className="p-4 flex justify-between items-center text-white shadow-md transition-colors duration-500 flex-shrink-0"
             style={{ backgroundColor: 'var(--theme-primary)' }}
           >
             <div className="flex items-center gap-2">
@@ -94,9 +108,8 @@ const ChatWidget = () => {
             <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1 rounded-full transition-colors"><X size={18} /></button>
           </div>
 
-          {/* Zone Messages */}
-          {/* Zone Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900 transition-colors">
+          {/* Zone Messages — flex-1 + overflow pour que le chat défile sans pousser l'input */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-900 transition-colors min-h-0">
             {messages.map((msg, index) => (
               <div key={index} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                 
@@ -167,24 +180,25 @@ const ChatWidget = () => {
             {isLoading && (
               <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-none w-fit shadow-sm border border-slate-100 dark:border-slate-700">
                 <Loader2 className="animate-spin text-slate-400" size={16} />
-                <span className="text-xs text-slate-400">L'IA réfléchit...</span>
+                <span className="text-xs text-slate-400">L'assistant réfléchit...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex gap-2">
+          {/* Input — flex-shrink-0 pour qu'il reste toujours visible en bas */}
+          <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex gap-2 flex-shrink-0">
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Je cherche un article..."
+              placeholder="Posez votre question..."
               className="flex-1 bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-4 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 outline-none placeholder:text-slate-400 transition-all theme-input-ring"
             />
             <button 
               type="submit" 
-              disabled={!input.trim()} 
+              disabled={!input.trim() || isLoading} 
               style={{ backgroundColor: 'var(--theme-primary)' }}
               className="text-white p-2 rounded-xl hover:opacity-90 disabled:opacity-50 transition-all active:scale-90"
             >

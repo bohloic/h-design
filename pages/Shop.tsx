@@ -194,6 +194,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
     setActiveSize('Toutes');
     setActiveColor('Toutes');
     setSearchQuery('');
+    setSortBy('default');
   };
 
   // (Loading géré directement avec Skeleton Loaders dans le composant principal)
@@ -414,6 +415,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
                     {activeCategory !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">{activeCategory} <button onClick={() => setActiveCategory('Toutes')}><X size={12} /></button></span>}
                     {activeSize !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">Taille: {activeSize} <button onClick={() => setActiveSize('Toutes')}><X size={12} /></button></span>}
                     {activeColor !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">Couleur: {activeColor} <button onClick={() => setActiveColor('Toutes')}><X size={12} /></button></span>}
+                    {sortBy !== 'default' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold border text-white theme-bg-primary border-transparent">{sortBy === 'priceAsc' ? 'Prix ↑' : 'Prix ↓'} <button onClick={() => setSortBy('default')} className="opacity-80 hover:opacity-100"><X size={12} /></button></span>}
                   </div>
                 </div>
               </div>

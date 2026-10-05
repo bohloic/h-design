@@ -48,6 +48,11 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   const [currentStep, setCurrentStep] = useState(1); // 1: Product, 2: Design, 3: Review
   const [hideBaseDesign, setHideBaseDesign] = useState(false);
 
+  // 🎯 Vrai si l'utilisateur est arrivé depuis le bouton "Personnaliser" d'un produit
+  // Dans ce cas, on affiche le produit de base sur le canvas
+  // Si accès direct via le menu, on affiche un canvas vide (pas de motif)
+  const [cameFromProduct, setCameFromProduct] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -71,26 +76,17 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
         } | null;
         
         let productToSelect = null;
+        const fromProduct = !!(state?.productId || state?.isEdit);
+        setCameFromProduct(fromProduct);
 
         if (state?.productId) {
             const found = productsData.find((p: Product) => p.id === Number(state.productId));
             if (found) productToSelect = found;
-        } else {
-            // 🎯 RECHERCHE DU T-SHIRT BLANC PAR DÉFAUT
-            productToSelect = productsData.find((p: Product) => 
-                p.name.toLowerCase().includes('t-shirt') && 
-                (p.name.toLowerCase().includes('blanc') || p.name.toLowerCase().includes('vierge'))
-            );
-            
-            // Si pas trouvé, on cherche n'importe quel T-shirt
-            if (!productToSelect) {
-                productToSelect = productsData.find((p: Product) => p.name.toLowerCase().includes('t-shirt'));
-            }
-
-            // Sinon le premier
-            if (!productToSelect) {
-                productToSelect = productsData.length > 0 ? productsData[0] : null;
-            }
+        } else if (!fromProduct) {
+            // 🎯 Accès direct (via le menu) : on ne pré-sélectionne aucun produit
+            // Le canvas démarre vide, l'utilisateur choisit son produit depuis la sidebar
+            // Pas de t-shirt affiché par défaut pour éviter la confusion
+            productToSelect = null;
         }
 
         if (productToSelect) {
@@ -120,6 +116,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     };
     fetchData();
   }, []);
+
 
   const handleSelectProduct = (product: Product, targetVariantId?: number | string | null, targetColorName?: string, targetSizeName?: string) => {
     setSelectedProduct(product);

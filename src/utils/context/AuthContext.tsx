@@ -69,6 +69,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUser();
   }, []);
 
+  // 📡 Écoute la déconnexion cross-onglets (Admin, Dashboard, etc.)
+  // Quand un autre onglet se déconnecte, celui-ci se recharge aussi immédiatement
+  useEffect(() => {
+    const handleStorageLogout = (e: StorageEvent) => {
+      if (e.key === '__logout_event__') {
+        // Un autre onglet vient de se déconnecter → on recharge cette fenêtre aussi
+        window.location.href = '/login';
+      }
+    };
+    window.addEventListener('storage', handleStorageLogout);
+    return () => window.removeEventListener('storage', handleStorageLogout);
+  }, []);
+
   const login = (token: string, userData: UserData) => {
     localStorage.setItem('token', token);
     localStorage.setItem('data', JSON.stringify(userData));
@@ -80,22 +93,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    // 🔐 1. Nettoyage complet du localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('data');
     localStorage.removeItem('role');
-    
-    // 🧹 Réinitialisation de tous les stores Zustand
+    localStorage.removeItem('cart');
+
+    // 🧹 2. Réinitialisation de tous les stores Zustand
     useNotificationStore.getState().reset();
     useWishlistStore.getState().reset();
     usePaymentStore.getState().reset();
 
-    // 🛒 Déclenchement d'un événement pour vider le panier dans App.tsx
+    // 🛒 3. Événement pour vider le panier dans App.tsx
     window.dispatchEvent(new Event('userLoggedOut'));
+
+    // 📡 4. Synchronise la déconnexion sur TOUS les onglets/fenêtres ouverts
+    //    (storage event est émis sur les autres onglets mais pas l'actuel)
+    localStorage.setItem('__logout_event__', String(Date.now()));
+    localStorage.removeItem('__logout_event__');
 
     setUser(null);
     setIsAuthenticated(false);
-    // Redirection fluide sans rechargement
-    navigate('/login'); 
+    
+    // 🔄 5. Rechargement complet pour purger la mémoire React
+    //    et s'assurer qu'aucune donnée sensible n'est plus visible
+    window.location.href = '/login';
   };
 
   const updateUser = (newData: Partial<UserData>) => {

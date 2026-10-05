@@ -429,9 +429,15 @@ export const OrderDetails: React.FC = () => {
                         const pointsUsed = Number(order.points_used || 0);
                         const loyaltyDiscount = pointsUsed > 0 ? pointsUsed * 25 : 0;
                         const totalAmount = Number(order.total_amount || 0);
-                        const rawShippingFee = Number(order.shipping_fee || order.shippingFee || order.delivery_fee || 0);
-                        const calculatedShippingFee = Math.max(0, totalAmount + loyaltyDiscount - itemsSubtotal);
-                        const shippingFee = rawShippingFee > 0 ? rawShippingFee : calculatedShippingFee;
+                        const rawShippingFee = Number(
+                            order.shipping_fee != null ? order.shipping_fee :
+                            order.shippingFee != null ? order.shippingFee :
+                            order.delivery_fee != null ? order.delivery_fee : NaN
+                        );
+                        // Si le champ est absent ou invalide, on calcule par déduction
+                        const calculatedShippingFee = !isNaN(rawShippingFee) && rawShippingFee >= 0
+                            ? rawShippingFee
+                            : Math.max(0, totalAmount + loyaltyDiscount - itemsSubtotal);
 
                         return (
                             <div className="bg-slate-900 text-white p-6 md:p-8 rounded-3xl shadow-xl relative overflow-hidden">
@@ -446,8 +452,8 @@ export const OrderDetails: React.FC = () => {
                                     </div>
                                     <div className="flex justify-between text-slate-300 font-medium">
                                         <span>Frais de livraison</span>
-                                        <span className={shippingFee > 0 ? "text-slate-200 font-bold" : "text-emerald-400 font-bold"}>
-                                            {shippingFee > 0 ? formatCurrency(shippingFee) : 'Gratuit'}
+                                        <span className={calculatedShippingFee > 0 ? "text-slate-200 font-bold" : "text-emerald-400 font-bold"}>
+                                            {calculatedShippingFee > 0 ? formatCurrency(calculatedShippingFee) : 'Gratuit 🎁'}
                                         </span>
                                     </div>
                                     {loyaltyDiscount > 0 && (
@@ -467,17 +473,7 @@ export const OrderDetails: React.FC = () => {
                         );
                     })()}
 
-                    {/* ✅ BOUTON ANNULATION (Visible uniquement si non expédié/annulé) */}
-                    {!order.status.toLowerCase().includes('expédié') && 
-                     !order.status.toLowerCase().includes('livré') && 
-                     !order.status.toLowerCase().includes('annulé') && (
-                        <button 
-                            onClick={handleCancelOrder}
-                            className="w-full py-4 border-2 border-red-100 text-red-600 rounded-2xl font-bold hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
-                        >
-                            <XCircle size={18} /> Annuler ma commande
-                        </button>
-                    )}
+                    {/* Bouton d'annulation supprimé — contacter le support pour annuler */}
                 </div>
             </div>
 
