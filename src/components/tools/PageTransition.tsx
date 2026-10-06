@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import LoadingLottie from '../../components/tools/LoadingLottie';
+import Lottie from 'lottie-react';
+import loadingAnimation from '../../assets/loading.json'; // Lottie animation file (download from IconScout)
 
 /**
  * PageTransition
@@ -42,7 +44,7 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
       {/* Overlay de chargement global (optionnel mais demandé pour bien voir le refresh) */}
       {isTransitioning && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-offwhite/50 dark:bg-carbon/50 backdrop-blur-sm">
-          <Loader2 className="w-10 h-10 animate-spin text-theme-primary" />
+          <LoadingLottie size={120} />
         </div>
       )}
 
