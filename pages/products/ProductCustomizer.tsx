@@ -83,10 +83,8 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             const found = productsData.find((p: Product) => p.id === Number(state.productId));
             if (found) productToSelect = found;
         } else if (!fromProduct) {
-            // 🎯 Accès direct (via le menu) : on ne pré-sélectionne aucun produit
-            // Le canvas démarre vide, l'utilisateur choisit son produit depuis la sidebar
-            // Pas de t-shirt affiché par défaut pour éviter la confusion
-            productToSelect = null;
+            // 🎯 Accès direct (via le menu) : on pré-sélectionne le premier produit par défaut (souvent un T-shirt)
+            productToSelect = productsData.length > 0 ? productsData[0] : null;
         }
 
         if (productToSelect) {

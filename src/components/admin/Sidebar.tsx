@@ -18,6 +18,7 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { authFetch } from "@/src/utils/apiClient";
+import { useAuth } from "@/src/utils/context/AuthContext";
 import { useAutoRefresh } from "@/src/utils/hooks/useAutoRefresh";
 import logoLight from "../../assets/logo.png";
 import logoDark from "../../assets/Logo2.png";
@@ -63,11 +64,10 @@ export const Sidebar = ({ onClose }: { onClose?: () => void }) => {
     groups[item.group].push(item);
   });
 
+  const { logout } = useAuth();
+
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('data');
-    navigate('/login');
-    window.location.href = '/login';
+    logout();
   };
 
   const adminData = (() => {

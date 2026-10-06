@@ -95,7 +95,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
   const discountAmount = useLoyaltyPoints && cartItems.length > 0 ? cartItems[0].price : 0;
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = subtotal > 50000 ? 0 : 3000;
+  const shipping = 3000; // Prix fixe quelle que soit la commande
   const total = subtotal + shipping - discountAmount;
 
   useLayoutEffect(() => {
@@ -639,8 +639,8 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => 
 
               <div className="flex justify-between text-sm text-slate-500 dark:text-slate-400">
                 <span>Livraison</span>
-                <span className={`font-bold ${shipping === 0 ? 'text-green-600 dark:text-green-500' : 'text-slate-800 dark:text-pure'}`}>
-                  {shipping === 0 ? "Gratuite" : formatCurrency(shipping)}
+                <span className="font-bold text-slate-800 dark:text-pure">
+                  {formatCurrency(shipping)}
                 </span>
               </div>
             </div>

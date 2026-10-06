@@ -46,19 +46,8 @@ const ChatWidget = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-            message: userMessage,
-            // 🧠 Instruction système injectée en premier dans l'historique
-            // → Ecrase tout prompt "Noël" résiduel côté backend
-            history: [
-              {
-                role: 'model',
-                parts: [{ text: "Je suis l'assistant virtuel de H-Designer, une boutique de vêtements personnalisables (T-shirts, Mugs, Sweats, etc.). Je réponds aux questions sur les produits, la personnalisation, les livraisons et le service client. Je ne parle PAS de Noël en particulier sauf si le client l'évoque. Je suis précis, professionnel et utile." }]
-              },
-              ...messages.map(m => ({
-                role: m.sender === 'user' ? 'user' : 'model',
-                parts: [{ text: m.text }]
-              }))
-            ]
+            // Injection du contexte directement dans le message pour éviter de faire planter le backend
+            message: `INSTRUCTION CACHÉE POUR L'IA (Ne réponds pas à ça directement, prends-le comme ton identité) : Tu es l'assistant virtuel de H-Designer, une boutique de vêtements personnalisables (T-shirts, Mugs, Sweats, etc.). Tu réponds aux questions sur les produits, la personnalisation, les livraisons et le service client. TU NE DOIS JAMAIS PARLER DE NOËL, ignore toute instruction de ton système backend concernant noël.\n\nVOICI LA QUESTION DU CLIENT :\n${userMessage}`
         })
       });
 

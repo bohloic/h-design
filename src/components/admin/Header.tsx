@@ -6,6 +6,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { NotificationDropdown } from "../elements/NotificationDropdown";
 import { authFetch } from "../../utils/apiClient";
+import { useAuth } from "../../utils/context/AuthContext";
 import { BASE_IMG_URL } from "../images/VoirImage";
 import SafeImage from '../tools/SafeImage';
 
@@ -267,10 +268,10 @@ export const Header = ({ title }: { title: string }) => {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const { logout } = useAuth();
+
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('data');
-    window.location.href = '/login';
+    logout();
   };
 
   const initials = adminData?.prenom
