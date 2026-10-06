@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import LoadingLottie from '../../components/tools/LoadingLottie';
-import Lottie from 'lottie-react';
-import loadingAnimation from '../../assets/loading.json'; // Lottie animation file (download from IconScout)
+// import Lottie from 'lottie-react';
+import loadingAnimation from '../../../assets/loading.json'; // Lottie animation file (download from IconScout)
 
 /**
  * PageTransition
@@ -33,7 +33,7 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return (
     <>
       {/* Barre de progression en haut de l'écran */}
-      <div 
+      <div
         className="fixed top-0 left-0 h-1 bg-theme-primary z-50 transition-all duration-300 ease-out"
         style={{
           width: isTransitioning ? '70%' : '100%',

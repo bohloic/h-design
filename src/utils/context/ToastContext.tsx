@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { CheckCircle2, AlertCircle, Info, X, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import LoadingSpinner from '../../components/tools/LoadingSpinner';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
 
@@ -52,7 +53,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                             {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-500" />}
                             {toast.type === 'warning' && <AlertCircle className="w-5 h-5 text-amber-500" />}
                             {toast.type === 'info' && <Info className="w-5 h-5 text-blue-500" />}
-                            {toast.type === 'loading' && <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />}
+                            {toast.type === 'loading' && <LoadingSpinner size={20} className="w-5 h-5 text-blue-400 animate-spin" />}
                         </div>
                         <p className="text-sm font-bold flex-1">{toast.message}</p>
                         <button 

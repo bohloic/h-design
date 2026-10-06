@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { authFetch } from '../../utils/apiClient';
 import CollectionCarousel from '../../../pages/products/CollectionCarousel';
-import { Loader2 } from 'lucide-react'; // 🪄 Ajout de l'icône de chargement
+import LoadingSpinner from '../../components/tools/LoadingSpinner';
 
 const TrendingSection = () => {
     // 🪄 Typage direct du state pour éviter les "as any" plus bas
@@ -51,11 +51,7 @@ const TrendingSection = () => {
     if (loading) {
         return (
             <div className="py-16 bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center border-t border-slate-200 dark:border-slate-800 transition-colors">
-                <Loader2 
-                    className="animate-spin mb-3" 
-                    size={32} 
-                    style={{ color: 'var(--theme-primary)' }} 
-                />
+                <LoadingSpinner size={32} className="animate-spin mb-3" />
                 <p className="text-slate-500 dark:text-slate-400 font-medium">Chargement des tendances...</p>
             </div>
         );

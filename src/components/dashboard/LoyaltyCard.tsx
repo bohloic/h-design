@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../utils/apiClient';
-import { Loader2, Star, Award, QrCode } from 'lucide-react';
+import { Award, Star } from 'lucide-react';
+import LoadingSpinner from '../tools/LoadingSpinner';
 import logo2 from '../../assets/logoo2.png';
 
 export const LoyaltyCard = () => {
@@ -33,7 +34,7 @@ export const LoyaltyCard = () => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-64 bg-slate-50 rounded-3xl border border-slate-100">
-                <Loader2 className="animate-spin mb-2" style={{ color: 'var(--theme-primary)' }} size={24} />
+                <LoadingSpinner size={24} className="animate-spin mb-2" />
                 <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">Génération de votre accès...</p>
             </div>
         );

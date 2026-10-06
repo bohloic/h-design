@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { ArrowUp } from "lucide-react";
+import LoadingSpinner from '../../components/tools/LoadingSpinner';
 
 export const BackToTop = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -81,7 +82,7 @@ export const BackToTop = () => {
         {/* Cœur du bouton (icône flèche ou loader) */}
         <div className="relative z-10">
           {isScrolling ? (
-            <Loader2 size={24} className="animate-spin" style={{ color: 'var(--theme-primary)' }} />
+            <LoadingSpinner size={24} className="animate-spin" />
           ) : (
             <ArrowUp size={24} className="group-hover:-translate-y-1 transition-transform" />
           )}
