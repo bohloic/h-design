@@ -13,7 +13,7 @@ import {
   Inbox
 } from 'lucide-react';
 
-import { useChatStore } from '@/src/store/useChatStore';
+import { useChatStore } from '@/store/useChatStore';
 
 const HelpSupport: React.FC = () => {
   const { openChat } = useChatStore();

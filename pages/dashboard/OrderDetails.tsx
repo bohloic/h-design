@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Package, Truck, CheckCircle2, MapPin, Download, Phone, ShoppingBag, Clock, XCircle, Loader2, Palette, AlertTriangle, CreditCard } from 'lucide-react';
-import { useToast } from '@/src/utils/context/ToastContext';
+import { useToast } from '@/utils/context/ToastContext';
 import { formatCurrency } from '@/constants';
-import { authFetch, safeParseJson } from '@/src/utils/apiClient';
-import { useAutoRefresh } from '@/src/utils/hooks/useAutoRefresh';
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { authFetch, safeParseJson } from '@/utils/apiClient';
+import { useAutoRefresh } from '@/utils/hooks/useAutoRefresh';
+import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import { useParams, useNavigate } from 'react-router-dom';
-import { translateStatus, getStatusColorClass } from '@/src/utils/statusTranslations';
+import { translateStatus, getStatusColorClass } from '@/utils/statusTranslations';
 
 export const OrderDetails: React.FC = () => {
     const { showToast } = useToast();

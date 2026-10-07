@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { authFetch } from '@/src/utils/apiClient';
-import { useToast } from '@/src/utils/context/ToastContext';
+import { authFetch } from '@/utils/apiClient';
+import { useToast } from '@/utils/context/ToastContext';
 import { formatCurrency } from '@/constants';
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import SafeImage from '../tools/SafeImage';
 import { CheckCircle, XCircle, Palette, Eye, Loader2, AlertCircle, PackageX, RefreshCw } from 'lucide-react';
-import { useAutoRefresh } from '@/src/utils/hooks/useAutoRefresh';
+import { useAutoRefresh } from '@/utils/hooks/useAutoRefresh';
 
 export const AdminValidationDesigns = () => {
     const { showToast } = useToast();

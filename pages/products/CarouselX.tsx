@@ -6,7 +6,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import '../../src/styles/Carousel.css';
-import ProductCard from '@/src/components/product/ProductCard';
+import ProductCard from '@/components/product/ProductCard';
 
 const CarouselX = ({ data }) => {
   const filteredProducts = data;

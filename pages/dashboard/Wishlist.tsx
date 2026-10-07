@@ -1,8 +1,8 @@
 import React from 'react';
 import { Heart, ShoppingBag, Trash2 } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
-import { useWishlistStore } from '@/src/store/useWishlistStore';
-import ProductCard from '@/src/components/product/ProductCard';
+import { useWishlistStore } from '@/store/useWishlistStore';
+import ProductCard from '@/components/product/ProductCard';
 
 export const Wishlist: React.FC = () => {
   const { onAddToCart } = useOutletContext<{ onAddToCart?: (p: any) => void }>();

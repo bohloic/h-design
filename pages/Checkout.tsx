@@ -4,9 +4,9 @@ import { CreditCard, MapPin, CheckCircle2, ArrowRight, Wallet, Lock, Truck, Load
 import { formatCurrency } from '../constants';
 import { Link, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import SafeImage from '../src/components/tools/SafeImage';
-import { usePaymentStore } from '@/src/store/usePaymentStore';
+import { usePaymentStore } from '@/store/usePaymentStore';
 import { useNotificationStore } from '../src/store/useNotificationStore';
 import { sanitizeFormData, isValidEmail } from '../src/utils/security';
 

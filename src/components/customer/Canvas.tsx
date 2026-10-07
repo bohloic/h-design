@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import html2canvas from 'html2canvas-pro';
 import { X, Maximize2, RotateCcw } from 'lucide-react';
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import React, { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react';
 import { DesignElement, Product, ProductColor } from '../../../types';
 

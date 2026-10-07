@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../src/utils/apiClient';
 import { Edit, Plus, Trash2, XCircle, Tag, Layers, Check, Image as ImageIcon, Search, Palette, Package } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import SafeImage from '../../src/components/tools/SafeImage';
 import Pagination from '../../src/components/tools/Pagination';
 import { useNotificationStore } from '../../src/store/useNotificationStore';

@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { MessageCircle, X, Send, Bot, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { authFetch } from '@/src/utils/apiClient';
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage'; 
+import { authFetch } from '@/utils/apiClient';
+import { BASE_IMG_URL } from '@/components/images/VoirImage';
 
-import { useChatStore } from '@/src/store/useChatStore';
+import { useChatStore } from '@/store/useChatStore';
 
 const ChatWidget = () => {
   const { isOpen, setIsOpen } = useChatStore();

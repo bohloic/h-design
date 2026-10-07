@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CreditCard, ShieldCheck, CheckCircle2, Wallet, Trash2, PlusCircle } from 'lucide-react';
-import { usePaymentStore, PaymentMethodType } from '@/src/store/usePaymentStore';
-import { useToast } from '@/src/utils/context/ToastContext';
+import { usePaymentStore, PaymentMethodType } from '@/store/usePaymentStore';
+import { useToast } from '@/utils/context/ToastContext';
 
 export const Payments: React.FC = () => {
   const { showToast } = useToast();

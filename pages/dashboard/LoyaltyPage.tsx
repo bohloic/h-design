@@ -1,6 +1,6 @@
 import React from 'react';
 import { Gift, TrendingUp, ShoppingBag, Sparkles } from 'lucide-react';
-import { LoyaltyCard } from '@/src/components/dashboard/LoyaltyCard';
+import { LoyaltyCard } from '@/components/dashboard/LoyaltyCard';
 
 export const LoyaltyTab = () => {
     return (

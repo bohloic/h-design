@@ -7,7 +7,7 @@ import ToolsPanel from '../../src/components/customer/ToolsPanel';
 import { Product, DesignElement, ProductVariant, Category } from '../../types';
 import { ShoppingCart, X, Layers, Shirt, Palette, ArrowLeft, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { BASE_IMG_URL } from '@/components/images/VoirImage';
 
 const DESIGN_PRICE = 5000; // Forfait unique de personnalisation 5000 FCFA
 const TEXTILE_COLORS_MAP: Record<string, string> = {

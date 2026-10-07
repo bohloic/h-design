@@ -25,12 +25,12 @@ import {
 } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { formatCurrency } from '@/constants';
-import { authFetch, safeParseJson } from '@/src/utils/apiClient';
-import GenderCategorySection from '@/src/components/product/GenderCategorySection';
-import ProductCarousel from '@/src/components/product/ProductCarousel';
-import SafeImage from '@/src/components/tools/SafeImage';
-import { useWishlistStore } from '@/src/store/useWishlistStore';
-import { useToast } from '@/src/utils/context/ToastContext';
+import { authFetch, safeParseJson } from '@/utils/apiClient';
+import GenderCategorySection from '@/components/product/GenderCategorySection';
+import ProductCarousel from '@/components/product/ProductCarousel';
+import SafeImage from '@/components/tools/SafeImage';
+import { useWishlistStore } from '@/store/useWishlistStore';
+import { useToast } from '@/utils/context/ToastContext';
 
 // ─── Type interne pour l'API model-viewer (Custom Element, pas de @types) ────
 // On caste modelViewerRef.current vers ce type pour accéder à l'API JS proprement

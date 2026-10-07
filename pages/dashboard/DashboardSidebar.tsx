@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, Package, Heart, Settings, CreditCard, ChevronRight, Gift, X, Award, LayoutDashboard } from 'lucide-react';
 import LogoutButton from '../../src/components/tools/logoutButton.jsx';
-import { LoyaltyCard } from '@/src/components/dashboard/LoyaltyCard.js';
+import { LoyaltyCard } from '@/components/dashboard/LoyaltyCard';
 import { Link } from 'react-router-dom';
 
 interface DashboardSidebarProps {

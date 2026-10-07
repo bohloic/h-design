@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Eye, Heart, AlertCircle } from 'lucide-react'; 
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../../../constants'; 
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
-import { useWishlistStore } from '@/src/store/useWishlistStore';
+import { BASE_IMG_URL } from '@/components/images/VoirImage';
+import { useWishlistStore } from '@/store/useWishlistStore';
 import SafeImage from '../tools/SafeImage';
 
 // 🎨 PALETTE DE COULEURS (Référence)

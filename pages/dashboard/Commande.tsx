@@ -2,10 +2,10 @@ import { formatCurrency } from "@/constants";
 import { Gift, Package, Star, Calendar, CreditCard, ChevronRight } from "lucide-react";
 import React, { useState, useMemo } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
-import { translateStatus, getStatusColorClass } from '@/src/utils/statusTranslations';
-import Pagination from "@/src/components/tools/Pagination";
+import { translateStatus, getStatusColorClass } from '@/utils/statusTranslations';
+import Pagination from "@/components/tools/Pagination";
 
-import { authFetch, safeParseJson } from "@/src/utils/apiClient";
+import { authFetch, safeParseJson } from "@/utils/apiClient";
 
 export const Commande: React.FC = () => {
     const { orders } = useOutletContext<{ orders: any[] }>();

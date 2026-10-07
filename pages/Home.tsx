@@ -11,17 +11,17 @@ import {
 import { Product } from '../types';
 import { getGiftAdvice } from '../services/geminiService';
 import CollectionCarousel from '../pages/products/CollectionCarousel';
-import TrendingSection from '@/src/components/product/TrendingProducts';
+import TrendingSection from '@/components/product/TrendingProducts';
 import SafeImage from '../src/components/tools/SafeImage';
 
 // Images (Assurez-vous que ces imports fonctionnent, sinon remplacez par vos chemins)
-import imageHome from '@/src/assets/image1.png';
+import imageHome from '@/assets/image1.png';
 import imageHome2 from '../src/assets/h_designer_hero_fashion_atelier_1774889548518.png';
-import imageHome3 from '@/src/assets/image4.png';
-import CatHome1 from '@/src/assets/cat1.png';
-import CatHome2 from '@/src/assets/cat2.png';
-import CatHome3 from '@/src/assets/cat3.png';
-import CatHome4 from '@/src/assets/cat4.png';
+import imageHome3 from '@/assets/image4.png';
+import CatHome1 from '@/assets/cat1.png';
+import CatHome2 from '@/assets/cat2.png';
+import CatHome3 from '@/assets/cat3.png';
+import CatHome4 from '@/assets/cat4.png';
 
 
 interface HomeProps {

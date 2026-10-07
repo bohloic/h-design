@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { authFetch } from '../../src/utils/apiClient';
 import { analyzeSales } from '../../services/geminiService';
 import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
-import { StatCard } from '@/src/components/admin/StatCard';
+import { StatCard } from '@/components/admin/StatCard';
 import { CheckCircle2, ShoppingBag, TrendingUp, Users, Sparkles, Loader2, Download } from 'lucide-react';
 import { 
   XAxis, 
@@ -14,8 +14,8 @@ import {
   Area
 } from 'recharts';
 // 🪄 IMPORT DU THEME
-import { useTheme } from '@/src/utils/context/ThemeContext'; // Ajuste le chemin si besoin
-import { useToast } from '@/src/utils/context/ToastContext';
+import { useTheme } from '@/utils/context/ThemeContext'; // Ajuste le chemin si besoin
+import { useToast } from '@/utils/context/ToastContext';
 
 export const DashboardView = () => {
   const [loading, setLoading] = useState(true);

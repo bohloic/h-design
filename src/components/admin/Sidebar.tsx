@@ -17,9 +17,9 @@ import {
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { authFetch } from "@/src/utils/apiClient";
-import { useAuth } from "@/src/utils/context/AuthContext";
-import { useAutoRefresh } from "@/src/utils/hooks/useAutoRefresh";
+import { authFetch } from "@/utils/apiClient";
+import { useAuth } from "@/utils/context/AuthContext";
+import { useAutoRefresh } from "@/utils/hooks/useAutoRefresh";
 import logoLight from "../../assets/logo.png";
 import logoDark from "../../assets/Logo2.png";
 

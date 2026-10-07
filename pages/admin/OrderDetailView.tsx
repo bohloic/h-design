@@ -7,9 +7,9 @@ import {
     Calendar, Printer, Mail, Phone, Shirt, Palette, Loader2, Sparkles, AlertTriangle, Type, Image as ImageIcon, Move, RotateCw, Maximize, Download, Eye,
     ThumbsUp, ThumbsDown, MessageSquare, CheckCircle2
 } from 'lucide-react';
-import { BASE_IMG_URL } from '@/src/components/images/VoirImage';
+import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import SafeImage from '../../src/components/tools/SafeImage';
-import { AdminDesignPreview } from '@/src/components/admin/AdminDesignPreview';
+import { AdminDesignPreview } from '@/components/admin/AdminDesignPreview';
 import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
 import { useToast } from '../../src/utils/context/ToastContext';
 

@@ -1,9 +1,10 @@
 import React from 'react';
-import Lottie from 'lottie-react';
-import loadingAnimation from '../../assets/loading.json'; // Lottie animation from IconScout
+import { Loader2 } from 'lucide-react';
 
-const LoadingLottie = ({ size = 120 }) => (
-  <Lottie animationData={loadingAnimation} style={{ width: size, height: size, pointerEvents: 'none' }} />
+const LoadingLottie = ({ size = 120, className = '' }) => (
+  <div className={`flex items-center justify-center ${className}`}>
+    <Loader2 className="animate-spin text-amber-500" style={{ width: size, height: size, pointerEvents: 'none' }} />
+  </div>
 );
 
 export default LoadingLottie;
