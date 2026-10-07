@@ -5,7 +5,9 @@ interface ThemeContextType {
   activeCollection: any | null;
   themeColor: string;
   themeMode: 'light' | 'dark';
+  theme: 'light' | 'dark'; // Alias de compatibilité pour themeMode
   toggleThemeMode: () => void;
+  toggleTheme: () => void; // Alias de compatibilité pour toggleThemeMode
   refreshTheme: () => Promise<void>;
 }
 
@@ -13,7 +15,9 @@ const ThemeContext = createContext<ThemeContextType>({
   activeCollection: null,
   themeColor: '#1E3A8A',
   themeMode: 'dark',
+  theme: 'dark',
   toggleThemeMode: () => {},
+  toggleTheme: () => {},
   refreshTheme: async () => {},
 });
 
@@ -61,8 +65,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const fetchActiveTheme = async () => {
     try {
-      // 🕵️ On ajoute un timestamp (?t=...) et 'no-store' pour forcer le navigateur
-      // à ignorer le cache et récupérer la version la plus RÉCENTE sur le serveur.
       const baseUrl = import.meta.env.VITE_API_URL || '';
       const response = await fetch(`${baseUrl}/api/collections/active?t=${Date.now()}`, {
         cache: 'no-store',
@@ -96,11 +98,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
-    // 1. Chargement initial
     fetchActiveTheme();
 
-    // 2. Synchronisation automatique (Polling) toutes les 15 secondes
-    // Cela permet de mettre à jour la bannière pour TOUS les utilisateurs sans actualiser
     const interval = setInterval(() => {
       fetchActiveTheme();
     }, 15000);
@@ -109,8 +108,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   return (
-    <ThemeContext.Provider value={{ activeCollection, themeColor, themeMode, toggleThemeMode, refreshTheme: fetchActiveTheme }}>
-      {/* Le reste de ton site s'affiche en dessous */}
+    <ThemeContext.Provider value={{ 
+      activeCollection, 
+      themeColor, 
+      themeMode, 
+      theme: themeMode,
+      toggleThemeMode, 
+      toggleTheme: toggleThemeMode,
+      refreshTheme: fetchActiveTheme 
+    }}>
       {children}
     </ThemeContext.Provider>
   );

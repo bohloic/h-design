@@ -13,6 +13,7 @@ import { getGiftAdvice } from '../services/geminiService';
 import CollectionCarousel from '../pages/products/CollectionCarousel';
 import TrendingSection from '@/components/product/TrendingProducts';
 import SafeImage from '../src/components/tools/SafeImage';
+import LoadingSpinner from '../src/components/tools/LoadingSpinner';
 
 // Images (Assurez-vous que ces imports fonctionnent, sinon remplacez par vos chemins)
 import imageHome2 from '../src/assets/h_designer_hero_fashion_atelier_1774889548518.png';
@@ -89,8 +90,8 @@ const Home: React.FC<HomeProps> = () => {
 
   if (isPageLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-offwhite dark:bg-carbon text-slate-900 dark:text-pure">
-        <Loader2 className="w-16 h-16 animate-spin mb-4" style={{ color: 'var(--theme-primary)' }} />
+      <div className="h-screen flex flex-col items-center justify-center bg-offwhite dark:bg-carbon text-slate-900 dark:text-pure gap-4">
+        <LoadingSpinner size={120} />
         <p className="text-slate-900 dark:text-pure font-bold text-lg tracking-widest uppercase">Chargement...</p>
       </div>
     );

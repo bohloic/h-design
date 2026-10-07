@@ -1,4 +1,5 @@
-import { useTheme } from '../../utils/hooks/index.jsx';
+import React from 'react';
+import { useTheme } from '../../utils/hooks';
 import ErrorIllustration from '../../assets/404.svg';
 
 function Error() {

@@ -16,6 +16,7 @@ import {
 // 🪄 IMPORT DU THEME
 import { useTheme } from '@/utils/context/ThemeContext'; // Ajuste le chemin si besoin
 import { useToast } from '@/utils/context/ToastContext';
+import LoadingSpinner from '../../src/components/tools/LoadingSpinner';
 
 export const DashboardView = () => {
   const [loading, setLoading] = useState(true);
@@ -206,7 +207,7 @@ export const DashboardView = () => {
   if (loading) {
       return (
           <div className="flex h-[80vh] items-center justify-center text-slate-400 flex-col gap-4">
-              <Loader2 size={40} className="animate-spin theme-text-primary" />
+              <LoadingSpinner size={100} />
               <p className="font-bold">Analyse de vos données en cours...</p>
           </div>
       );

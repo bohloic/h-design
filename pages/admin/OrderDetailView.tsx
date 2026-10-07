@@ -11,6 +11,7 @@ import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import { AdminDesignPreview } from '@/components/admin/AdminDesignPreview';
 import { translateStatus, getStatusColorClass } from '../../src/utils/statusTranslations';
 import { useToast } from '../../src/utils/context/ToastContext';
+import LoadingSpinner from '../../src/components/tools/LoadingSpinner';
 
 export const OrderDetailView = () => {
     const { id } = useParams();
@@ -110,7 +111,7 @@ export const OrderDetailView = () => {
     if (loading || !order) {
         return (
             <div className="h-screen flex items-center justify-center">
-                <Loader2 className="w-10 h-10 animate-spin theme-text-primary" />
+                <LoadingSpinner size={100} />
             </div>
         );
     }

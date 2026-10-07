@@ -4,6 +4,7 @@ import { useToast } from '@/utils/context/ToastContext';
 import { formatCurrency } from '@/constants';
 import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import SafeImage from '../tools/SafeImage';
+import LoadingSpinner from '../tools/LoadingSpinner';
 import { CheckCircle, XCircle, Palette, Eye, Loader2, AlertCircle } from 'lucide-react';
 import { useAutoRefresh } from '@/utils/hooks/useAutoRefresh';
 
@@ -137,7 +138,7 @@ export const AdminValidationDesigns = () => {
         }
     };
 
-    if (loading) return <div className="p-10 flex justify-center text-slate-400"><Loader2 className="animate-spin" size={32} /></div>;
+    if (loading) return <div className="p-16 flex justify-center items-center"><LoadingSpinner size={80} /></div>;
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">

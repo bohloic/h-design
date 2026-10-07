@@ -6,6 +6,7 @@ import { useNotificationStore } from '../../src/store/useNotificationStore';
 import { useAuth } from '../../src/utils/context/AuthContext';
 import { useToast } from '../../src/utils/context/ToastContext';
 import FormAlert from '../../src/components/elements/FormAlert';
+import LoadingSpinner from '../../src/components/tools/LoadingSpinner';
 
 interface MonTokenCustom {
   userId: string;
@@ -161,8 +162,8 @@ export const Settings: React.FC = () => {
         />
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-10 opacity-50">
-            <Loader2 size={40} className="animate-spin text-slate-400 mb-2" />
+          <div className="flex flex-col items-center justify-center py-10 gap-2">
+            <LoadingSpinner size={80} />
             <p className="text-sm font-bold text-slate-500">Chargement de votre profil...</p>
           </div>
         ) : (
