@@ -90,10 +90,29 @@ export const AdminVIPScanner = () => {
 
         try {
             const response = await authFetch(`/api/admin/loyalty/scan?${type}=${encodeURIComponent(identifier)}`);
-            if (!response.ok) throw new Error("Client introuvable.");
+            if (response.ok) {
+                const data = await response.json();
+                setScannedUser(data);
+                return;
+            }
+
+            // Fallback: si l'endpoint dédié retourne 404, chercher dans la liste globale /api/users
+            const usersRes = await authFetch('/api/users');
+            if (usersRes.ok) {
+                const users = await usersRes.json();
+                const searchStr = String(identifier).toLowerCase().trim();
+                const found = users.find((u: any) => 
+                    type === 'id' 
+                        ? String(u.id) === searchStr
+                        : (u.email && u.email.toLowerCase().trim() === searchStr)
+                );
+                if (found) {
+                    setScannedUser(found);
+                    return;
+                }
+            }
             
-            const data = await response.json();
-            setScannedUser(data);
+            throw new Error(`Aucun client trouvé pour : ${identifier}`);
         } catch (err: any) {
             setError(err.message || "Impossible de localiser ce client.");
         } finally {
@@ -160,7 +179,10 @@ export const AdminVIPScanner = () => {
                                         const text = Array.isArray(result) ? result[0]?.rawValue : result;
                                         if (text) handleScan(text);
                                     }} 
-                                    onError={(error: any) => console.log("Scanner Caméra:", error?.message)}
+                                    onError={(error: any) => {
+                                        console.warn("Scanner Caméra Error:", error?.message || error);
+                                        setError("Permission caméra refusée ou caméra indisponible. Utilisez la saisie par email ou le téléversement d'image.");
+                                    }}
                                 />
                                 <button 
                                     onClick={() => setShowCamera(false)}

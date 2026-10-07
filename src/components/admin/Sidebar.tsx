@@ -101,10 +101,10 @@ export const Sidebar = ({
   }, [showProfileModal]);
 
   return (
-    <div className="w-full h-full bg-slate-900 text-slate-300 flex flex-col overflow-y-auto relative">
+    <div className="w-full h-full bg-slate-900 text-slate-300 flex flex-col relative overflow-hidden select-none">
       
-      {/* ── LOGO & RÉDUCTION SIDEBAR ── */}
-      <div className="px-3 py-4 border-b border-slate-800/60 flex-shrink-0 flex items-center justify-between">
+      {/* ── LOGO & RÉDUCTION SIDEBAR (STICKY TOP) ── */}
+      <div className="px-3 py-4 border-b border-slate-800/60 flex-shrink-0 flex items-center justify-between bg-slate-900 sticky top-0 z-20">
         <Link to={ADMIN_BASE_PATH} className="flex items-center group overflow-hidden">
           <img 
             src={logoLight} 
@@ -201,8 +201,8 @@ export const Sidebar = ({
         ))}
       </nav>
 
-      {/* ── PROFIL ADMIN + ACCÈS PARAMÈTRES ET DECONNEXION ── */}
-      <div className="p-3 border-t border-slate-800/60 flex-shrink-0">
+      {/* ── PROFIL ADMIN + ACCÈS PARAMÈTRES ET DECONNEXION (STICKY BOTTOM) ── */}
+      <div className="p-3 border-t border-slate-800/60 flex-shrink-0 bg-slate-900 sticky bottom-0 z-20">
         <div className={`bg-slate-800/60 rounded-2xl p-2.5 flex items-center gap-2.5 ${isCollapsed ? 'justify-center' : ''}`}>
           <button
             onClick={() => setShowProfileModal(true)}

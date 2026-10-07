@@ -56,16 +56,16 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
         />
       )}
 
-      {/* --- 2. SIDEBAR RESPONSIVE & COLLAPSIBLE --- */}
+      {/* --- 2. SIDEBAR RESPONSIVE & COLLAPSIBLE (FIXE 100% HAUTEUR) --- */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 bg-slate-900 border-r border-slate-800 shadow-xl lg:shadow-none
+        fixed top-0 left-0 bottom-0 h-screen z-50 bg-slate-900 border-r border-slate-800 shadow-xl lg:shadow-none
         transform transition-all duration-300 ease-in-out
         lg:translate-x-0 
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
         w-64
       `}>
-        <div className="h-full overflow-y-auto">
+        <div className="h-full">
             <Sidebar 
               onClose={() => setSidebarOpen(false)} 
               isCollapsed={isCollapsed}
@@ -74,8 +74,8 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
         </div>
       </aside>
 
-      {/* --- 3. CONTENU PRINCIPAL --- */}
-      <main className={`flex-1 min-h-screen transition-all duration-300 ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
+      {/* --- 3. CONTENU PRINCIPAL (DÉFILEMENT INDÉPENDANT) --- */}
+      <main className={`flex-1 h-screen overflow-y-auto transition-all duration-300 ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         
         {/* Header Mobile */}
         <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">

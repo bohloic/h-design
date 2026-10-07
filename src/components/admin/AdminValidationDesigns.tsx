@@ -25,7 +25,33 @@ export const AdminValidationDesigns = () => {
             const response = await authFetch('/api/admin/orders'); 
             if (response.ok) {
                 const allOrders = await response.json();
-                setPendingOrders(allOrders);
+                
+                // 🪄 Filtrage précis : uniquement les commandes avec des designs personnalisés en attente
+                const filteredPending = allOrders.filter((order: any) => {
+                    const isValidationStatus = 
+                        order.status === 'paid_waiting' || 
+                        (order.status && order.status.toLowerCase().includes('validation')) ||
+                        order.status === 'Payé - Validation Design';
+
+                    const hasUnapprovedCustomItem = order.items?.some((item: any) => {
+                        let designData: any = null;
+                        try {
+                            if (item.customization) {
+                                designData = typeof item.customization === 'string' 
+                                    ? JSON.parse(item.customization) 
+                                    : item.customization;
+                            }
+                        } catch (e) {}
+                        
+                        const isCustom = !!(designData?.customizationImage || (designData?.elements && designData.elements.length > 0) || item.customization);
+                        const isNotApproved = !['Validé', 'approved'].includes(item.design_status);
+                        return isCustom && isNotApproved;
+                    });
+
+                    return isValidationStatus || hasUnapprovedCustomItem;
+                });
+
+                setPendingOrders(filteredPending.length > 0 ? filteredPending : allOrders.filter((o: any) => o.items?.some((i: any) => i.customization)));
             }
         } catch (error) {
             console.error("Erreur chargement des designs :", error);

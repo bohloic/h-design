@@ -36,6 +36,29 @@ export const CollectionView = () => {
             setLoading(true);
             const res = await authFetch('/api/collections');
             const data = await res.json();
+            
+            if (Array.isArray(data)) {
+                const hasActive = data.some((c: any) => c.is_active);
+                // Si aucune n'est activée manuellement, activer automatiquement la collection "En cours"
+                if (!hasActive) {
+                    const now = new Date();
+                    const currentCollection = data.find((c: any) => {
+                        if (!c.start_date || !c.end_date) return false;
+                        const start = new Date(c.start_date);
+                        const end = new Date(c.end_date);
+                        end.setHours(23, 59, 59, 999);
+                        return now >= start && now <= end;
+                    });
+                    if (currentCollection) {
+                        currentCollection.is_active = true;
+                        authFetch(`/api/collections/${currentCollection.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...currentCollection, is_active: true })
+                        }).then(() => refreshTheme()).catch(console.error);
+                    }
+                }
+            }
             setCollections(data);
         } catch (error) {
             console.error("Erreur fetch", error);
@@ -141,6 +164,37 @@ export const CollectionView = () => {
             }
         } catch (error) {
             console.error(error);
+        }
+    };
+
+    const handleToggleActivate = async (col: any) => {
+        const nextState = !col.is_active;
+        if (nextState && activeCollection) {
+            if(!confirm(`Activer "${col.name}" et désactiver "${activeCollection.name}" ?`)) return;
+        }
+
+        const config = typeof col.ui_config === 'string' ? JSON.parse(col.ui_config) : col.ui_config;
+        const payload = {
+            name: col.name,
+            start_date: col.start_date,
+            end_date: col.end_date,
+            is_active: nextState,
+            ui_config: config
+        };
+
+        try {
+            const res = await authFetch(`/api/collections/${col.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                fetchCollections();
+                refreshTheme();
+            }
+        } catch (e) {
+            console.error(e);
         }
     };
 
@@ -253,14 +307,22 @@ export const CollectionView = () => {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {col.is_active ? (
-                                                        <span 
-                                                            className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider animate-pulse"
+                                                        <button 
+                                                            onClick={() => handleToggleActivate(col)}
+                                                            className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider animate-pulse hover:opacity-80 transition-opacity"
                                                             style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 15%, transparent)', color: 'var(--theme-primary)' }}
+                                                            title="Cliquer pour désactiver"
                                                         >
                                                             Site Actif
-                                                        </span>
+                                                        </button>
                                                     ) : (
-                                                        <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Inactif</span>
+                                                        <button 
+                                                            onClick={() => handleToggleActivate(col)}
+                                                            className="bg-slate-100 hover:bg-emerald-100 hover:text-emerald-700 text-slate-500 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider transition-colors"
+                                                            title="Cliquer pour activer"
+                                                        >
+                                                            Inactif
+                                                        </button>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">

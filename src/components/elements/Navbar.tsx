@@ -3,6 +3,7 @@ import { ShoppingCart, User, Menu, X, ShieldCheck, LogOut, Sun, Moon } from 'luc
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from './NotificationDropdown';
 import { useTheme } from '../../utils/context/ThemeContext';
+import { ADMIN_BASE_PATH } from '@/constants';
 import logoLight from '../../assets/logo.png';
 import logoDark from '../../assets/logoo2.png';
 import SafeImage from '../tools/SafeImage';
@@ -78,13 +79,13 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
               </Link>
             )}
 
-            {/* LIEN ADMIN */}
+            {/* LIEN ADMIN SÉCURISÉ */}
             {isAuthenticated && role === 'admin' && (
               <Link
-                to="/admin"
-                className="flex items-center gap-1 px-3 py-1 rounded-full text-sm font-black border theme-bg-primary-soft theme-text-primary theme-border-primary-soft hover:brightness-95 transition-all"
+                to={ADMIN_BASE_PATH}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black border theme-bg-primary-soft theme-text-primary theme-border-primary-soft hover:brightness-95 transition-all shadow-sm"
               >
-                <ShieldCheck size={16} /> Admin
+                <ShieldCheck size={16} /> Panneau Admin
               </Link>
             )}
           </div>
@@ -172,11 +173,11 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
 
             {isAuthenticated && role === 'admin' && (
               <Link
-                to="/admin"
+                to={ADMIN_BASE_PATH}
                 onClick={closeMenu}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl text-base font-black border border-transparent theme-bg-primary-soft theme-text-primary"
               >
-                <ShieldCheck size={18} /> Administration
+                <ShieldCheck size={18} /> Panneau Administration
               </Link>
             )}
 

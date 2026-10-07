@@ -123,16 +123,33 @@ export const CustomerView = () => {
     setSelectedCustomerHistory(customer);
     setLoadingOrders(true);
     try {
+      let ordersList: any[] = [];
       const res = await authFetch('/api/admin/orders');
       if (res.ok) {
-        const allOrders = await res.json();
-        // Filtrer les commandes par id client ou email client
-        const userOrders = allOrders.filter((o: any) => 
-          String(o.user_id) === String(customer.id) ||
-          (o.customer_email && o.customer_email.toLowerCase() === customer.email.toLowerCase())
-        );
-        setCustomerOrders(userOrders);
+        const rawData = await res.json();
+        ordersList = Array.isArray(rawData) ? rawData : (rawData.orders || []);
+      } else {
+        // Fallback endpoint public/client /api/orders
+        const fallbackRes = await authFetch('/api/orders');
+        if (fallbackRes.ok) {
+          const rawData = await fallbackRes.json();
+          ordersList = Array.isArray(rawData) ? rawData : (rawData.orders || []);
+        }
       }
+
+      const customerEmail = (customer.email || '').toLowerCase().trim();
+      const customerId = String(customer.id);
+
+      // Filtrer les commandes par id client ou email client sur tous les champs d'identification possibles
+      const userOrders = ordersList.filter((o: any) => {
+        const matchId = String(o.user_id || o.customer_id || o.user?.id || '') === customerId;
+        const matchEmail = [o.customer_email, o.email, o.user_email, o.user?.email]
+          .filter(Boolean)
+          .some(e => String(e).toLowerCase().trim() === customerEmail);
+        return matchId || matchEmail;
+      });
+
+      setCustomerOrders(userOrders);
     } catch (e) {
       console.error("Erreur chargement historique:", e);
       setCustomerOrders([]);
