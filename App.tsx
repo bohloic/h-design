@@ -3,61 +3,61 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { CartItem } from './types';
 
 // Components
-import Navbar from './src/components/elements/Navbar.tsx';
-import CartDrawer from './src/components/cart/CartDrawer.tsx';
-import Footer from './src/components/elements/Footer.tsx';
-import ScrollToTop from './src/components/tools/ScrollToTop.tsx';
-import PageTransition from './src/components/tools/PageTransition.tsx';
-import ChatWidget from './src/components/chatbot/ChatWidget.jsx';
-import { BackToTop } from './src/components/elements/BackToTop.tsx';
-import WelcomeTour from './src/components/tools/WelcomeTour.tsx';
+import Navbar from '@/components/elements/Navbar';
+import CartDrawer from '@/components/cart/CartDrawer';
+import Footer from '@/components/elements/Footer';
+import ScrollToTop from '@/components/tools/ScrollToTop';
+import PageTransition from '@/components/tools/PageTransition';
+import ChatWidget from '@/components/chatbot/ChatWidget';
+import { BackToTop } from '@/components/elements/BackToTop';
+import WelcomeTour from '@/components/tools/WelcomeTour';
 
 // Styles
-import './src/styles/GlobalUX.css';
+import '@/styles/GlobalUX.css';
 
 // Routes Guards
-import AdminRoute from './src/components/routes/AdminRoute.jsx';
-import PrivateRoute from './src/components/routes/PrivateRoute.tsx';
-import GuestRoute from './src/components/routes/GuestRoute.tsx';
+import AdminRoute from '@/components/routes/AdminRoute';
+import PrivateRoute from '@/components/routes/PrivateRoute';
+import GuestRoute from '@/components/routes/GuestRoute';
 
 // Pages
 import Home from './pages/Home';
 import Shop from './pages/Shop';
-import Dashboard from './pages/dashboard/Dashboard.tsx';
+import Dashboard from './pages/dashboard/Dashboard';
 import Checkout from './pages/Checkout';
 import Auth from './pages/Auth';
 import NotFound from './pages/NotFound';
-import OrderConfirmed from './pages/OrderConfirmed.tsx';
-import ProductDetails from './pages/products/ProductDetails.tsx';
-import ProductCustomizer from './pages/products/ProductCustomizer.tsx';
-import HelpSupport from './pages/HelpSupport.tsx';
+import OrderConfirmed from './pages/OrderConfirmed';
+import ProductDetails from './pages/products/ProductDetails';
+import ProductCustomizer from './pages/products/ProductCustomizer';
+import HelpSupport from './pages/HelpSupport';
 
 // Dashboard nested pages
-import { Overview } from './pages/dashboard/Overview.tsx';
-import { Commande } from './pages/dashboard/Commande.tsx';
-import { OrderDetails } from './pages/dashboard/OrderDetails.tsx';
-import { LoyaltyTab } from './pages/dashboard/LoyaltyPage.tsx';
-import { Wishlist } from './pages/dashboard/Wishlist.tsx';
-import { Payments } from './pages/dashboard/Payments.tsx';
-import { Settings } from './pages/dashboard/Settings.tsx';
+import { Overview } from './pages/dashboard/Overview';
+import { Commande } from './pages/dashboard/Commande';
+import { OrderDetails } from './pages/dashboard/OrderDetails';
+import { LoyaltyTab } from './pages/dashboard/LoyaltyPage';
+import { Wishlist } from './pages/dashboard/Wishlist';
+import { Payments } from './pages/dashboard/Payments';
+import { Settings } from './pages/dashboard/Settings';
 import { Navigate } from 'react-router-dom';
 
 // Admin Pages & Layouts
-import { AppLayout } from './src/layouts/AppLayout';
-import { DashboardView } from './pages/admin/DashboardView.tsx';
-import { ProductView } from './pages/admin/ProductView.tsx';
-import { OrderView } from './pages/admin/OrderView.tsx';
-import { CustomerView } from './pages/admin/CustomerView.tsx';
-import { CollectionView } from './pages/admin/CollectionView.tsx';
-import { CategoryView } from './pages/admin/CategoryView.tsx';
-import { DeliveryView } from './pages/admin/DeliveryView.tsx';
-import { OrderDetailView } from './pages/admin/OrderDetailView.tsx';
-import PaymentCallback from './pages/PaymentCallback.tsx';
-import { AdminVIPScanner } from './pages/admin/AdminVIPScanner.tsx';
-import ResetPassword from './pages/ResetPassword.tsx';
-import { ThemeProvider, useTheme } from './src/utils/context/ThemeContext.tsx';
-import { AuthProvider, useAuth } from './src/utils/context/AuthContext';
-import { ToastProvider } from './src/utils/context/ToastContext.tsx';
+import { AppLayout } from '@/layouts/AppLayout';
+import { DashboardView } from './pages/admin/DashboardView';
+import { ProductView } from './pages/admin/ProductView';
+import { OrderView } from './pages/admin/OrderView';
+import { CustomerView } from './pages/admin/CustomerView';
+import { CollectionView } from './pages/admin/CollectionView';
+import { CategoryView } from './pages/admin/CategoryView';
+import { DeliveryView } from './pages/admin/DeliveryView';
+import { OrderDetailView } from './pages/admin/OrderDetailView';
+import PaymentCallback from './pages/PaymentCallback';
+import { AdminVIPScanner } from './pages/admin/AdminVIPScanner';
+import ResetPassword from './pages/ResetPassword';
+import { ThemeProvider, useTheme } from '@/utils/context/ThemeContext';
+import { AuthProvider, useAuth } from '@/utils/context/AuthContext';
+import { ToastProvider } from '@/utils/context/ToastContext';
 import { AdminValidationDesigns } from './src/components/admin/AdminValidationDesigns';
 import WhatsAppButton from './src/components/elements/WhatsAppButton';
 
