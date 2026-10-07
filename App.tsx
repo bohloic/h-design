@@ -58,8 +58,8 @@ import ResetPassword from './pages/ResetPassword';
 import { ThemeProvider, useTheme } from '@/utils/context/ThemeContext';
 import { AuthProvider, useAuth } from '@/utils/context/AuthContext';
 import { ToastProvider } from '@/utils/context/ToastContext';
-import { AdminValidationDesigns } from './src/components/admin/AdminValidationDesigns';
-import WhatsAppButton from './src/components/elements/WhatsAppButton';
+import { AdminValidationDesigns } from '@/components/admin/AdminValidationDesigns';
+import WhatsAppButton from '@/components/elements/WhatsAppButton';
 
 // ============================================================
 // Hook de détection des zones "App" (Admin & Dashboard)
