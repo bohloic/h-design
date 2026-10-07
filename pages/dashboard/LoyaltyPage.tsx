@@ -1,4 +1,3 @@
-import React from 'react';
 import { Gift, TrendingUp, ShoppingBag, Sparkles } from 'lucide-react';
 import { LoyaltyCard } from '@/components/dashboard/LoyaltyCard';
 

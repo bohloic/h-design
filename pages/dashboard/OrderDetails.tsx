@@ -22,29 +22,6 @@ export const OrderDetails: React.FC = () => {
     const [isPaying, setIsPaying] = useState(false);
     const progressBarRef = useRef<HTMLDivElement>(null);
 
-    const handleCancelOrder = async () => {
-        if (!window.confirm("Êtes-vous sûr de vouloir annuler cette commande ?\n\n⚠️ IMPORTANT : Aucun remboursement ne sera autorisé après l'annulation d'une commande déjà payée.")) {
-            return;
-        }
-
-        try {
-            const response = await authFetch(`/api/orders/${orderId}/cancel`, {
-                method: 'PUT'
-            });
-
-            if (response.ok) {
-                showToast("Votre commande a été annulée.", "success");
-                fetchOrderDetails(); // Rafraîchir l'affichage
-            } else {
-                const data = await response.json();
-                showToast(data.message || "Erreur lors de l'annulation", "error");
-            }
-        } catch (error) {
-            console.error("Erreur annulation:", error);
-            showToast("Impossible d'annuler la commande pour le moment.", "error");
-        }
-    };
-
     const handlePayNow = async () => {
         if (!order) return;
         setIsPaying(true);

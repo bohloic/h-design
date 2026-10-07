@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../src/utils/apiClient';
-import { Edit, Plus, Trash2, XCircle, Tag, Layers, Check, Image as ImageIcon, Search, Palette, Package } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { BASE_IMG_URL } from '@/components/images/VoirImage';
+import { Edit, Plus, Trash2, XCircle, Tag, Layers, Check, Image as ImageIcon, Search, Palette } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import SafeImage from '../../src/components/tools/SafeImage';
 import Pagination from '../../src/components/tools/Pagination';
 import { useNotificationStore } from '../../src/store/useNotificationStore';
@@ -30,7 +29,6 @@ const TEXTILE_COLORS = [
 ];
 
 export const ProductView = () => {
-  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [categories, setCategories] = useState([]); 

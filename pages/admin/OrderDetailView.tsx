@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { authFetch } from '../../src/utils/apiClient';
 import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
 import {
     ChevronLeft, Package, User, MapPin, CreditCard,
-    Calendar, Printer, Mail, Phone, Shirt, Palette, Loader2, Sparkles, AlertTriangle, Type, Image as ImageIcon, Move, RotateCw, Maximize, Download, Eye,
-    ThumbsUp, ThumbsDown, MessageSquare, CheckCircle2
+    Calendar, Printer, Mail, Phone, Shirt, Palette, Loader2, Sparkles, AlertTriangle, Type, Image as ImageIcon, Move, Maximize, Download, Eye,
+    ThumbsUp, ThumbsDown, CheckCircle2
 } from 'lucide-react';
 import { BASE_IMG_URL } from '@/components/images/VoirImage';
-import SafeImage from '../../src/components/tools/SafeImage';
 import { AdminDesignPreview } from '@/components/admin/AdminDesignPreview';
-import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
+import { translateStatus, getStatusColorClass } from '../../src/utils/statusTranslations';
 import { useToast } from '../../src/utils/context/ToastContext';
 
 export const OrderDetailView = () => {

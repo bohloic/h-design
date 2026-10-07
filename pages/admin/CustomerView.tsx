@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { authFetch } from '../../src/utils/apiClient';
 import { Edit, Trash2, UserPlus, Gift, Mail, Phone, XCircle, Shield, User as UserIcon, ChevronDown, CheckCircle2, Eye, EyeOff, AlertCircle, Search } from 'lucide-react';
 import Pagination from '../../src/components/tools/Pagination';

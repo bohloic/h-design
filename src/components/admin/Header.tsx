@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  Bell, Search, Store, LogOut, ChevronDown,
+  Search, Store, LogOut, ChevronDown,
   Package, ShoppingBag, Users, ArrowRight, X, Loader2, AlertCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { NotificationDropdown } from "../elements/NotificationDropdown";
 import { authFetch } from "../../utils/apiClient";
 import { useAuth } from "../../utils/context/AuthContext";
-import { BASE_IMG_URL } from "../images/VoirImage";
 import SafeImage from '../tools/SafeImage';
 
 // ─── Types ───────────────────────────────────────────────────────────────────

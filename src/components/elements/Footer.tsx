@@ -1,7 +1,6 @@
 import React from 'react';
-import { Gift, Facebook, Instagram, Twitter, Mail, Phone, MapPin, ArrowRight, MessageSquare } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Mail, Phone, MapPin, ArrowRight } from 'lucide-react';
 import logoLight from '../../assets/logoo2.png';
-import logoDark from '../../../assets/logo.png';
 import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {

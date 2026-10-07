@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import LoadingLottie from '../../components/tools/LoadingLottie';
-// import Lottie from 'lottie-react';
-import loadingAnimation from '../../../assets/loading.json'; // Lottie animation file (download from IconScout)
 
 /**
  * PageTransition

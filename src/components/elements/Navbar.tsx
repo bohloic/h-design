@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingCart, User, Gift, Search, Menu, X, ShieldCheck, LogOut, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, ShieldCheck, LogOut, Sun, Moon } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { NotificationDropdown } from './NotificationDropdown';
 import { useTheme } from '../../utils/context/ThemeContext';

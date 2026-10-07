@@ -5,7 +5,7 @@ interface AdminDesignPreviewProps {
     customizationJson: any;
 }
 
-export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ productImage, customizationJson }) => {
+export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ customizationJson }) => {
     // 1. Initialisation sécurisée du tableau pour éviter l'erreur TypeScript
     let elements: any[] = [];
 

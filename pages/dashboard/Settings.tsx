@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Bell, Store, Loader2, Save, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, Lock, Bell, Loader2, Save } from 'lucide-react';
 import { authFetch } from '../../src/utils/apiClient';
 import { jwtDecode } from 'jwt-decode';
 import { useNotificationStore } from '../../src/store/useNotificationStore';
@@ -15,7 +15,7 @@ interface MonTokenCustom {
 }
 
 export const Settings: React.FC = () => {
-  const { user, updateUser } = useAuth();
+  const { updateUser } = useAuth();
   const { showToast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);

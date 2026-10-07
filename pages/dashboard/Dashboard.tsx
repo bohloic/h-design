@@ -6,8 +6,6 @@ import DashboardSidebar from './DashboardSidebar';
 import { Menu, User } from 'lucide-react'; 
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
-import { useNotificationStore } from '../../src/store/useNotificationStore';
-import { translateStatus } from '../../src/utils/statusTranslations';
 
 
 

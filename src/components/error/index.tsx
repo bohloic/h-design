@@ -1,4 +1,3 @@
-import React from 'react';
 import { useTheme } from '../../utils/hooks/index.jsx';
 import ErrorIllustration from '../../assets/404.svg';
 

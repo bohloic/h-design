@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Product, Category } from '../../../types'; 
 import { Grid, Search } from 'lucide-react'; 
-import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import SafeImage from '../tools/SafeImage';
 
 interface SidebarLeftProps {

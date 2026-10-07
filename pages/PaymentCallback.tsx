@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { authFetch } from '../src/utils/apiClient';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';

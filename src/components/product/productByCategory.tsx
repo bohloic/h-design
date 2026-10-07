@@ -4,7 +4,7 @@ import {useState} from 'react'
 
 export const productByCategory = () => {
     // 💡 Note : N'oublie pas de typer ton state et d'ajouter la logique de fetch plus tard !
-    const [product, setProduct] = useState<any[]>([]) 
+    const [product] = useState<any[]>([]) 
 
     return (
         <section className="max-w-7xl mx-auto px-4">

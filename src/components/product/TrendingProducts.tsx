@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { authFetch } from '../../utils/apiClient';
 import CollectionCarousel from '../../../pages/products/CollectionCarousel';
 import LoadingSpinner from '../../components/tools/LoadingSpinner';

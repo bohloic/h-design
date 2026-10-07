@@ -15,17 +15,15 @@ import {
   ExternalLink,
   X 
 } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { authFetch } from "@/utils/apiClient";
 import { useAuth } from "@/utils/context/AuthContext";
 import { useAutoRefresh } from "@/utils/hooks/useAutoRefresh";
 import logoLight from "../../assets/logo.png";
-import logoDark from "../../assets/Logo2.png";
 
 export const Sidebar = ({ onClose }: { onClose?: () => void }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   
   const [badges, setBadges] = useState({ pendingDesigns: 0, pendingOrders: 0 });
 

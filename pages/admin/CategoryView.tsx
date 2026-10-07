@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Plus, Trash2, XCircle, Tag, Check, Calendar, Search, LayoutGrid } from 'lucide-react';
+import { Edit, Plus, Trash2, XCircle, Check, Calendar, Search, LayoutGrid } from 'lucide-react';
 import { authFetch } from '../../src/utils/apiClient';
 import { useToast } from '../../src/utils/context/ToastContext';
 

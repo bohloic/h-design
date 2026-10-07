@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { CheckCircle2, Package, Sparkles, Home, MessageCircle } from 'lucide-react';
 import logo from '../src/assets/logo.png';

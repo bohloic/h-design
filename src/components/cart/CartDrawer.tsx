@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { X, Trash2, Plus, Minus, ArrowRight, ShoppingCart } from 'lucide-react';
 import { CartItem } from '../../../types';
 import { formatCurrency } from '../../../constants';
-import { BASE_IMG_URL } from '../images/VoirImage';
 import SafeImage from '../tools/SafeImage';
 
 interface CartDrawerProps {

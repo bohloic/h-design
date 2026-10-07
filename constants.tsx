@@ -1,6 +1,4 @@
 
-import { Product } from './types';
-
 export const PRODUCTS = [
   {
     id: 1,

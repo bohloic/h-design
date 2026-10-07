@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import React, { useState, createContext, useContext, useCallback } from 'react';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 import LoadingSpinner from '../../components/tools/LoadingSpinner';
 

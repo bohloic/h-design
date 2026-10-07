@@ -25,7 +25,7 @@ export const getGiftAdvice = async (prompt: string): Promise<string> => {
   }
 };
 
-export const analyzeSales = async (orders: any[], products: any[]) => {
+export const analyzeSales = async (_orders?: any[], _products?: any[]) => {
   // Optionnel : On peut aussi créer une route backend dédiée pour l'analyse
   // Pour l'instant, on reste sur un mock ou on appelle une route générique si besoin.
   return ["Optimisez vos stocks sur les best-sellers.", "Lancez une promotion sur les articles à faible rotation.", "Améliorez le suivi des commandes clients."];

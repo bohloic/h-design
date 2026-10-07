@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { authFetch } from '../src/utils/apiClient';
-import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2, ShieldCheck, Phone, Eye, EyeOff, KeyRound, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Mail, Loader2, ShieldCheck, Eye, EyeOff, KeyRound, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useNotificationStore } from '../src/store/useNotificationStore';
 import { jwtDecode } from 'jwt-decode';
 import logo from '../src/assets/logo.png';

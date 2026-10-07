@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, Heart, CreditCard, ArrowRight, User, Award } from 'lucide-react';
+import { Package, Heart, ArrowRight, User, Award } from 'lucide-react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { formatCurrency } from "@/constants";
 import { useWishlistStore } from '@/store/useWishlistStore';

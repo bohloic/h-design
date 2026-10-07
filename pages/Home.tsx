@@ -3,7 +3,7 @@ import { authFetch } from '../src/utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import {
-  Star, Sparkles, Truck, ShieldCheck, Send, Gift, Loader2,
+  Star, Sparkles, Truck, ShieldCheck, Send, Loader2,
   Palette, MousePointerClick, Shirt, ArrowRight
 } from 'lucide-react';
 
@@ -15,7 +15,6 @@ import TrendingSection from '@/components/product/TrendingProducts';
 import SafeImage from '../src/components/tools/SafeImage';
 
 // Images (Assurez-vous que ces imports fonctionnent, sinon remplacez par vos chemins)
-import imageHome from '@/assets/image1.png';
 import imageHome2 from '../src/assets/h_designer_hero_fashion_atelier_1774889548518.png';
 import imageHome3 from '@/assets/image4.png';
 import CatHome1 from '@/assets/cat1.png';
@@ -28,7 +27,7 @@ interface HomeProps {
   onAddToCart: (product: Product) => void;
 }
 
-const Home: React.FC<HomeProps> = ({ onAddToCart }) => {
+const Home: React.FC<HomeProps> = () => {
   const navigate = useNavigate();
 
   // --- ÉTATS ---

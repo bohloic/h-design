@@ -1,11 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import React from 'react';
 
 interface CustomSectionProps {
   onCustomizeClick: () => void;
 }
 
-const CustomSection: React.FC<CustomSectionProps> = ({ onCustomizeClick }) => {
+const CustomSection: React.FC<CustomSectionProps> = () => {
     const navigate = useNavigate();
 
   return (

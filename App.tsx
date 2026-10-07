@@ -69,11 +69,6 @@ const useIsAdminZone = () => {
   return location.pathname.startsWith('/admin');
 };
 
-const useIsDashboardZone = () => {
-  const location = useLocation();
-  return location.pathname.startsWith('/dashboard');
-};
-
 const useIsAuthZone = () => {
   const location = useLocation();
   return ['/login', '/reset-password'].includes(location.pathname);
@@ -99,7 +94,6 @@ const AppShell: React.FC<{
 }> = ({ cart, isCartOpen, onOpenCart, onCloseCart, onUpdateQuantity, onRemoveFromCart, addToCart, clearCart }) => {
   const { isAuthenticated, user, logout } = useAuth();
   const isAdminZone = useIsAdminZone();
-  const isDashboardZone = useIsDashboardZone();
   const isAuthZone = useIsAuthZone();
   const isCustomizerZone = useIsCustomizerZone();
   const { activeCollection } = useTheme();

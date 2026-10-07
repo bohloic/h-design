@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import { authFetch, safeParseJson } from '../src/utils/apiClient';
 import { CreditCard, MapPin, CheckCircle2, ArrowRight, Wallet, Lock, Truck, Loader2, Star, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '../constants';
 import { Link, useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
-import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import SafeImage from '../src/components/tools/SafeImage';
 import { usePaymentStore } from '@/store/usePaymentStore';
 import { useNotificationStore } from '../src/store/useNotificationStore';
@@ -47,7 +46,7 @@ interface MonTokenCustom {
   role: string;
   exp: number;
 }
-const Checkout: React.FC<CheckoutProps> = ({ cartItems, onClearCart, data }) => {
+const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const preferredPaymentMethod = usePaymentStore(state => state.preferredMethod);

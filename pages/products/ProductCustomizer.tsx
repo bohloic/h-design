@@ -1,4 +1,4 @@
-import React, {useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { authFetch, uploadDesignToServer } from '../../src/utils/apiClient';
 import { useToast } from '../../src/utils/context/ToastContext';
 import SidebarLeft from '../../src/components/customer/SidebarLeft';
@@ -48,10 +48,6 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   const [currentStep, setCurrentStep] = useState(1); // 1: Product, 2: Design, 3: Review
   const [hideBaseDesign, setHideBaseDesign] = useState(false);
 
-  // 🎯 Vrai si l'utilisateur est arrivé depuis le bouton "Personnaliser" d'un produit
-  // Dans ce cas, on affiche le produit de base sur le canvas
-  // Si accès direct via le menu, on affiche un canvas vide (pas de motif)
-  const [cameFromProduct, setCameFromProduct] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -77,7 +73,6 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
         
         let productToSelect = null;
         const fromProduct = !!(state?.productId || state?.isEdit);
-        setCameFromProduct(fromProduct);
 
         if (state?.productId) {
             const found = productsData.find((p: Product) => p.id === Number(state.productId));
@@ -373,8 +368,6 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   };
 
   const basePrice = selectedProduct ? parseFloat(selectedProduct.price.toString()) : 0;
-  const designCost = designElements.length > 0 ? DESIGN_PRICE : 0;
-  const currentTotalPrice = (basePrice + designCost).toFixed(0);
 
   const toolsColors = availableColors.map(v => ({ name: v.colorName, hex: v.hex || v.colorCode || '#FFFFFF' }));
   const currentCanvasColor = selectedVariant ? { name: selectedVariant.colorName, hex: selectedVariant.hex || selectedVariant.colorCode || '#FFFFFF' } : { name: 'Défaut', hex: '#FFFFFF' };

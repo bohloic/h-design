@@ -1,16 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Check, CheckCircle2, AlertCircle, Info, X, Trash2, ArrowRight } from 'lucide-react';
+import { Bell, Check, CheckCircle2, AlertCircle, Info, Trash2, ArrowRight } from 'lucide-react';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '../../utils/context/AuthContext';
 
-interface MonTokenCustom {
-  userId: string;
-  email: string;
-  role: string;
-  exp: number;
-}
 
 export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -29,7 +22,6 @@ export const NotificationDropdown: React.FC = () => {
     markAllAsRead, 
     removeNotification,
     fetchNotifications,
-    isLoading,
     clearAllNotifications
   } = useNotificationStore();
 

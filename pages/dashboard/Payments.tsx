@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, ShieldCheck, CheckCircle2, Wallet, Trash2, PlusCircle } from 'lucide-react';
+import { CreditCard, ShieldCheck, CheckCircle2, Trash2, PlusCircle } from 'lucide-react';
 import { usePaymentStore, PaymentMethodType } from '@/store/usePaymentStore';
 import { useToast } from '@/utils/context/ToastContext';
 

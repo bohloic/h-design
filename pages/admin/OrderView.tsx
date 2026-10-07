@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { authFetch } from '../../src/utils/apiClient';
 import { useToast } from '../../src/utils/context/ToastContext';
-import { ShoppingBag, ChevronDown, Package, User, Calendar, CreditCard, Search, Eye, Filter } from 'lucide-react';
+import { ShoppingBag, ChevronDown, User, CreditCard, Search, Eye, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNotificationStore } from '../../src/store/useNotificationStore';
-import { jwtDecode } from 'jwt-decode';
 import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
 import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
 import Pagination from '../../src/components/tools/Pagination';
@@ -140,14 +139,6 @@ export const OrderView = () => {
           }
       }
 
-      let adminId = undefined;
-      try {
-          const token = localStorage.getItem('token');
-          if (token) {
-              const decoded = jwtDecode<any>(token);
-              adminId = String(decoded.userId);
-          }
-      } catch (e) {}
 
       // 1. Notification locale pour l'Admin (Confirmation immédiate)
       useNotificationStore.getState().addNotification({

@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Type, Download, Save, RefreshCw, Check } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, Type, Save, Check } from 'lucide-react';
 
 const TShirtDesigner = ({ baseImage, onSaveDesign }) => {
   // --- STATE ---

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { authFetch } from '../../src/utils/apiClient';
 import { analyzeSales } from '../../services/geminiService';
 import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';

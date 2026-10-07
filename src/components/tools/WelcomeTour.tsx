@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, ShoppingBag, Palette, X, ArrowRight, MessageCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Sparkles, Palette, X, ArrowRight, MessageCircle } from 'lucide-react';
 
 const WelcomeTour: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [step, setStep] = useState(1);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const hasSeenTour = localStorage.getItem('hasSeenWelcomeTour');

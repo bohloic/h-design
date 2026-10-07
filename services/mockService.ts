@@ -1,4 +1,4 @@
-import { Product, Order, OrderStatus, Customer, Category } from '../typesAdmin';
+import { Product, Order, OrderStatus, Customer } from '../typesAdmin';
 
 
 // Mock initial data

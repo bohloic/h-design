@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from "../components/admin/Header";
 import { Sidebar } from "../components/admin/Sidebar";
-import { Menu, X, LogOut, Store } from 'lucide-react';
+import { Menu, LogOut, Store } from 'lucide-react';
 import { NotificationDropdown } from '../components/elements/NotificationDropdown.tsx';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../utils/context/ThemeContext.tsx';
@@ -14,7 +14,6 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
 
   // 🔒 ISOLATION DU THÈME : L'Admin est TOUJOURS en mode clair
   useEffect(() => {
-    const isDarkAtEntry = document.documentElement.classList.contains('dark');
     document.documentElement.classList.remove('dark');
 
     return () => {
