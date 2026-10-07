@@ -7,16 +7,22 @@ import { BASE_IMG_URL } from '@/components/images/VoirImage';
 
 import { useChatStore } from '@/store/useChatStore';
 
-const ChatWidget = () => {
+interface Message {
+  text: string;
+  sender: 'user' | 'bot';
+  products?: any[];
+}
+
+const ChatWidget: React.FC = () => {
   const { isOpen, setIsOpen } = useChatStore();
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     { text: "Bonjour ! Je suis l'assistant **H-Designer**. Comment puis-je vous aider ? (ex: 'Quelles sont vos catégories ?' ou 'Je cherche un T-shirt XL')", sender: 'bot' }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  const messagesEndRef = useRef(null);
-  const inputRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const scrollToBottom = () => {
@@ -32,7 +38,7 @@ const ChatWidget = () => {
     }
   }, [isOpen]);
 
-  const handleSendMessage = async (e) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
@@ -67,7 +73,7 @@ const ChatWidget = () => {
     }
   };
 
-  const handleProductClick = (product) => {
+  const handleProductClick = (product: any) => {
       setIsOpen(false);
       const identifier = product.slug || product.id;
       navigate(`/boutique/produit/${identifier}`);

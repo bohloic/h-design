@@ -1,7 +1,7 @@
+import React from "react";
 import { Outlet, Link } from "react-router-dom";
-// import "./Admin.css"; // Votre CSS spécifique pour l'admin
 
-const AdminLayout = () => {
+const AdminLayout: React.FC = () => {
   return (
     <div className="admin-container">
       {/* Sidebar Gauche */}

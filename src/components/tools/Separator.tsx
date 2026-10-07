@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
  * 1. Séparateur Simple 
  * Légèrement teinté avec la couleur du thème
  */
-export const Separator = () => {
+export const Separator: React.FC = () => {
   return (
     <hr 
         className="my-12 border-t transition-colors duration-500" 
@@ -18,7 +18,7 @@ export const Separator = () => {
  * 2. Séparateur Dégradé
  * Utilise un dégradé allant vers la couleur du thème (en transparence)
  */
-export const GradientSeparator = () => {
+export const GradientSeparator: React.FC = () => {
   return (
     <div 
         className="my-16 h-px w-full opacity-60" 
@@ -29,11 +29,15 @@ export const GradientSeparator = () => {
   );
 };
 
+interface LabeledSeparatorProps {
+  label?: React.ReactNode;
+}
+
 /**
  * 3. Séparateur avec Libellé ou Icône
  * Le contenu central prend la couleur pleine du thème
  */
-export const LabeledSeparator = ({ label }) => {
+export const LabeledSeparator: React.FC<LabeledSeparatorProps> = ({ label }) => {
   return (
     <div className="relative flex py-12 items-center">
       {/* Ligne de gauche teintée */}
