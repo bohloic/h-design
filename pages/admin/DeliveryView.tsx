@@ -59,6 +59,17 @@ export const DeliveryView = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
+  // ⌨️ FERMETURE MODAL AVEC ÉCHAP
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
   const paginatedDeliveries = React.useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredDeliveries.slice(start, start + itemsPerPage);

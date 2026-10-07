@@ -3,6 +3,7 @@ import { Bell, Check, CheckCircle2, AlertCircle, Info, Trash2, ArrowRight } from
 import { useNotificationStore } from '../../store/useNotificationStore';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../utils/context/AuthContext';
+import { ADMIN_BASE_PATH } from '@/constants';
 
 
 export const NotificationDropdown: React.FC = () => {
@@ -75,7 +76,7 @@ export const NotificationDropdown: React.FC = () => {
       notif.message?.toLowerCase().includes('order');
 
     if (isAdmin && isOrderNotif) {
-      navigate('/admin/orders');
+      navigate(`${ADMIN_BASE_PATH}/orders`);
       setIsOpen(false);
       return;
     }
@@ -208,7 +209,7 @@ export const NotificationDropdown: React.FC = () => {
 
           <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-center transition-colors">
             <Link 
-              to={isAdminZone ? "/admin" : "/dashboard"} 
+              to={isAdminZone ? ADMIN_BASE_PATH : "/dashboard"} 
               onClick={() => setIsOpen(false)}
               className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-pure flex items-center gap-1 transition-colors"
             >

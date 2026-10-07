@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { authFetch } from '../../src/utils/apiClient';
-import { Edit, Trash2, UserPlus, Gift, Mail, Phone, XCircle, Shield, User as UserIcon, ChevronDown, CheckCircle2, Eye, EyeOff, AlertCircle, Search } from 'lucide-react';
+import { Edit, Trash2, UserPlus, Gift, Mail, Phone, XCircle, Shield, User as UserIcon, ChevronDown, CheckCircle2, Eye, EyeOff, AlertCircle, Search, ShoppingBag, Calendar, Package, ArrowRight } from 'lucide-react';
 import Pagination from '../../src/components/tools/Pagination';
 import { useToast } from '../../src/utils/context/ToastContext';
+import { ADMIN_BASE_PATH, formatCurrency } from '../../src/constants';
 
 export const CustomerView = () => {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // --- FILTRAGE & RECHERCHE ---
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+
+  // --- HISTORIQUE D'ACHAT CLIENT ---
+  const [selectedCustomerHistory, setSelectedCustomerHistory] = useState<any | null>(null);
+  const [customerOrders, setCustomerOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
 
   const filteredUsers = React.useMemo(() => {
     return users.filter((user: any) => {
@@ -56,13 +63,25 @@ export const CustomerView = () => {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: '', // Nouveau champ
+    confirmPassword: '',
     loyalty_points: 0
   });
 
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // ⌨️ FERMETURE DES MODALES AVEC LA TOUCHE ÉCHAP
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showModal) closeModal();
+        if (selectedCustomerHistory) setSelectedCustomerHistory(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, selectedCustomerHistory]);
 
   // 🪄 LOGIQUE DE MISE EN ÉVIDENCE (Highlight)
   const location = useLocation();
@@ -98,6 +117,29 @@ export const CustomerView = () => {
         setLoading(false);
     }
   }; 
+
+  // --- CHARGEMENT DE L'HISTORIQUE DE COMMANDES D'UN CLIENT ---
+  const fetchCustomerHistory = async (customer: any) => {
+    setSelectedCustomerHistory(customer);
+    setLoadingOrders(true);
+    try {
+      const res = await authFetch('/api/admin/orders');
+      if (res.ok) {
+        const allOrders = await res.json();
+        // Filtrer les commandes par id client ou email client
+        const userOrders = allOrders.filter((o: any) => 
+          String(o.user_id) === String(customer.id) ||
+          (o.customer_email && o.customer_email.toLowerCase() === customer.email.toLowerCase())
+        );
+        setCustomerOrders(userOrders);
+      }
+    } catch (e) {
+      console.error("Erreur chargement historique:", e);
+      setCustomerOrders([]);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
 
   // --- GESTION DES RÔLES ---
   const handleRoleChange = async (userId: number, newRole: string) => {
@@ -156,7 +198,6 @@ export const CustomerView = () => {
     e.preventDefault();
     setError(''); 
 
-    // Vérification des mots de passe à la création
     if (!isEditing && formData.password !== formData.confirmPassword) {
         setError("Les mots de passe ne correspondent pas.");
         return;
@@ -212,7 +253,7 @@ export const CustomerView = () => {
             </span>
             Gestion des Utilisateurs
           </h3>
-          <p className="text-slate-500 text-sm mt-1">Gérez vos clients, votre équipe et leur fidélité.</p>
+          <p className="text-slate-500 text-sm mt-1">Gérez vos clients, votre équipe, leur fidélité et leur historique d'achat.</p>
         </div>
         <button 
           onClick={openCreateModal}
@@ -256,7 +297,7 @@ export const CustomerView = () => {
       {loading ? (
           <div className="p-12 text-center text-slate-400 flex flex-col items-center">
               <div className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4 border-theme-primary-soft border-t-theme-primary"></div>
-              Chargement...
+              Chargement des utilisateurs...
           </div>
       ) : filteredUsers.length === 0 ? (
           <div className="p-12 text-center text-slate-400">Aucun utilisateur ne correspond à vos critères.</div>
@@ -290,7 +331,6 @@ export const CustomerView = () => {
 
                 {/* Section Sécurité & Rôle */}
                 <div className="bg-slate-50 rounded-xl p-3 mb-4 space-y-3">
-                    
                     <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1"><Gift size={14}/> Fidélité</span>
                         <span className="font-black text-theme-primary">{user.loyalty_points || 0} pts</span>
@@ -325,21 +365,31 @@ export const CustomerView = () => {
 
                 <div className="flex-grow"></div>
 
-                {/* Actions */}
-                <div className="flex gap-2 mt-auto">
+                {/* 🪄 BOUTON FICHE CLIENT HISTORIQUE D'ACHAT + ACTIONS */}
+                <div className="space-y-2 mt-auto">
                     <button 
-                        onClick={() => openEditModal(user)}
-                        className="flex-1 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 transition-colors"
+                        onClick={() => fetchCustomerHistory(user)}
+                        className="w-full py-2.5 px-3 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/70 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm"
                     >
-                        <Edit size={16} /> Modifier
+                        <ShoppingBag size={14} className="text-theme-primary" />
+                        <span>Fiche Client : Voir l'historique d'achat</span>
                     </button>
-                    <button 
-                        onClick={() => handleDelete(user.id)}
-                        className="flex-none px-4 py-2 text-sm font-bold border rounded-xl hover:bg-red-50 flex items-center justify-center transition-colors text-theme-primary border-theme-primary-soft"
-                        title="Supprimer"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={() => openEditModal(user)}
+                            className="flex-1 py-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-1.5 transition-colors"
+                        >
+                            <Edit size={14} /> Modifier
+                        </button>
+                        <button 
+                            onClick={() => handleDelete(user.id)}
+                            className="flex-none px-3.5 py-2 text-xs font-bold border rounded-xl hover:bg-red-50 flex items-center justify-center transition-colors text-theme-primary border-theme-primary-soft"
+                            title="Supprimer"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
                 </div>
 
               </div>
@@ -359,21 +409,131 @@ export const CustomerView = () => {
           </div>
       )}
 
-      {/* --- MODAL --- */}
+      {/* --- MODAL HISTORIQUE D'ACHAT CLIENT --- */}
+      {selectedCustomerHistory && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setSelectedCustomerHistory(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden border border-slate-100 max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 bg-slate-900 text-white flex justify-between items-center sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-theme-primary rounded-2xl text-white">
+                  <ShoppingBag size={22} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Fiche & Historique Client</h3>
+                  <p className="text-xs text-slate-400">
+                    {selectedCustomerHistory.prenom} {selectedCustomerHistory.nom} ({selectedCustomerHistory.email})
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedCustomerHistory(null)}
+                title="Fermer (Échap)"
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-full transition-colors"
+              >
+                <XCircle size={20} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              {loadingOrders ? (
+                <div className="p-12 text-center text-slate-400 flex flex-col items-center">
+                  <div className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4 border-theme-primary"></div>
+                  Chargement de l'historique d'achat...
+                </div>
+              ) : customerOrders.length === 0 ? (
+                <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
+                  <Package size={48} className="mb-3 opacity-30" />
+                  <p className="font-bold text-slate-600">Aucune commande enregistrée pour ce client.</p>
+                  <p className="text-xs mt-1 text-slate-400">Le client n'a pas encore validé d'achats sur la boutique.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-bold text-slate-600">
+                    <span>Total Commandes : {customerOrders.length}</span>
+                    <span>Montant Cumulé : {formatCurrency(customerOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0))}</span>
+                  </div>
+
+                  {customerOrders.map((order: any) => (
+                    <div key={order.id} className="p-4 bg-white border border-slate-200 rounded-2xl hover:border-slate-300 transition-all shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className="text-xs font-black text-slate-900">#{order.slug || `HD-${String(order.id).padStart(5, '0')}`}</span>
+                          <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Calendar size={12} /> {new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-black text-theme-primary text-sm">{formatCurrency(parseFloat(order.total_amount))}</span>
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-0.5">
+                            {order.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      {order.items && order.items.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-slate-100 space-y-1">
+                          {order.items.map((item: any, idx: number) => (
+                            <div key={idx} className="flex justify-between text-xs text-slate-600">
+                              <span>• {item.name || item.product_name} x{item.quantity}</span>
+                              <span className="font-semibold">{formatCurrency(parseFloat(item.price))}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setSelectedCustomerHistory(null);
+                          navigate(`${ADMIN_BASE_PATH}/orders/${order.id}`);
+                        }}
+                        className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                      >
+                        Consulter tous les détails de la commande <ArrowRight size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setSelectedCustomerHistory(null)}
+                className="px-6 py-2.5 bg-slate-800 text-white font-bold text-sm rounded-xl hover:bg-slate-900 transition-colors"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL CRÉATION / ÉDITION --- */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={closeModal}
+        >
+          <div 
+            className="bg-white rounded-3xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh] overflow-y-auto" 
+            onClick={(e) => e.stopPropagation()}
+          >
             
             <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
               <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                 {isEditing ? 'Modifier le profil' : 'Nouveau membre'}
               </h3>
-              <button onClick={closeModal} title="Fermer" className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
+              <button onClick={closeModal} title="Fermer (Échap)" className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
                 <XCircle size={20} />
               </button>
             </div>
 
-            {/* AFFICHEUR D'ERREURS */}
             {error && (
                 <div className="mx-6 mt-6 p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 font-medium text-sm border border-red-100">
                     <AlertCircle size={18} />

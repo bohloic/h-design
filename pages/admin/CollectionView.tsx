@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Plus, Trash2, XCircle, Search, Calendar, Image as ImageIcon, Layers, Check, AlertCircle } from 'lucide-react';
+import { Edit, Plus, Trash2, XCircle, Search, Calendar, Image as ImageIcon, Layers, Check, AlertCircle, Clock } from 'lucide-react';
 import { authFetch } from '../../src/utils/apiClient';
 import { useTheme } from '../../src/utils/context/ThemeContext';
 
@@ -19,6 +19,17 @@ export const CollectionView = () => {
         banner_url: ''
     });
 
+    // ⌨️ FERMETURE MODAL AVEC ÉCHAP
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isModalOpen) {
+                resetForm();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isModalOpen]);
+
     // --- LECTURE ---
     const fetchCollections = async () => {
         try {
@@ -37,10 +48,27 @@ export const CollectionView = () => {
         fetchCollections();
     }, []);
 
-    // Vérifie si une AUTRE collection est déjà active
     const activeCollection = collections.find(c => c.is_active && c.id !== editingId);
 
-    // --- GESTION FORMULAIRE ---
+    // --- CALCUL DU STATUT DE PÉRIODE ---
+    const getPeriodStatus = (startDateStr?: string, endDateStr?: string) => {
+        if (!startDateStr || !endDateStr) return { status: 'indefinite', label: 'Indéfinie', badgeClass: 'bg-slate-100 text-slate-600' };
+        
+        const now = new Date();
+        const start = new Date(startDateStr);
+        const end = new Date(endDateStr);
+        // Ajuster fin de journée pour la date de fin
+        end.setHours(23, 59, 59, 999);
+
+        if (now < start) {
+            return { status: 'scheduled', label: 'Programmé', badgeClass: 'bg-blue-100 text-blue-700' };
+        } else if (now >= start && now <= end) {
+            return { status: 'current', label: 'En cours', badgeClass: 'bg-emerald-100 text-emerald-700' };
+        } else {
+            return { status: 'expired', label: 'Expiré', badgeClass: 'bg-amber-100 text-amber-700' };
+        }
+    };
+
     const handleChange = (e: any) => {
         const { name, value, type, checked } = e.target;
         setFormData(prev => ({
@@ -79,7 +107,6 @@ export const CollectionView = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        // Avertissement de sécurité
         if (formData.is_active && activeCollection) {
             if(!confirm(`Attention, la collection "${activeCollection.name}" est déjà active. Si vous continuez, elle sera désactivée au profit de celle-ci. Continuer ?`)) {
                 return;
@@ -110,7 +137,7 @@ export const CollectionView = () => {
             if (res.ok) {
                 resetForm();
                 fetchCollections();
-                refreshTheme(); // 🪄 Mise à jour instantanée du site !
+                refreshTheme();
             }
         } catch (error) {
             console.error(error);
@@ -121,7 +148,7 @@ export const CollectionView = () => {
         if(!confirm("Supprimer cette collection ? Tous les produits qui y sont liés la perdront.")) return;
         await authFetch(`/api/collections/${id}`, { method: 'DELETE' });
         fetchCollections();
-        refreshTheme(); // 🪄 Mise à jour instantanée si on supprime le thème actif
+        refreshTheme();
     };
 
     const formatDate = (dateString?: string) => {
@@ -144,14 +171,14 @@ export const CollectionView = () => {
                         >
                             <Layers size={24} />
                         </span>
-                        Thèmes & Collections
+                        Thèmes & Collections Saisonnières
                     </h3>
-                    <p className="text-slate-500 text-sm mt-1">Personnalisez le design du site selon les collections (Signature, Été...).</p>
+                    <p className="text-slate-500 text-sm mt-1">Gérez les périodes d'activité et la charte graphique globale de la boutique.</p>
                 </div>
                 <button 
                     onClick={() => { resetForm(); setIsModalOpen(true); }}
                     style={{ backgroundColor: 'var(--theme-primary)' }}
-                    className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-opacity shadow-lg active:scale-95"
+                    className="w-full sm:w-auto text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 opacity-95 hover:opacity-100 transition-opacity shadow-lg active:scale-95 text-sm"
                 >
                     <Plus size={20} /> <span className="hidden sm:inline">Nouveau Thème</span><span className="sm:hidden">Ajouter</span>
                 </button>
@@ -165,7 +192,7 @@ export const CollectionView = () => {
                             className="animate-spin w-8 h-8 border-4 border-t-transparent rounded-full mb-4"
                             style={{ borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)', borderTopColor: 'var(--theme-primary)' }}
                         ></div>
-                        Chargement...
+                        Chargement des collections...
                     </div>
                 ) : collections.length === 0 ? (
                     <div className="p-12 text-center flex flex-col items-center justify-center text-slate-400">
@@ -180,16 +207,18 @@ export const CollectionView = () => {
                                 <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 text-sm font-semibold">
                                     <tr>
                                         <th className="px-6 py-4">Nom du Thème</th>
-                                        <th className="px-6 py-4">Période</th>
-                                        <th className="px-6 py-4">Couleur Principale</th>
+                                        <th className="px-6 py-4">Période de Validité</th>
+                                        <th className="px-6 py-4">Couleur</th>
                                         <th className="px-6 py-4">Bannière</th>
-                                        <th className="px-6 py-4">Statut</th>
+                                        <th className="px-6 py-4">Statut Thème</th>
                                         <th className="px-6 py-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {collections.map((col: any) => {
                                         const config = typeof col.ui_config === 'string' ? JSON.parse(col.ui_config) : col.ui_config;
+                                        const periodInfo = getPeriodStatus(col.start_date, col.end_date);
+
                                         return (
                                             <tr key={col.id} className="hover:bg-slate-50 transition-colors group">
                                                 <td className="px-6 py-4 font-bold text-slate-700">
@@ -199,6 +228,9 @@ export const CollectionView = () => {
                                                     <div className="flex flex-col gap-1">
                                                         <span className="flex items-center gap-1"><Calendar size={12} /> {formatDate(col.start_date)}</span>
                                                         <span className="flex items-center gap-1 ml-4 text-slate-400">au {formatDate(col.end_date)}</span>
+                                                        <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider w-max mt-1 ${periodInfo.badgeClass}`}>
+                                                            <Clock size={10} /> {periodInfo.label}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -213,7 +245,7 @@ export const CollectionView = () => {
                                                 <td className="px-6 py-4">
                                                     {config?.banner_url ? (
                                                         <a href={config.banner_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-sm flex items-center gap-1">
-                                                            <ImageIcon size={14} /> Voir image
+                                                            <ImageIcon size={14} /> Voir bannière
                                                         </a>
                                                     ) : (
                                                         <span className="text-slate-400 text-sm italic">Aucune</span>
@@ -237,7 +269,7 @@ export const CollectionView = () => {
                                                         <button 
                                                             onClick={() => handleDelete(col.id)} 
                                                             className="p-2 text-slate-400 bg-white rounded-lg transition-all border border-transparent hover:border-red-100 hover:bg-red-50"
-                                                            style={{ color: 'var(--theme-primary)' }} // Utilise la couleur du thème (qui est souvent un rouge par défaut pour la suppression)
+                                                            style={{ color: 'var(--theme-primary)' }}
                                                         >
                                                             <Trash2 size={18}/>
                                                         </button>
@@ -254,6 +286,8 @@ export const CollectionView = () => {
                         <div className="md:hidden divide-y divide-slate-100">
                             {collections.map((col: any) => {
                                 const config = typeof col.ui_config === 'string' ? JSON.parse(col.ui_config) : col.ui_config;
+                                const periodInfo = getPeriodStatus(col.start_date, col.end_date);
+
                                 return (
                                     <div key={col.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50 transition-colors">
                                         <div className="flex justify-between items-start">
@@ -267,6 +301,9 @@ export const CollectionView = () => {
                                                     <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
                                                         <Calendar size={12} /> {formatDate(col.start_date)} - {formatDate(col.end_date)}
                                                     </p>
+                                                    <span className={`inline-flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider mt-1 ${periodInfo.badgeClass}`}>
+                                                        <Clock size={10} /> {periodInfo.label}
+                                                    </span>
                                                 </div>
                                             </div>
                                             {col.is_active ? (
@@ -301,31 +338,35 @@ export const CollectionView = () => {
                 )}
             </div>
 
-            {/* --- MODAL RESPONSIVE --- */}
+            {/* --- MODAL RESPONSIVE AVEC FERMETURE ÉCHAP --- */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh] overflow-y-auto">
-                        
+                <div 
+                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={resetForm}
+                >
+                    <div 
+                        className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-100"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
                             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                                 {editingId ? <Edit size={20} style={{ color: 'var(--theme-primary)' }}/> : <Plus size={20} style={{ color: 'var(--theme-primary)' }}/>}
                                 {editingId ? 'Modifier le Thème' : 'Nouveau Thème'}
                             </h3>
-                            <button onClick={resetForm} className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
+                            <button onClick={resetForm} title="Fermer (Échap)" className="p-2 bg-white rounded-full text-slate-400 hover:text-slate-600 shadow-sm">
                                 <XCircle size={20} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
                             
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Nom du thème (Ex: Collection Signature)</label>
+                                <label className="text-sm font-bold text-slate-700">Nom du thème (Ex: Collection Signature Noël)</label>
                                 <input 
                                     type="text" name="name" required
                                     value={formData.name} onChange={handleChange}
-                                    style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none font-medium placeholder-slate-400 transition-all focus:bg-white focus:ring-2"
-                                    placeholder="Ex: Hiver 2025"
+                                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none font-medium placeholder-slate-400 transition-all focus:bg-white focus:ring-2 focus:ring-slate-300 text-sm"
+                                    placeholder="Ex: Spécial Fêtes 2026"
                                 />
                             </div>
 
@@ -335,8 +376,7 @@ export const CollectionView = () => {
                                     <input 
                                         type="date" name="start_date" required
                                         value={formData.start_date} onChange={handleChange}
-                                        style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                                        className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none transition-all focus:bg-white focus:ring-2"
+                                        className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none transition-all focus:bg-white focus:ring-2 focus:ring-slate-300 text-sm"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -344,8 +384,7 @@ export const CollectionView = () => {
                                     <input 
                                         type="date" name="end_date" required
                                         value={formData.end_date} onChange={handleChange}
-                                        style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                                        className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none transition-all focus:bg-white focus:ring-2"
+                                        className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl outline-none transition-all focus:bg-white focus:ring-2 focus:ring-slate-300 text-sm"
                                     />
                                 </div>
                             </div>
@@ -356,7 +395,7 @@ export const CollectionView = () => {
                                 </p>
                                 
                                 <div className="flex items-center gap-4">
-                                    <label className="text-sm text-slate-600 flex-1">Couleur des boutons et textes majeurs :</label>
+                                    <label className="text-sm text-slate-600 flex-1">Couleur des boutons et éléments majeurs :</label>
                                     <input 
                                         type="color" name="primary_color"
                                         value={formData.primary_color} onChange={handleChange}
@@ -365,12 +404,11 @@ export const CollectionView = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm text-slate-600">Lien de la bannière (Affichée en haut du site) :</label>
+                                    <label className="text-sm text-slate-600">Lien de la bannière supérieure :</label>
                                     <input 
                                         type="text" name="banner_url"
                                         value={formData.banner_url} onChange={handleChange}
-                                        style={{ '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties}
-                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none transition-all focus:ring-2"
+                                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm outline-none transition-all focus:ring-2 focus:ring-slate-300"
                                         placeholder="https://..."
                                     />
                                 </div>
@@ -384,14 +422,12 @@ export const CollectionView = () => {
                                     <input 
                                         type="checkbox" name="is_active"
                                         checked={formData.is_active} onChange={handleChange}
-                                        style={{ 
-                                            accentColor: 'var(--theme-primary)' // Note : accentColor est supporté par beaucoup de navigateurs modernes pour les checkbox
-                                        }}
+                                        style={{ accentColor: 'var(--theme-primary)' }}
                                         className="w-5 h-5 rounded border-gray-300 cursor-pointer"
                                     />
                                 </div>
                                 <div>
-                                    <span className="text-sm font-bold text-slate-700 block">Appliquer ce thème au site</span>
+                                    <span className="text-sm font-bold text-slate-700 block">Activer ce thème sur le site</span>
                                     {formData.is_active && activeCollection && (
                                         <span className="text-xs flex items-center gap-1 mt-1" style={{ color: 'var(--theme-primary)' }}>
                                             <AlertCircle size={12} /> Attention, cela désactivera "{activeCollection.name}"
@@ -403,10 +439,10 @@ export const CollectionView = () => {
                             <button 
                                 type="submit" 
                                 style={{ backgroundColor: 'var(--theme-primary)' }}
-                                className="w-full py-4 text-white font-bold rounded-xl opacity-95 hover:opacity-100 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95"
+                                className="w-full py-4 text-white font-bold rounded-xl opacity-95 hover:opacity-100 transition-all shadow-xl flex items-center justify-center gap-2 active:scale-95 text-sm"
                             >
                                 <Check size={20} />
-                                {editingId ? 'Mettre à jour le site' : 'Créer et appliquer'}
+                                {editingId ? 'Mettre à jour le thème' : 'Créer et appliquer'}
                             </button>
                         </form>
                     </div>

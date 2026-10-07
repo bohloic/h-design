@@ -10,14 +10,28 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
   const navigate = useNavigate();
   // État pour gérer l'ouverture/fermeture de la sidebar sur mobile
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  // État pour gérer la réduction de la sidebar sur PC
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('admin_sidebar_collapsed') === 'true';
+    } catch { return false; }
+  });
+
   const { themeMode } = useTheme();
+
+  const handleToggleCollapse = () => {
+    setIsCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('admin_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   // 🔒 ISOLATION DU THÈME : L'Admin est TOUJOURS en mode clair
   useEffect(() => {
     document.documentElement.classList.remove('dark');
 
     return () => {
-      // On restaure le mode sombre uniquement si c'était le choix global de l'utilisateur
       if (themeMode === 'dark') {
         document.documentElement.classList.add('dark');
       }
@@ -35,7 +49,6 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
     <div className="flex min-h-screen bg-slate-50">
       
       {/* --- 1. OVERLAY MOBILE (Fond noir transparent) --- */}
-      {/* S'affiche uniquement si la sidebar est ouverte sur mobile */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 z-40 bg-black/50 lg:hidden backdrop-blur-sm"
@@ -43,36 +56,29 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
         />
       )}
 
-      {/* --- 2. SIDEBAR RESPONSIVE --- */}
-      {/* - fixed inset-y-0 : Toujours fixée en hauteur
-          - z-50 : Au dessus de tout
-          - w-64 : Largeur fixe
-          - transform transition-transform : Animation fluide
-          - Mobile (défaut) : -translate-x-full (cachée à gauche) sauf si isSidebarOpen est true
-          - Desktop (lg) : translate-x-0 (toujours visible)
-      */}
+      {/* --- 2. SIDEBAR RESPONSIVE & COLLAPSIBLE --- */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 shadow-xl lg:shadow-none
-        transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 bg-slate-900 border-r border-slate-800 shadow-xl lg:shadow-none
+        transform transition-all duration-300 ease-in-out
         lg:translate-x-0 
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}
+        w-64
       `}>
-        
-
-
-        {/* On inclut ton composant Sidebar existant ici */}
-        {/* Note: Ta Sidebar doit juste contenir les liens, le container externe est géré ici */}
         <div className="h-full overflow-y-auto">
-            <Sidebar onClose={() => setSidebarOpen(false)} /> 
+            <Sidebar 
+              onClose={() => setSidebarOpen(false)} 
+              isCollapsed={isCollapsed}
+              onToggleCollapse={handleToggleCollapse}
+            /> 
         </div>
       </aside>
 
       {/* --- 3. CONTENU PRINCIPAL --- */}
-      {/* lg:ml-64 : Laisse la place à la sidebar sur PC. Sur mobile : ml-0 */}
-      <main className="flex-1 min-h-screen transition-all duration-300 lg:ml-64">
+      <main className={`flex-1 min-h-screen transition-all duration-300 ${isCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         
-        {/* Header Mobile (Barre supérieure visible uniquement sur mobile) */}
-        <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-30">
+        {/* Header Mobile */}
+        <div className="lg:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
             <div className="flex items-center gap-3">
                 <button 
                     onClick={() => setSidebarOpen(true)}
@@ -82,11 +88,10 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
                 >
                     <Menu size={24} />
                 </button>
-                <h1 className="font-bold text-lg text-slate-800 truncate max-w-[120px] sm:max-w-none">{title}</h1>
+                <h1 className="font-bold text-lg text-slate-800 truncate max-w-[140px] sm:max-w-none">{title}</h1>
             </div>
 
             <div className="flex items-center gap-1 sm:gap-2">
-                {/* Boutique mobile */}
                 <button 
                     onClick={() => navigate('/')}
                     className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
@@ -95,10 +100,8 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
                     <Store size={20} />
                 </button>
 
-                {/* Notifications mobile */}
                 <NotificationDropdown />
 
-                {/* Bouton déconnexion mobile */}
                 <button 
                     onClick={handleLogout}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
@@ -110,7 +113,7 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
             </div>
         </div>
 
-        {/* Header Desktop (Ton composant Header existant) */}
+        {/* Header Desktop */}
         <div className="hidden lg:block">
              <Header title={title} />
         </div>

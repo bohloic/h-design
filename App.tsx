@@ -19,6 +19,7 @@ import '@/styles/GlobalUX.css';
 import AdminRoute from '@/components/routes/AdminRoute';
 import PrivateRoute from '@/components/routes/PrivateRoute';
 import GuestRoute from '@/components/routes/GuestRoute';
+import { ADMIN_BASE_PATH } from '@/constants';
 
 // Pages
 import Home from './pages/Home';
@@ -66,7 +67,7 @@ import WhatsAppButton from '@/components/elements/WhatsAppButton';
 // ============================================================
 const useIsAdminZone = () => {
   const location = useLocation();
-  return location.pathname.startsWith('/admin');
+  return location.pathname.startsWith(ADMIN_BASE_PATH);
 };
 
 const useIsAuthZone = () => {
@@ -177,18 +178,22 @@ const AppShell: React.FC<{
             </Route>
             <Route path="/payment/callback" element={<PaymentCallback />} />
 
-            {/* --- Routes Admin --- */}
+            {/* 🛡️ SÉCURITÉ ADMIN : /admin est masqué et renvoie 404 pour les robots */}
+            <Route path="/admin" element={<NotFound />} />
+            <Route path="/admin/*" element={<NotFound />} />
+
+            {/* 🔐 ROUTE SECRET ADMIN OBFUSQUÉE */}
             <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<AppLayout title="Tableau de bord"><DashboardView /></AppLayout>} />
-              <Route path="/admin/products" element={<AppLayout title="Inventaire Produits"><ProductView /></AppLayout>} />
-              <Route path="/admin/orders" element={<AppLayout title="Gestion des Ventes"><OrderView /></AppLayout>} />
-              <Route path="/admin/orders/:id" element={<AppLayout title="Détails de la Commande"><OrderDetailView /></AppLayout>} />
-              <Route path="/admin/validations" element={<AppLayout title="Validation des Designs"><AdminValidationDesigns /></AppLayout>} />
-              <Route path="/admin/customers" element={<AppLayout title="Gestion Clients"><CustomerView /></AppLayout>} />
-              <Route path="/admin/vip-scanner" element={<AppLayout title="Fidélité & Scan VIP"><AdminVIPScanner /></AppLayout>} />
-              <Route path="/admin/collections" element={<AppLayout title="Thèmes & Collections"><CollectionView /></AppLayout>} />
-              <Route path="/admin/categories" element={<AppLayout title="Catégories"><CategoryView /></AppLayout>} />
-              <Route path="/admin/deliveries" element={<AppLayout title="Livraisons"><DeliveryView /></AppLayout>} />
+              <Route path={ADMIN_BASE_PATH} element={<AppLayout title="Tableau de bord"><DashboardView /></AppLayout>} />
+              <Route path={`${ADMIN_BASE_PATH}/products`} element={<AppLayout title="Inventaire Produits"><ProductView /></AppLayout>} />
+              <Route path={`${ADMIN_BASE_PATH}/orders`} element={<AppLayout title="Gestion des Ventes"><OrderView /></AppLayout>} />
+              <Route path={`${ADMIN_BASE_PATH}/orders/:id`} element={<AppLayout title="Détails de la Commande"><OrderDetailView /></AppLayout>} />
+              <Route path={`${ADMIN_BASE_PATH}/validations`} element={<AppLayout title="Validation des Designs"><AdminValidationDesigns /></AppLayout>} />
+              <Route path={`${ADMIN_BASE_PATH}/customers`} element={<AppLayout title="Gestion Clients"><CustomerView /></AppLayout>} />
+              <Route path={`${ADMIN_BASE_PATH}/vip-scanner`} element={<AppLayout title="Fidélité & Scan VIP"><AdminVIPScanner /></AppLayout>} />
+              <Route path={`${ADMIN_BASE_PATH}/collections`} element={<AppLayout title="Thèmes & Collections"><CollectionView /></AppLayout>} />
+              <Route path={`${ADMIN_BASE_PATH}/categories`} element={<AppLayout title="Catégories"><CategoryView /></AppLayout>} />
+              <Route path={`${ADMIN_BASE_PATH}/deliveries`} element={<AppLayout title="Livraisons"><DeliveryView /></AppLayout>} />
             </Route>
 
             {/* 404 */}

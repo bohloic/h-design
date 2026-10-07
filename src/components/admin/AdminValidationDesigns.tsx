@@ -5,14 +5,18 @@ import { formatCurrency } from '@/constants';
 import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import SafeImage from '../tools/SafeImage';
 import LoadingSpinner from '../tools/LoadingSpinner';
-import { CheckCircle, XCircle, Palette, Eye, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Palette, Eye, Loader2, AlertCircle, X, Download, ZoomIn, Layers } from 'lucide-react';
 import { useAutoRefresh } from '@/utils/hooks/useAutoRefresh';
+import { AdminDesignPreview } from './AdminDesignPreview';
 
 export const AdminValidationDesigns = () => {
     const { showToast } = useToast();
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<number | null>(null);
+
+    // Modal d'inspection détaillée du design client
+    const [previewModalItem, setPreviewModalItem] = useState<{ item: any; imgUrl: string; orderSlug: string } | null>(null);
 
     // 1. CHARGEMENT DES COMMANDES EN ATTENTE DE DESIGN
     const fetchPendingDesigns = async (showLoader = true) => {
@@ -34,10 +38,20 @@ export const AdminValidationDesigns = () => {
         fetchPendingDesigns(true);
     }, []);
 
-    // 🔄 Auto-actualisation discrète toutes les 20 secondes
     useAutoRefresh(() => {
         fetchPendingDesigns(false);
     }, 20000);
+
+    // ⌨️ FERMETURE MODAL AVEC LA TOUCHE ÉCHAP
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && previewModalItem) {
+                setPreviewModalItem(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [previewModalItem]);
 
     // 👁️ Marquer les designs comme vus quand ils sont affichés
     useEffect(() => {
@@ -68,7 +82,7 @@ export const AdminValidationDesigns = () => {
     // 3. SOUMISSION FINALE DE LA DÉCISION
     const handleFinalSubmit = async (order: any) => {
         const decisionsArray = order.items
-            .filter((item: any) => itemDecisions[item.id]) // On n'envoie que les nouvelles décisions
+            .filter((item: any) => itemDecisions[item.id])
             .map((item: any) => ({
                 id: item.id,
                 status: itemDecisions[item.id]?.status,
@@ -81,7 +95,6 @@ export const AdminValidationDesigns = () => {
         }
 
         const pendingCount = order.items.filter((item: any) => {
-            // On vérifie si l'article est personnalisable
             let designData: any = null;
             try {
                 if (item.customization) {
@@ -92,8 +105,6 @@ export const AdminValidationDesigns = () => {
             } catch (e) {}
             
             const isCustom = !!(designData?.customizationImage || (designData?.elements && designData.elements.length > 0));
-            
-            // On ne compte que les articles personnalisables qui n'ont pas encore de décision
             return isCustom && !['Validé', 'approved'].includes(item.design_status) && !itemDecisions[item.id];
         }).length;
 
@@ -104,8 +115,6 @@ export const AdminValidationDesigns = () => {
 
         try {
             setProcessingId(order.id);
-            // On envoie le tableau de décisions au backend. 
-            // Note: Nous utilisons l'ID de la commande pour mettre à jour les éléments liés.
             const response = await authFetch(`/api/admin/orders/${order.id}/validate-items`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -115,17 +124,14 @@ export const AdminValidationDesigns = () => {
             if (response.ok) {
                 showToast("✅ Décisions enregistrées !", "success");
                 
-                // 🪄 On nettoie immédiatement l'affichage local
                 setPendingOrders(prev => prev.filter(o => o.id !== order.id));
                 
-                // Nettoyage des décisions locales pour cette commande
                 setItemDecisions(prev => {
                     const next = { ...prev };
                     order.items.forEach((item: any) => delete next[item.id]);
                     return next;
                 });
 
-                // On relance un fetch discret pour être sûr d'être à jour
                 setTimeout(() => fetchPendingDesigns(false), 500);
             } else {
                 const errorData = await response.json();
@@ -150,7 +156,7 @@ export const AdminValidationDesigns = () => {
                     </div>
                     <div>
                         <h2 className="text-2xl font-black text-slate-900">Validations Design</h2>
-                        <p className="text-slate-500 text-sm">Examinez les créations sur-mesure de vos clients</p>
+                        <p className="text-slate-500 text-sm">Examinez, testez et validez les créations sur-mesure de vos clients</p>
                     </div>
                 </div>
                 <div className="text-center bg-slate-50 px-6 py-2 rounded-2xl border border-slate-100">
@@ -255,15 +261,15 @@ export const AdminValidationDesigns = () => {
                                             {imgUrl ? (
                                                 <div className="relative group overflow-hidden rounded-xl border border-slate-200 bg-white">
                                                     <SafeImage src={imgUrl} alt={isCustomizable ? "Design client" : "Produit standard"} className="w-full h-40 object-contain p-2" />
-                                                    <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-sm">
+                                                    <div className="absolute inset-0 bg-slate-900/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white backdrop-blur-sm gap-2">
                                                         <button 
-                                                            onClick={() => window.open(imgUrl.startsWith('http') ? imgUrl : (imgUrl.startsWith('h-designer/') ? `https://res.cloudinary.com/dwyx9e7zw/image/upload/${imgUrl}` : BASE_IMG_URL + imgUrl), '_blank')} 
-                                                            title="Ouvrir l'image en grand"
-                                                            className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors mb-1"
+                                                            onClick={() => setPreviewModalItem({ item, imgUrl, orderSlug: `HD-${String(order.id).padStart(5, '0')}` })}
+                                                            title="Inspecter et tester le design"
+                                                            className="px-4 py-2 bg-theme-primary text-white font-bold rounded-xl shadow-lg flex items-center gap-2 hover:scale-105 transition-transform text-xs"
                                                         >
-                                                            <Eye size={18} />
+                                                            <Eye size={16} />
+                                                            Inspecter & Tester
                                                         </button>
-                                                        <span className="text-[9px] font-bold tracking-widest uppercase">Voir en Grand</span>
                                                     </div>
                                                 </div>
                                             ) : (
@@ -287,7 +293,6 @@ export const AdminValidationDesigns = () => {
                             <div className="p-4 border-t border-slate-100 bg-white">
                                 {(() => {
                                     const allItemsDecided = order.items.every((item: any) => {
-                                        // On vérifie si l'article est personnalisable
                                         let designData: any = null;
                                         try {
                                             if (item.customization) {
@@ -298,11 +303,7 @@ export const AdminValidationDesigns = () => {
                                         } catch (e) {}
                                         
                                         const isCustom = !!(designData?.customizationImage || (designData?.elements && designData.elements.length > 0));
-                                        
-                                        // Si pas personnalisable, c'est OK par défaut
                                         if (!isCustom) return true;
-                                        
-                                        // Si personnalisable, il faut soit qu'il soit déjà validé, soit qu'une nouvelle décision soit prise
                                         return ['Validé', 'approved'].includes(item.design_status) || !!itemDecisions[item.id];
                                     });
                                     
@@ -310,21 +311,113 @@ export const AdminValidationDesigns = () => {
                                         <button 
                                             onClick={() => handleFinalSubmit(order)}
                                             disabled={processingId === order.id || !allItemsDecided}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:grayscale theme-bg-primary"
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:grayscale theme-bg-primary bg-theme-primary"
                                         >
                                             {processingId === order.id ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
                                             Confirmer ma décision
                                         </button>
                                     );
                                 })()}
-                                <p className="text-[10px] text-center text-slate-400 mt-3 italic">
-                                    Vérifiez bien chaque item avant de confirmer.
-                                </p>
                             </div>
                         </div>
                     ))}
                 </div>
             )}
+
+            {/* 🖼️ MODAL D'INSPECTION & TEST DU DESIGN CLIENT */}
+            {previewModalItem && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={() => setPreviewModalItem(null)}
+                >
+                    <div 
+                        className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden border border-slate-100 max-h-[90vh] flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-5 bg-slate-900 text-white flex justify-between items-center sticky top-0 z-10">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-theme-primary rounded-xl text-white">
+                                    <Eye size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg">Inspection & Test du Design HD</h3>
+                                    <p className="text-xs text-slate-400">
+                                        Cmd {previewModalItem.orderSlug} • {previewModalItem.item.name || previewModalItem.item.product_name}
+                                    </p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setPreviewModalItem(null)}
+                                title="Fermer (Échap)"
+                                className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                {/* Visualisation du canvas */}
+                                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+                                        <ZoomIn size={14} /> Rendu Canvas Client
+                                    </p>
+                                    <div className="w-full h-64 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center p-2 border border-slate-200">
+                                        <SafeImage 
+                                            src={previewModalItem.imgUrl} 
+                                            alt="Visualisation design" 
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => window.open(previewModalItem.imgUrl.startsWith('http') ? previewModalItem.imgUrl : (previewModalItem.imgUrl.startsWith('h-designer/') ? `https://res.cloudinary.com/dwyx9e7zw/image/upload/${previewModalItem.imgUrl}` : BASE_IMG_URL + previewModalItem.imgUrl), '_blank')}
+                                        className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5"
+                                    >
+                                        <Download size={14} /> Télécharger le rendu HD original
+                                    </button>
+                                </div>
+
+                                {/* Décomposition des calques et textes */}
+                                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                        <Layers size={14} className="text-theme-primary" /> Calques & Éléments Sources
+                                    </p>
+                                    <AdminDesignPreview 
+                                        productImage={previewModalItem.imgUrl} 
+                                        customizationJson={previewModalItem.item.customization} 
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 bg-white border-t border-slate-100 flex items-center justify-between gap-3">
+                            <span className="text-xs font-medium text-slate-500 hidden sm:inline">
+                                Testez la conformité du design avant impression
+                            </span>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <button
+                                    onClick={() => {
+                                        handleItemAction(previewModalItem.item.id, 'rejected');
+                                        setPreviewModalItem(null);
+                                    }}
+                                    className="flex-1 sm:flex-none px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-red-200"
+                                >
+                                    <XCircle size={16} /> Rejeter ce design
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        handleItemAction(previewModalItem.item.id, 'approved');
+                                        setPreviewModalItem(null);
+                                    }}
+                                    className="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-md"
+                                >
+                                    <CheckCircle size={16} /> Valider ce design
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
-};
+};

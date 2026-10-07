@@ -8,6 +8,7 @@ import { NotificationDropdown } from "../elements/NotificationDropdown";
 import { authFetch } from "../../utils/apiClient";
 import { useAuth } from "../../utils/context/AuthContext";
 import SafeImage from '../tools/SafeImage';
+import { ADMIN_BASE_PATH } from "@/constants";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface SearchResults {
@@ -166,7 +167,7 @@ const SearchBar = () => {
                   {results!.orders.map((order: any) => (
                     <button
                       key={order.id}
-                      onClick={() => goTo(`/admin/orders/${order.id}`, order.id)}
+                      onClick={() => goTo(`${ADMIN_BASE_PATH}/orders/${order.id}`, order.id)}
                       className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 transition-colors text-left group"
                     >
                       <div>
@@ -189,7 +190,7 @@ const SearchBar = () => {
                   {results!.products.map((product: any) => (
                     <button
                       key={product.id}
-                      onClick={() => goTo('/admin/products', product.id)}
+                      onClick={() => goTo(`${ADMIN_BASE_PATH}/products`, product.id)}
                       className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left group"
                     >
                       <div className="w-9 h-9 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-200">
@@ -217,7 +218,7 @@ const SearchBar = () => {
                   {results!.customers.map((customer: any) => (
                     <button
                       key={customer.id}
-                      onClick={() => goTo('/admin/customers', customer.id)}
+                      onClick={() => goTo(`${ADMIN_BASE_PATH}/customers`, customer.id)}
                       className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors text-left group"
                     >
                       <div

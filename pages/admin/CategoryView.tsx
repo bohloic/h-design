@@ -46,6 +46,17 @@ export const CategoryView = () => {
     fetchCategories();
   }, []);
 
+  // ⌨️ FERMETURE MODAL AVEC ÉCHAP
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModalOpen) {
+        resetForm();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
   // --- GESTION FORMULAIRE ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

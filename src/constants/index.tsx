@@ -71,6 +71,8 @@ export const PRODUCTS = [
   }
 ];
 
+export const ADMIN_BASE_PATH = '/h-design-hq-manage-x92';
+
 export const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
