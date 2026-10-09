@@ -44,8 +44,67 @@ export const Sidebar = ({
   const fetchBadges = async () => {
     try {
       const response = await authFetch('/api/admin/badges');
-      if (response.ok) {
-        setBadges(await response.json());
+      if (response && response.ok) {
+        const data = await response.json();
+        setBadges(data);
+        return;
+      }
+      
+      // Fallback local : calculer directement depuis les commandes si l'endpoint badges est indisponible
+      const ordersRes = await authFetch('/api/admin/orders');
+      if (ordersRes && ordersRes.ok) {
+        const rawOrders = await ordersRes.json();
+        const allOrders = (Array.isArray(rawOrders) ? rawOrders : (rawOrders.orders || [])).map((order: any) => {
+          let items = order.items;
+          if (typeof items === 'string') {
+            try { items = JSON.parse(items); } catch(e) { items = []; }
+          }
+          return { ...order, items: Array.isArray(items) ? items : [] };
+        });
+
+        const pendingDesignsCount = allOrders.filter((order: any) => {
+          const statusLower = String(order.status || '').toLowerCase().trim();
+          const isValidationStatus = 
+            statusLower === 'paid_waiting' || 
+            statusLower === 'paid_waiting_validation' ||
+            statusLower === 'waiting_validation' ||
+            statusLower === 'pending_approval' ||
+            statusLower.includes('validation') ||
+            statusLower.includes('valider');
+
+          const hasUnapprovedCustomItem = order.items?.some((item: any) => {
+            let designData: any = null;
+            try {
+              if (item.customization) {
+                designData = typeof item.customization === 'string' 
+                  ? JSON.parse(item.customization) 
+                  : item.customization;
+              }
+            } catch (e) {}
+            
+            const isCustom = !!(
+              item.customization || 
+              item.design || 
+              item.customization_image ||
+              designData?.customizationImage || 
+              (designData?.elements && designData.elements.length > 0)
+            );
+            
+            const itemStatusLower = String(item.design_status || '').toLowerCase().trim();
+            const isApproved = ['validé', 'approved', 'valide'].includes(itemStatusLower);
+            
+            return isCustom && !isApproved;
+          });
+
+          return isValidationStatus || hasUnapprovedCustomItem;
+        }).length;
+
+        const pendingOrdersCount = allOrders.filter((order: any) => {
+          const s = String(order.status || '').toLowerCase();
+          return s === 'pending' || s.includes('attente de paiement');
+        }).length;
+
+        setBadges({ pendingDesigns: pendingDesignsCount, pendingOrders: pendingOrdersCount });
       }
     } catch (error) {
       console.error("Erreur fetch badges:", error);

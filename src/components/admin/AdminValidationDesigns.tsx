@@ -24,14 +24,25 @@ export const AdminValidationDesigns = () => {
             if (showLoader) setLoading(true);
             const response = await authFetch('/api/admin/orders'); 
             if (response.ok) {
-                const allOrders = await response.json();
+                const rawOrders = await response.json();
+                const allOrders = (Array.isArray(rawOrders) ? rawOrders : (rawOrders.orders || [])).map((order: any) => {
+                    let items = order.items;
+                    if (typeof items === 'string') {
+                        try { items = JSON.parse(items); } catch(e) { items = []; }
+                    }
+                    return { ...order, items: Array.isArray(items) ? items : [] };
+                });
                 
-                // 🪄 Filtrage précis : uniquement les commandes avec des designs personnalisés en attente
+                // 🪄 Filtrage précis : uniquement les commandes avec des designs personnalisés en attente de validation
                 const filteredPending = allOrders.filter((order: any) => {
+                    const statusLower = String(order.status || '').toLowerCase().trim();
                     const isValidationStatus = 
-                        order.status === 'paid_waiting' || 
-                        (order.status && order.status.toLowerCase().includes('validation')) ||
-                        order.status === 'Payé - Validation Design';
+                        statusLower === 'paid_waiting' || 
+                        statusLower === 'paid_waiting_validation' ||
+                        statusLower === 'waiting_validation' ||
+                        statusLower === 'pending_approval' ||
+                        statusLower.includes('validation') ||
+                        statusLower.includes('valider');
 
                     const hasUnapprovedCustomItem = order.items?.some((item: any) => {
                         let designData: any = null;
@@ -43,15 +54,24 @@ export const AdminValidationDesigns = () => {
                             }
                         } catch (e) {}
                         
-                        const isCustom = !!(designData?.customizationImage || (designData?.elements && designData.elements.length > 0) || item.customization);
-                        const isNotApproved = !['Validé', 'approved'].includes(item.design_status);
-                        return isCustom && isNotApproved;
+                        const isCustom = !!(
+                            item.customization || 
+                            item.design || 
+                            item.customization_image ||
+                            designData?.customizationImage || 
+                            (designData?.elements && designData.elements.length > 0)
+                        );
+                        
+                        const itemStatusLower = String(item.design_status || '').toLowerCase().trim();
+                        const isApproved = ['validé', 'approved', 'valide'].includes(itemStatusLower);
+                        
+                        return isCustom && !isApproved;
                     });
 
                     return isValidationStatus || hasUnapprovedCustomItem;
                 });
 
-                setPendingOrders(filteredPending.length > 0 ? filteredPending : allOrders.filter((o: any) => o.items?.some((i: any) => i.customization)));
+                setPendingOrders(filteredPending);
             }
         } catch (error) {
             console.error("Erreur chargement des designs :", error);

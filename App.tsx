@@ -4,6 +4,7 @@ import { CartItem } from './types';
 
 // Components
 import Navbar from '@/components/elements/Navbar';
+import MobileBottomNav from '@/components/elements/MobileBottomNav';
 import CartDrawer from '@/components/cart/CartDrawer';
 import Footer from '@/components/elements/Footer';
 import ScrollToTop from '@/components/tools/ScrollToTop';
@@ -134,6 +135,11 @@ const AppShell: React.FC<{
           onLogout={logout}
           user={user}
         />
+      )}
+
+      {/* 📱 Barre de navigation mobile fixe (TechNova / Learnova UX) */}
+      {!hidePublicLayout && !isCustomizerZone && (
+        <MobileBottomNav cartCount={cartCount} onOpenCart={onOpenCart} />
       )}
 
       {/* 💬 ChatBot & Support (Caché en Admin) */}

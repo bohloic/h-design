@@ -204,3 +204,71 @@ img {
   max-width: 100%;
 }
 
+/* 📱 OPTIMISATION RESPONSIVE MOBILE & ESPACEMENT BOTTOM NAV */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: 4.5rem;
+  }
+}
+
+/* 🎨 REGLAGES DES COULEURS DES TEXTES ET CONTRASTES SELON CHAQUE MODE & THEME */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.dark .bg-white {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-800,
+.dark .text-slate-900,
+.dark .text-slate-700 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-200 {
+  border-color: #334155 !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: #0f172a !important;
+}
+
+/* 🌐 COMPATIBILITÉ ANCIENS NAVIGATEURS (Safari <15, Firefox anciens, Chrome anciens) */
+@-webkit-keyframes smoothFadeIn {
+  from { opacity: 0; -webkit-transform: translateY(8px); transform: translateY(8px); }
+  to { opacity: 1; -webkit-transform: translateY(0); transform: translateY(0); }
+}
+
+@supports not (backdrop-filter: blur(8px)) {
+  .backdrop-blur-md, .backdrop-blur-sm {
+    background-color: rgba(15, 23, 42, 0.95) !important;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+

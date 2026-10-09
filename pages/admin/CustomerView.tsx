@@ -124,29 +124,80 @@ export const CustomerView = () => {
     setLoadingOrders(true);
     try {
       let ordersList: any[] = [];
+
+      // 1. Tenter l'endpoint direct spécifique à l'utilisateur
+      try {
+        const userDirectRes = await authFetch(`/api/users/${customer.id}/orders`);
+        if (userDirectRes && userDirectRes.ok) {
+          const directData = await userDirectRes.json();
+          const list = Array.isArray(directData) ? directData : (directData.orders || []);
+          if (list.length > 0) ordersList.push(...list);
+        }
+      } catch (e) { /* Fallback silencieux vers les autres endpoints */ }
+
+      // 2. Fetcher la liste globale des commandes admin
       const res = await authFetch('/api/admin/orders');
-      if (res.ok) {
+      if (res && res.ok) {
         const rawData = await res.json();
-        ordersList = Array.isArray(rawData) ? rawData : (rawData.orders || []);
+        const list = Array.isArray(rawData) ? rawData : (rawData.orders || []);
+        ordersList.push(...list);
       } else {
-        // Fallback endpoint public/client /api/orders
+        // Fallback endpoint public /api/orders
         const fallbackRes = await authFetch('/api/orders');
-        if (fallbackRes.ok) {
+        if (fallbackRes && fallbackRes.ok) {
           const rawData = await fallbackRes.json();
-          ordersList = Array.isArray(rawData) ? rawData : (rawData.orders || []);
+          const list = Array.isArray(rawData) ? rawData : (rawData.orders || []);
+          ordersList.push(...list);
         }
       }
 
+      // Dédupliquer la liste globale des commandes par ID de commande
+      const uniqueOrdersMap = new Map();
+      ordersList.forEach(o => {
+        if (o && o.id) uniqueOrdersMap.set(String(o.id), o);
+      });
+      const allOrders = Array.from(uniqueOrdersMap.values());
+
       const customerEmail = (customer.email || '').toLowerCase().trim();
       const customerId = String(customer.id);
+      const cleanCustomerPhone = customer.phone ? String(customer.phone).replace(/\D/g, '') : '';
 
-      // Filtrer les commandes par id client ou email client sur tous les champs d'identification possibles
-      const userOrders = ordersList.filter((o: any) => {
-        const matchId = String(o.user_id || o.customer_id || o.user?.id || '') === customerId;
-        const matchEmail = [o.customer_email, o.email, o.user_email, o.user?.email]
-          .filter(Boolean)
-          .some(e => String(e).toLowerCase().trim() === customerEmail);
-        return matchId || matchEmail;
+      // 3. Filtrer les commandes par ID, email ou téléphone avec parsing sécurisé
+      const userOrders = allOrders.filter((o: any) => {
+        const matchId = 
+          (o.user_id && String(o.user_id) === customerId) ||
+          (o.userId && String(o.userId) === customerId) ||
+          (o.customer_id && String(o.customer_id) === customerId) ||
+          (o.client_id && String(o.client_id) === customerId) ||
+          (o.user?.id && String(o.user.id) === customerId);
+
+        const possibleEmails = [
+          o.customer_email, o.email, o.user_email, o.customerEmail, o.user?.email,
+          o.guest_email, o.client_email,
+          o.shipping_address?.email, o.billing_address?.email,
+          o.shippingAddress?.email, o.billingAddress?.email
+        ].filter(Boolean).map(e => String(e).toLowerCase().trim());
+
+        const matchEmail = customerEmail && possibleEmails.includes(customerEmail);
+
+        const possiblePhones = [
+          o.phone, o.customer_phone, o.user_phone, o.user?.phone,
+          o.shipping_address?.phone, o.billing_address?.phone
+        ].filter(Boolean).map(p => String(p).replace(/\D/g, ''));
+
+        const matchPhone = cleanCustomerPhone && cleanCustomerPhone.length >= 6 && possiblePhones.some(p => p.includes(cleanCustomerPhone) || cleanCustomerPhone.includes(p));
+
+        return matchId || matchEmail || matchPhone;
+      }).map((o: any) => {
+        let items = o.items;
+        if (typeof items === 'string') {
+          try { items = JSON.parse(items); } catch(e) { items = []; }
+        }
+        return {
+          ...o,
+          items: Array.isArray(items) ? items : [],
+          total_amount: typeof o.total_amount === 'number' ? o.total_amount : parseFloat(o.total_amount || 0)
+        };
       });
 
       setCustomerOrders(userOrders);
