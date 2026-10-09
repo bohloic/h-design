@@ -211,8 +211,105 @@ img {
   }
 }
 
-/* 🎨 REGLAGES DES COULEURS DES TEXTES ET CONTRASTES SELON CHAQUE MODE & THEME */
+/* ====================================================
+   🎨 DESIGN TOKENS (LIGHT / DARK MODE ACCESSIBILITÉ WCAG)
+   ==================================================== */
+:root {
+  --bg-main: #ffffff;
+  --bg-sec: #f3f4f6;
+  --bg-card: #ffffff;
+  --text-main: #111827;
+  --text-muted: #4b5563;
+  --border-color: #e5e7eb;
+
+  /* Button Tokens */
+  --btn-outline-border: #111827;
+  --btn-outline-text: #111827;
+  --btn-outline-bg: transparent;
+  --btn-outline-hover-bg: #111827;
+  --btn-outline-hover-text: #ffffff;
+
+  --btn-filter-bg: #ffffff;
+  --btn-filter-text: #4b5563;
+  --btn-filter-border: #e5e7eb;
+  --btn-filter-active-bg: var(--theme-primary, #1e3a8a);
+  --btn-filter-active-text: #ffffff;
+}
+
+.dark {
+  --bg-main: #111827;
+  --bg-sec: #1f2937;
+  --bg-card: #1f2937;
+  --text-main: #f9fafb;
+  --text-muted: #d1d5db;
+  --border-color: #374151;
+
+  /* Button Tokens */
+  --btn-outline-border: #f9fafb;
+  --btn-outline-text: #f9fafb;
+  --btn-outline-bg: transparent;
+  --btn-outline-hover-bg: #f9fafb;
+  --btn-outline-hover-text: #111827;
+
+  --btn-filter-bg: #1f2937;
+  --btn-filter-text: #d1d5db;
+  --btn-filter-border: #374151;
+  --btn-filter-active-bg: var(--theme-primary, #1e3a8a);
+  --btn-filter-active-text: #ffffff;
+}
+
+/* ====================================================
+   🖼️ REQUIREMENT 2: HERO SECTION OVERLAY & TEXT SHADOW
+   ==================================================== */
+.hero-image-overlay {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+.hero-text-shadow {
+  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ====================================================
+   🔘 REQUIREMENT 3: OPTIMISATION DES BOUTONS (WCAG >= 4.5:1)
+   ==================================================== */
+.btn-outline {
+  background-color: var(--btn-outline-bg);
+  color: var(--btn-outline-text) !important;
+  border: 2px solid var(--btn-outline-border);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-outline:hover {
+  background-color: var(--btn-outline-hover-bg) !important;
+  color: var(--btn-outline-hover-text) !important;
+  border-color: var(--btn-outline-hover-bg) !important;
+}
+
+.btn-category-filter {
+  background-color: var(--btn-filter-bg);
+  color: var(--btn-filter-text) !important;
+  border: 1px solid var(--btn-filter-border);
+  transition: all 0.2s ease;
+}
+
+.btn-category-filter:hover {
+  border-color: var(--theme-primary, #1e3a8a);
+  color: var(--text-main) !important;
+}
+
+.btn-category-filter.active {
+  background-color: var(--btn-filter-active-bg) !important;
+  color: var(--btn-filter-active-text) !important;
+  border-color: var(--btn-filter-active-bg) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ====================================================
+   🎨 REGLAGES STRICTS DES COULEURS ET CONTRASTES (Light/Dark Mode)
+   ==================================================== */
 body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -221,34 +318,41 @@ body {
 }
 
 .dark body {
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: #111827 !important;
+  color: #f9fafb !important;
 }
 
 .dark .bg-white {
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
 }
 
-.dark .text-slate-800,
+.dark .bg-offwhite,
+.dark .bg-slate-50,
+.dark .bg-slate-100 {
+  background-color: #111827 !important;
+}
+
 .dark .text-slate-900,
-.dark .text-slate-700 {
-  color: #f1f5f9 !important;
+.dark .text-slate-800,
+.dark .text-black {
+  color: #f9fafb !important;
 }
 
+.dark .text-slate-700,
 .dark .text-slate-600,
-.dark .text-slate-500 {
-  color: #94a3b8 !important;
+.dark .text-slate-500,
+.dark .text-slate-400,
+.dark .text-gray-500,
+.dark .text-gray-600 {
+  color: #d1d5db !important;
 }
 
 .dark .border-slate-100,
-.dark .border-slate-200 {
-  border-color: #334155 !important;
-}
-
-.dark .bg-slate-50,
-.dark .bg-slate-100 {
-  background-color: #0f172a !important;
+.dark .border-slate-200,
+.dark .border-slate-300,
+.dark .border-slate-800 {
+  border-color: #374151 !important;
 }
 
 /* 🌐 COMPATIBILITÉ ANCIENS NAVIGATEURS (Safari <15, Firefox anciens, Chrome anciens) */

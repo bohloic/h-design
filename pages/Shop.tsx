@@ -200,36 +200,36 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
   // (Loading géré directement avec Skeleton Loaders dans le composant principal)
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12 min-h-screen bg-offwhite dark:bg-carbon text-slate-900 dark:text-pure transition-colors">
+    <div className="max-w-7xl mx-auto px-4 py-8 lg:py-12 min-h-screen bg-[#F3F4F6] dark:bg-[#111827] text-[#111827] dark:text-[#F9FAFB] transition-colors">
 
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
         <div>
-          <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-pure mb-2 uppercase tracking-tight">La Boutique</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-lg">Trouvez la pièce parfaite pour votre style.</p>
+          <h1 className="text-3xl md:text-4xl font-black text-[#111827] dark:text-[#F9FAFB] mb-2 uppercase tracking-tight">La Boutique</h1>
+          <p className="text-[#4B5563] dark:text-[#D1D5DB] text-lg">Trouvez la pièce parfaite pour votre style.</p>
         </div>
         <div className="relative w-full md:w-80">
           <input
             type="text" placeholder="Rechercher..."
             value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full focus:outline-none transition-all shadow-sm theme-search-input text-slate-900 dark:text-pure placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-slate-800 rounded-full focus:outline-none transition-all shadow-sm theme-search-input text-[#111827] dark:text-[#F9FAFB] placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
           <Search className="absolute left-4 top-3.5 text-slate-400 dark:text-slate-500 w-5 h-5" />
         </div>
       </div>
 
       {/* BARRE MOBILE */}
-      <div className="lg:hidden mb-6 flex gap-3 sticky top-[70px] z-30 bg-white/95 dark:bg-carbon/95 backdrop-blur-md py-3 -mx-4 px-4 border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+      <div className="lg:hidden mb-6 flex gap-3 sticky top-[70px] z-30 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md py-3 -mx-4 px-4 border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
         <button
           onClick={() => setIsMobileFilterOpen(true)}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-bold shadow-md active:scale-95 transition-transform text-sm border border-slate-200 dark:border-slate-700"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 btn-outline rounded-xl font-bold shadow-sm active:scale-95 transition-transform text-sm cursor-pointer"
         >
           <SlidersHorizontal size={16} /> Filtres
         </button>
         <div className="flex-1 relative">
           <select
             value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}
-            className="w-full h-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl font-medium outline-none text-sm appearance-none text-slate-900 dark:text-pure transition-colors"
+            className="w-full h-full px-4 py-3 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-slate-800 rounded-xl font-medium outline-none text-sm appearance-none text-[#111827] dark:text-[#F9FAFB] transition-colors cursor-pointer"
           >
             <option value="default">Pertinence</option>
             <option value="priceAsc">Prix: - cher</option>
@@ -243,18 +243,18 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
         {/* SIDEBAR */}
         <aside className={`
-            fixed inset-0 z-[60] bg-offwhite dark:bg-carbon transition-transform duration-300
+            fixed inset-0 z-[60] bg-[#F3F4F6] dark:bg-[#111827] transition-transform duration-300
             flex flex-col h-full
             lg:static lg:h-auto lg:w-72 lg:bg-transparent lg:block lg:z-auto lg:translate-x-0
             ${isMobileFilterOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
 
           {/* Header Sidebar Mobile */}
-          <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-offwhite dark:bg-carbon lg:hidden transition-colors">
-            <h2 className="text-xl font-black text-slate-900 dark:text-pure uppercase">Filtres</h2>
+          <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-[#F3F4F6] dark:bg-[#111827] lg:hidden transition-colors">
+            <h2 className="text-xl font-black text-[#111827] dark:text-[#F9FAFB] uppercase">Filtres</h2>
             <button
               onClick={() => setIsMobileFilterOpen(false)}
-              className="p-2 bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-colors"
+              className="p-2 bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 text-[#111827] dark:text-[#F9FAFB] transition-colors"
             >
               <X size={20} />
             </button>
@@ -264,8 +264,8 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
             {/* Tri (Desktop) */}
             <div className="hidden lg:block pb-6 border-b border-slate-200 dark:border-slate-800 transition-colors">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2"><ArrowUpDown size={14} /> Trier par</h3>
-              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium cursor-pointer outline-none hover:border-slate-300 dark:hover:border-slate-700 transition-colors text-slate-900 dark:text-pure">
+              <h3 className="font-bold text-xs uppercase tracking-wider text-[#4B5563] dark:text-[#D1D5DB] mb-4 flex items-center gap-2"><ArrowUpDown size={14} /> Trier par</h3>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="w-full px-4 py-3 bg-white dark:bg-[#1F2937] border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium cursor-pointer outline-none hover:border-slate-300 dark:hover:border-slate-700 transition-colors text-[#111827] dark:text-[#F9FAFB]">
                 <option value="default">Pertinence</option>
                 <option value="priceAsc">Prix croissant</option>
                 <option value="priceDesc">Prix décroissant</option>
@@ -274,16 +274,12 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
             {/* GENRE */}
             <div className="mb-8 mt-6 lg:mt-8">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2"><Users size={14} /> Genre</h3>
+              <h3 className="font-bold text-xs uppercase tracking-wider text-[#4B5563] dark:text-[#D1D5DB] mb-4 flex items-center gap-2"><Users size={14} /> Genre</h3>
               <div className="flex flex-wrap gap-2">
                 {genders.map(gender => (
                   <button
                     key={gender} onClick={() => setActiveGender(gender)}
-                    style={activeGender === gender ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
-                    className={`px-3 py-2 rounded-lg text-sm font-bold transition-all border ${activeGender === gender
-                        ? 'text-white shadow-md'
-                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'
-                      }`}
+                    className={`px-3.5 py-2 rounded-lg text-sm font-bold transition-all btn-category-filter cursor-pointer ${activeGender === gender ? 'active shadow-md' : ''}`}
                   >
                     {gender}
                   </button>
@@ -293,16 +289,12 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
             {/* COUPE */}
             <div className="mb-8">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2"><Shirt size={14} /> Coupe</h3>
+              <h3 className="font-bold text-xs uppercase tracking-wider text-[#4B5563] dark:text-[#D1D5DB] mb-4 flex items-center gap-2"><Shirt size={14} /> Coupe</h3>
               <div className="space-y-2">
                 {availableCategories.map(cat => (
                   <button
                     key={cat} onClick={() => setActiveCategory(cat)}
-                    style={activeCategory === cat ? { backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)', color: 'var(--theme-primary)', borderColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)' } : {}}
-                    className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeCategory === cat
-                        ? 'shadow-sm border'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 border-transparent'
-                      }`}
+                    className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all btn-category-filter cursor-pointer ${activeCategory === cat ? 'active font-bold shadow-sm' : ''}`}
                   >
                     {cat}
                   </button>
@@ -312,16 +304,12 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
             {/* TAILLE */}
             <div className="mb-8">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2"><Ruler size={14} /> Taille</h3>
+              <h3 className="font-bold text-xs uppercase tracking-wider text-[#4B5563] dark:text-[#D1D5DB] mb-4 flex items-center gap-2"><Ruler size={14} /> Taille</h3>
               <div className="flex flex-wrap gap-2">
                 {availableSizes.map(size => (
                   <button
                     key={size} onClick={() => setActiveSize(size)}
-                    style={activeSize === size ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
-                    className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-bold transition-all border ${activeSize === size
-                        ? 'text-white shadow-md'
-                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-600'
-                      }`}
+                    className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-bold transition-all btn-category-filter cursor-pointer ${activeSize === size ? 'active shadow-md' : ''}`}
                   >
                     {size === 'Toutes' ? 'All' : size}
                   </button>
@@ -331,19 +319,19 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
             {/* COULEUR */}
             <div className="mb-8">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2"><Palette size={14} /> Couleur</h3>
+              <h3 className="font-bold text-xs uppercase tracking-wider text-[#4B5563] dark:text-[#D1D5DB] mb-4 flex items-center gap-2"><Palette size={14} /> Couleur</h3>
               <div className="flex flex-wrap gap-3">
                 {availableColors.map((col, idx) => (
                   <button
                     key={idx} onClick={() => setActiveColor(col.name)} title={col.name}
-                    className={`w-9 h-9 rounded-full border shadow-sm transition-transform flex items-center justify-center ${activeColor === col.name ? 'ring-2 ring-offset-2 scale-110 border-transparent' : 'hover:scale-110'
+                    className={`w-9 h-9 rounded-full border shadow-sm transition-transform flex items-center justify-center cursor-pointer ${activeColor === col.name ? 'ring-2 ring-offset-2 scale-110 border-transparent' : 'hover:scale-110'
                       }`}
                     style={{
                       backgroundColor: col.name === 'Toutes' ? 'transparent' : col.hex,
                       ...(activeColor === col.name ? { '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties : {})
                     }}
                   >
-                    {col.name === 'Toutes' && <span className="text-[10px] font-bold text-slate-500">All</span>}
+                    {col.name === 'Toutes' && <span className="text-[10px] font-bold text-[#4B5563] dark:text-[#D1D5DB]">All</span>}
                     {activeColor === col.name && col.name !== 'Toutes' && <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${col.name === 'Blanc' || col.name === 'Jaune' ? 'bg-slate-900' : 'bg-white'}`} />}
                   </button>
                 ))}
@@ -352,16 +340,12 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
             {/* COLLECTIONS */}
             <div className="pt-6 border-t border-slate-200 dark:border-slate-800 mb-8 transition-colors">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2"><Filter size={14} /> Collections</h3>
+              <h3 className="font-bold text-xs uppercase tracking-wider text-[#4B5563] dark:text-[#D1D5DB] mb-4 flex items-center gap-2"><Filter size={14} /> Collections</h3>
               <div className="space-y-2">
                 {collections.map(col => (
                   <button
                     key={col} onClick={() => { setActiveCollection(col); setIsMobileFilterOpen(false); }}
-                    style={activeCollection === col ? { backgroundColor: 'var(--theme-primary)' } : {}}
-                    className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${activeCollection === col
-                        ? 'text-white shadow-lg'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                      }`}
+                    className={`w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all btn-category-filter cursor-pointer ${activeCollection === col ? 'active font-bold shadow-lg' : ''}`}
                   >
                     {col}
                   </button>
@@ -379,7 +363,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
           {loading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 pb-12">
               {Array.from({ length: 8 }).map((_, idx) => (
-                <div key={idx} className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 animate-pulse flex flex-col h-80">
+                <div key={idx} className="bg-white dark:bg-[#1F2937] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 animate-pulse flex flex-col h-80">
                   <div className="w-full h-48 bg-slate-200 dark:bg-slate-800 rounded-xl mb-4" />
                   <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2" />
                   <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-auto" />
@@ -391,16 +375,15 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
               ))}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-24 bg-slate-50 dark:bg-slate-900/40 rounded-[2rem] flex flex-col items-center justify-center animate-in fade-in zoom-in-95 mx-4 border border-slate-200 dark:border-slate-800 transition-colors">
-              <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-6 transition-colors">
-                <Search className="w-8 h-8 text-slate-400" />
+            <div className="text-center py-24 bg-white dark:bg-[#1F2937] rounded-[2rem] flex flex-col items-center justify-center animate-in fade-in zoom-in-95 mx-4 border border-slate-200 dark:border-slate-800 transition-colors">
+              <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-6 transition-colors">
+                <Search className="w-8 h-8 text-[#4B5563] dark:text-[#D1D5DB]" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-pure mb-2">Aucun résultat trouvé</h3>
-              <p className="text-slate-500 mb-8 max-w-xs mx-auto">Essayez de modifier vos filtres ou cherchez un autre terme.</p>
+              <h3 className="text-xl font-bold text-[#111827] dark:text-[#F9FAFB] mb-2">Aucun résultat trouvé</h3>
+              <p className="text-[#4B5563] dark:text-[#D1D5DB] mb-8 max-w-xs mx-auto">Essayez de modifier vos filtres ou cherchez un autre terme.</p>
               <button
                 onClick={resetFilters}
-                style={{ backgroundColor: 'var(--theme-primary)' }}
-                className="px-8 py-3 text-white rounded-full font-bold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 opacity-95 hover:opacity-100"
+                className="btn-outline px-8 py-3 rounded-full font-bold cursor-pointer"
               >
                 Tout réinitialiser
               </button>
@@ -409,13 +392,13 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             <>
               <div className="mb-6 px-1">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                  <span className="text-slate-500 dark:text-slate-400 font-medium text-sm">{filteredProducts.length} articles</span>
+                  <span className="text-[#4B5563] dark:text-[#D1D5DB] font-medium text-sm">{filteredProducts.length} articles</span>
                   <div className="flex flex-wrap gap-2">
-                    {activeGender !== 'Tous' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">Genre: {activeGender} <button onClick={() => setActiveGender('Tous')}><X size={12} /></button></span>}
-                    {activeCategory !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">{activeCategory} <button onClick={() => setActiveCategory('Toutes')}><X size={12} /></button></span>}
-                    {activeSize !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">Taille: {activeSize} <button onClick={() => setActiveSize('Toutes')}><X size={12} /></button></span>}
-                    {activeColor !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">Couleur: {activeColor} <button onClick={() => setActiveColor('Toutes')}><X size={12} /></button></span>}
-                    {sortBy !== 'default' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold border text-white theme-bg-primary border-transparent">{sortBy === 'priceAsc' ? 'Prix ↑' : 'Prix ↓'} <button onClick={() => setSortBy('default')} className="opacity-80 hover:opacity-100"><X size={12} /></button></span>}
+                    {activeGender !== 'Tous' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-[#111827] dark:text-[#F9FAFB] border border-slate-200 dark:border-slate-700">Genre: {activeGender} <button onClick={() => setActiveGender('Tous')} className="cursor-pointer"><X size={12} /></button></span>}
+                    {activeCategory !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-[#111827] dark:text-[#F9FAFB] border border-slate-200 dark:border-slate-700">{activeCategory} <button onClick={() => setActiveCategory('Toutes')} className="cursor-pointer"><X size={12} /></button></span>}
+                    {activeSize !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-[#111827] dark:text-[#F9FAFB] border border-slate-200 dark:border-slate-700">Taille: {activeSize} <button onClick={() => setActiveSize('Toutes')} className="cursor-pointer"><X size={12} /></button></span>}
+                    {activeColor !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-[#111827] dark:text-[#F9FAFB] border border-slate-200 dark:border-slate-700">Couleur: {activeColor} <button onClick={() => setActiveColor('Toutes')} className="cursor-pointer"><X size={12} /></button></span>}
+                    {sortBy !== 'default' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold border text-white theme-bg-primary border-transparent">{sortBy === 'priceAsc' ? 'Prix ↑' : 'Prix ↓'} <button onClick={() => setSortBy('default')} className="opacity-80 hover:opacity-100 cursor-pointer"><X size={12} /></button></span>}
                   </div>
                 </div>
               </div>

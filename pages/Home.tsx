@@ -98,7 +98,7 @@ const Home: React.FC<HomeProps> = () => {
   }
 
   return (
-    <div className="overflow-x-hidden bg-offwhite dark:bg-carbon animate-in fade-in duration-700 font-sans text-slate-900 dark:text-pure transition-colors">
+    <div className="overflow-x-hidden bg-[#F3F4F6] dark:bg-[#111827] animate-in fade-in duration-700 font-sans text-[#111827] dark:text-[#F9FAFB] transition-colors">
 
       {/* ================= HERO SECTION ================= */}
       <section className="relative h-[85vh] flex items-center overflow-hidden">
@@ -108,38 +108,44 @@ const Home: React.FC<HomeProps> = () => {
             alt="Hero Fashion"
             className="w-full h-full object-cover object-center animate-slow-zoom"
           />
-          <div className="absolute inset-0 bg-black/30" />
+          {/* 🖼️ Overlay semi-transparent direct sur l'image */}
+          <div 
+            className="absolute inset-0 hero-image-overlay" 
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)' }} 
+          />
         </div>
 
         <div className="relative z-10 container mx-auto px-4 md:px-8">
-          <div className="max-w-3xl bg-white/10 backdrop-blur-md border border-white/20 p-8 md:p-12 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-10 duration-1000">
+          <div className="max-w-3xl bg-black/40 backdrop-blur-md border border-white/20 p-8 md:p-12 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-10 duration-1000">
             <span
-              className="inline-block py-1 px-3 rounded-full text-white text-xs font-bold uppercase tracking-widest mb-6"
+              className="inline-block py-1.5 px-4 rounded-full text-white text-xs font-bold uppercase tracking-widest mb-6 hero-text-shadow shadow-sm"
               style={{ backgroundColor: 'var(--theme-primary)' }}
             >
               Nouvelle Collection
             </span>
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white leading-tight mb-6 drop-shadow-lg">
+            {/* 🪄 Textes détachés visuellement avec text-shadow */}
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white leading-tight mb-6 hero-text-shadow">
               IMPRIMEZ <br /> VOTRE
-              <span className="rainbow-text ml-4">
+              <span className="rainbow-text ml-4 hero-text-shadow">
                 STYLE
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-white/90 mb-8 font-medium max-w-xl leading-relaxed">
+            <p className="text-lg md:text-xl text-white/95 mb-8 font-medium max-w-xl leading-relaxed hero-text-shadow">
               Créez des vêtements uniques ou découvrez des designs originaux créés par des artistes indépendants.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => navigate('/personnaliser/mon-design')}
-                className="group bg-white text-slate-900 px-8 py-4 rounded-full font-black text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2"
+                className="group bg-white text-[#111827] px-8 py-4 rounded-full font-black text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Palette className="w-5 h-5 group-hover:rotate-12 transition-transform" style={{ color: 'var(--theme-primary)' }} />
                 Je personnalise
               </button>
+              {/* 🔘 Bouton Outline dynamique (Noir en Clair, Blanc en Sombre) */}
               <button
                 onClick={() => navigate('/boutique')}
-                className="bg-slate-900/80 hover:bg-slate-900 text-white border border-white/20 px-8 py-4 rounded-full font-bold text-lg backdrop-blur-sm transition-all flex items-center justify-center gap-2 group"
+                className="btn-outline px-8 py-4 rounded-full font-bold text-lg backdrop-blur-sm transition-all flex items-center justify-center gap-2 group cursor-pointer hero-text-shadow"
               >
                 Acheter
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -150,10 +156,10 @@ const Home: React.FC<HomeProps> = () => {
       </section>
 
       {/* ================= CATEGORIES RAPIDES ================= */}
-      <section className="py-16 bg-slate-50 dark:bg-slate-900/50 transition-colors">
+      <section className="py-16 bg-[#F3F4F6] dark:bg-[#111827] transition-colors">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-black text-slate-900 dark:text-pure uppercase tracking-tight">Que cherchez-vous ?</h2>
+            <h2 className="text-3xl font-black text-[#111827] dark:text-[#F9FAFB] uppercase tracking-tight">Que cherchez-vous ?</h2>
             <div
               className="w-20 h-1 mx-auto mt-4 rounded-full"
               style={{ backgroundColor: 'var(--theme-primary)' }}
@@ -171,12 +177,12 @@ const Home: React.FC<HomeProps> = () => {
                 key={idx}
                 onClick={() => navigate('/boutique', { state: { gender: cat.label } })}
                 style={{ '--tw-border-opacity': 1, '--hover-border-color': 'var(--theme-primary)' } as React.CSSProperties}
-                className="group relative h-64 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-500"
+                className="group relative h-64 rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all duration-500 border border-slate-200 dark:border-slate-800"
               >
                 <SafeImage src={cat.img} alt={cat.label} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-85 group-hover:opacity-95 transition-opacity" />
                 <div className="absolute bottom-6 left-0 right-0 text-center">
-                  <span className="text-white font-bold text-xl uppercase tracking-widest border-b-2 border-transparent group-hover:border-[color:var(--hover-border-color)] pb-1 transition-all">
+                  <span className="text-white font-bold text-xl uppercase tracking-widest border-b-2 border-transparent group-hover:border-[color:var(--hover-border-color)] pb-1 transition-all hero-text-shadow">
                     {cat.label}
                   </span>
                 </div>
@@ -187,12 +193,12 @@ const Home: React.FC<HomeProps> = () => {
       </section>
 
       {/* ================= TRENDING SECTION ================= */}
-      <div className="bg-offwhite dark:bg-carbon pt-16 pb-8 transition-colors">
+      <div className="bg-[#FFFFFF] dark:bg-[#111827] pt-16 pb-8 transition-colors">
         <TrendingSection />
       </div>
 
       {/* ================= COMMENT ÇA MARCHE ================= */}
-      <section className="py-20 bg-slate-900 text-white overflow-hidden relative">
+      <section className="py-20 bg-slate-900 dark:bg-[#1F2937] text-white overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-10 pointer-events-none">
           <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full blur-[100px]" style={{ backgroundColor: 'var(--theme-primary)' }}></div>
           <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-600 rounded-full blur-[100px]"></div>
@@ -200,8 +206,8 @@ const Home: React.FC<HomeProps> = () => {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-16">
-            <span className="font-bold uppercase tracking-widest text-sm" style={{ color: 'var(--theme-primary)' }}>Simple & Rapide</span>
-            <h2 className="text-4xl md:text-5xl font-black mt-2">CRÉEZ VOTRE STYLE</h2>
+            <span className="font-bold uppercase tracking-widest text-sm text-blue-400">Simple & Rapide</span>
+            <h2 className="text-4xl md:text-5xl font-black mt-2 text-[#F9FAFB]">CRÉEZ VOTRE STYLE</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
@@ -217,8 +223,8 @@ const Home: React.FC<HomeProps> = () => {
                   {step.icon}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold mb-3">{step.title}</h3>
-                  <p className="text-slate-400 leading-relaxed max-w-xs mx-auto">{step.desc}</p>
+                  <h3 className="text-2xl font-bold mb-3 text-[#F9FAFB]">{step.title}</h3>
+                  <p className="text-[#D1D5DB] leading-relaxed max-w-xs mx-auto">{step.desc}</p>
                 </div>
               </div>
             ))}
@@ -227,7 +233,7 @@ const Home: React.FC<HomeProps> = () => {
           <div className="text-center mt-16">
             <button
               onClick={() => navigate('/personnaliser/mon-design')}
-              className="bg-white text-slate-900 hover:!text-white px-10 py-4 rounded-full font-black text-lg shadow-xl transition-colors hover-theme-bg"
+              className="btn-outline px-10 py-4 rounded-full font-black text-lg shadow-xl cursor-pointer"
             >
               Commencer la création
             </button>
@@ -236,18 +242,18 @@ const Home: React.FC<HomeProps> = () => {
       </section>
 
       {/* ================= NOUVELLE COLLECTION ================= */}
-      <section className="py-20 bg-offwhite dark:bg-carbon transition-colors">
+      <section className="py-20 bg-[#F3F4F6] dark:bg-[#111827] transition-colors">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-end mb-10 px-2">
             <div>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-pure uppercase">
+              <h2 className="text-3xl md:text-4xl font-black text-[#111827] dark:text-[#F9FAFB] uppercase">
                 Nouvelle Collection
               </h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Les pièces incontournables du moment.</p>
+              <p className="text-[#4B5563] dark:text-[#D1D5DB] mt-2 text-lg">Les pièces incontournables du moment.</p>
             </div>
             <button
               onClick={() => navigate('/boutique')}
-              className="hidden md:flex items-center gap-2 text-slate-900 dark:text-pure font-bold border-b-2 pb-1 transition-colors hover-theme-text-border"
+              className="hidden md:flex items-center gap-2 text-[#111827] dark:text-[#F9FAFB] font-bold border-b-2 pb-1 transition-colors hover-theme-text-border"
               style={{ borderColor: 'var(--theme-primary)' }}
             >
               Tout voir <ArrowRight size={18} />
@@ -259,8 +265,7 @@ const Home: React.FC<HomeProps> = () => {
           <div className="mt-8 text-center md:hidden">
             <button
               onClick={() => navigate('/boutique')}
-              className="font-bold border-2 px-6 py-2 rounded-full"
-              style={{ color: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' }}
+              className="btn-outline px-6 py-2.5 rounded-full font-bold text-sm"
             >
               Voir toute la boutique
             </button>
@@ -269,14 +274,14 @@ const Home: React.FC<HomeProps> = () => {
       </section>
 
       {/* ================= FEATURES (Réassurance) ================= */}
-      <section className="py-16 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-800 transition-colors">
+      <section className="py-16 bg-[#FFFFFF] dark:bg-[#1F2937] border-t border-slate-200 dark:border-slate-800 transition-colors">
         <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { icon: <Truck className="w-8 h-8" />, title: "Livraison Rapide", txt: "Expédition en 24/48h" },
             { icon: <ShieldCheck className="w-8 h-8" />, title: "Paiement Sécurisé", txt: "Mobile Money & Cartes" },
             { icon: <Star className="w-8 h-8" />, title: "Qualité Garantie", txt: "Satisfait ou remboursé" }
           ].map((feat, i) => (
-            <div key={i} className="flex items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-shadow">
+            <div key={i} className="flex items-center gap-4 bg-[#F3F4F6] dark:bg-[#111827] p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow">
               <div
                 className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
                 style={{ backgroundColor: 'color-mix(in srgb, var(--theme-primary) 20%, transparent)', color: 'var(--theme-primary)' }}
@@ -284,8 +289,8 @@ const Home: React.FC<HomeProps> = () => {
                 {feat.icon}
               </div>
               <div>
-                <h4 className="font-bold text-slate-900 dark:text-pure text-lg">{feat.title}</h4>
-                <p className="text-slate-500 dark:text-slate-400 text-sm">{feat.txt}</p>
+                <h4 className="font-bold text-[#111827] dark:text-[#F9FAFB] text-lg">{feat.title}</h4>
+                <p className="text-[#4B5563] dark:text-[#D1D5DB] text-sm">{feat.txt}</p>
               </div>
             </div>
           ))}
@@ -294,7 +299,6 @@ const Home: React.FC<HomeProps> = () => {
 
       {/* ================= AI ASSISTANT BANNER ================= */}
       <section className="container mx-auto px-4 my-16">
-        {/* 🪄 BANNIERE IA DYNAMIQUE */}
         <div
           className="rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-10"
           style={{ backgroundImage: 'linear-gradient(to right, var(--theme-primary), color-mix(in srgb, var(--theme-primary) 60%, black))' }}
@@ -307,21 +311,21 @@ const Home: React.FC<HomeProps> = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-4 backdrop-blur-sm">
               <Sparkles size={14} className="text-yellow-300" /> Assistant IA
             </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4 leading-tight">En panne d'inspiration ?</h2>
-            <p className="text-white/90 text-lg mb-8">Laissez notre intelligence artificielle vous trouver l'idée cadeau parfaite en quelques secondes.</p>
+            <h2 className="text-3xl md:text-5xl font-black mb-4 leading-tight hero-text-shadow">En panne d'inspiration ?</h2>
+            <p className="text-white/95 text-lg mb-8 hero-text-shadow">Laissez notre intelligence artificielle vous trouver l'idée cadeau parfaite en quelques secondes.</p>
 
-            <div className="bg-white p-2 rounded-2xl shadow-lg flex flex-col sm:flex-row gap-2">
+            <div className="bg-white dark:bg-[#111827] p-2 rounded-2xl shadow-lg flex flex-col sm:flex-row gap-2 border border-slate-200 dark:border-slate-800">
               <input
                 type="text"
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 placeholder="Ex: Cadeau romantique pour ma femme..."
-                className="flex-1 bg-transparent border-none outline-none text-slate-900 px-4 py-3 placeholder:text-slate-400"
+                className="flex-1 bg-transparent border-none outline-none text-[#111827] dark:text-[#F9FAFB] px-4 py-3 placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
               <button
                 onClick={handleAskAi}
                 disabled={isLoadingAi}
-                className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors"
+                className="bg-[var(--theme-primary)] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
               >
                 {isLoadingAi ? <Loader2 className="animate-spin" /> : <Send size={18} />}
                 <span className="hidden sm:inline">Générer</span>
@@ -340,10 +344,10 @@ const Home: React.FC<HomeProps> = () => {
                 <div className="prose prose-invert prose-sm max-w-none text-white/90 leading-relaxed font-medium">
                   <ReactMarkdown
                     components={{
-                      p: ({ node, ...props }) => <p {...props} className="mb-3 last:mb-0" />,
+                      p: ({ node, ...props }) => <p {...props} className="mb-3 last:mb-0 text-[#F9FAFB]" />,
                       ul: ({ node, ...props }) => <ul {...props} className="list-disc pl-5 mb-3 space-y-1" />,
-                      li: ({ node, ...props }) => <li {...props} className="text-white/80" />,
-                      strong: ({ node, ...props }) => <strong {...props} className="text-yellow-400 font-bold" />
+                      li: ({ node, ...props }) => <li {...props} className="text-[#D1D5DB]" />,
+                      strong: ({ node, ...props }) => <strong {...props} className="text-yellow-300 font-bold" />
                     }}
                   >
                     {aiResponse}

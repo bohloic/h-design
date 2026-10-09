@@ -126,7 +126,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
 
   return (
     <div 
-      className="group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full animate-fade-in"
+      className="group bg-white dark:bg-[#1F2937] rounded-2xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full animate-fade-in"
       onClick={() => navigate(`/boutique/produit/${product.slug}`)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); handleMouseLeave(); }}
@@ -134,7 +134,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
       {/* IMAGE */}
       <div className="relative aspect-[3/4] overflow-hidden bg-slate-100 dark:bg-black/20">
         
-        {/* 🔴 BADGE ÉPUISÉ (Reste sémantiquement rouge) */}
+        {/* 🔴 BADGE ÉPUISÉ */}
         {isOutOfStock && (
           <div className="absolute top-2 right-2 bg-red-600/95 text-white text-[10px] font-bold px-2.5 py-1 rounded shadow-sm z-20 flex items-center gap-1 backdrop-blur-md">
             <AlertCircle size={12} strokeWidth={3} />
@@ -149,7 +149,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         />
         
         {product.hasOptions && !isOutOfStock && (
-            <div className="absolute top-2 left-2 bg-slate-800/80 dark:bg-slate-900/80 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm z-10">
+            <div className="absolute top-2 left-2 bg-slate-900/80 dark:bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded backdrop-blur-sm z-10">
                 OPTIONS
             </div>
         )}
@@ -157,7 +157,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         <div className={`absolute bottom-3 left-0 right-0 flex justify-center gap-3 transition-all duration-300 transform z-20 ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
             <button 
                 onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
-                className={`bg-white dark:bg-carbon p-2.5 rounded-full shadow-lg transition-colors ${isInWishlist ? 'text-rose-500' : 'text-slate-900 dark:text-pure card-hover-theme-heart'}`}
+                className={`bg-white dark:bg-[#111827] p-2.5 rounded-full shadow-lg transition-colors ${isInWishlist ? 'text-rose-500' : 'text-[#111827] dark:text-[#F9FAFB] card-hover-theme-heart'}`}
                 title={isInWishlist ? "Retirer des favoris" : "Ajouter aux favoris"}
             >
                 <Heart size={18} fill={isInWishlist ? "currentColor" : "none"} />
@@ -171,7 +171,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                     ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
                     : isAdded
                     ? 'bg-emerald-600 text-white scale-105'
-                    : 'bg-slate-800 dark:bg-slate-900 text-white card-hover-theme-btn'
+                    : 'bg-[#111827] dark:bg-[#F9FAFB] text-white dark:text-[#111827] hover:bg-[var(--theme-primary)] dark:hover:bg-[var(--theme-primary)] dark:hover:text-white card-hover-theme-btn'
                 }`}
                 title={isOutOfStock && !product.hasOptions ? "Épuisé" : (product.hasOptions ? "Voir le produit" : "Ajouter au panier")}
             >
@@ -195,11 +195,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
 
       {/* INFO */}
       <div className="p-3 sm:p-4 flex flex-col flex-1">
-        <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest truncate mb-1">
+        <div className="text-[10px] text-[#4B5563] dark:text-[#D1D5DB] uppercase tracking-widest truncate mb-1 font-semibold">
             {product.category || product.category_name}
         </div>
         
-        <h3 className={`font-bold text-sm sm:text-base mb-2 truncate leading-tight transition-colors ${isOutOfStock ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-pure'}`}>
+        {/* 🎨 Titres des produits 100% lisibles en Mode Clair & Sombre */}
+        <h3 className={`font-bold text-sm sm:text-base mb-2 truncate leading-tight transition-colors ${isOutOfStock ? 'text-slate-400 line-through' : 'text-[#111827] dark:text-[#F9FAFB]'}`}>
             {product.name}
         </h3>
 
@@ -210,7 +211,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                     {displayColors.map((v: any, idx: number) => (
                         <button
                             key={v.id || idx}
-                            className={`w-4 h-4 rounded-full border border-slate-200 shadow-sm transition-transform hover:scale-125 focus:outline-none ring-1 ring-transparent hover:ring-slate-300 relative ${v.colorName === 'Blanc' ? 'bg-white' : ''}`}
+                            className={`w-4 h-4 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm transition-transform hover:scale-125 focus:outline-none ring-1 ring-transparent hover:ring-slate-300 relative ${v.colorName === 'Blanc' ? 'bg-white' : ''}`}
                             style={{ backgroundColor: v.finalColor }}
                             title={v.colorName}
                             onMouseEnter={(e) => v.image && handleVariantHover(e, v.image, v.colorName)}
@@ -223,7 +224,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                     ))}
                 </div>
             ) : (
-                <div className="text-[10px] text-slate-400 dark:text-slate-500 italic">Unique</div>
+                <div className="text-[10px] text-[#4B5563] dark:text-[#D1D5DB] italic">Unique</div>
             )}
         </div>
         
@@ -246,6 +247,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         }
         .card-hover-theme-btn:hover {
             background-color: var(--theme-primary) !important;
+            color: white !important;
         }
       `}</style>
     </div>
