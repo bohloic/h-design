@@ -6,6 +6,8 @@ import { Filter, Search, X, SlidersHorizontal, ArrowUpDown, Users, Palette, Rule
 import ProductCard from '../src/components/product/ProductCard';
 import Pagination from '../src/components/tools/Pagination';
 
+import { ProductGridSkeleton } from '../src/components/tools/ProductCardSkeleton';
+
 interface ShopProps {
   onAddToCart: (product: Product) => void;
 }
@@ -254,7 +256,8 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             <h2 className="text-xl font-black text-[#111827] dark:text-[#F9FAFB] uppercase">Filtres</h2>
             <button
               onClick={() => setIsMobileFilterOpen(false)}
-              className="p-2 bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 text-[#111827] dark:text-[#F9FAFB] transition-colors"
+              aria-label="Fermer les filtres"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 text-[#111827] dark:text-[#F9FAFB] transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
             >
               <X size={20} />
             </button>
@@ -354,6 +357,18 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             </div>
 
           </div>
+
+          {/* 📌 BOUTON STICKY MOBILE EN BAS DE LA MODALE DES FILTRES */}
+          <div className="sticky bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 lg:hidden z-20">
+            <button
+              onClick={() => setIsMobileFilterOpen(false)}
+              style={{ backgroundColor: 'var(--theme-primary)' }}
+              className="w-full py-3.5 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              Afficher {filteredProducts.length} résultat{filteredProducts.length > 1 ? 's' : ''}
+            </button>
+          </div>
+
         </aside>
 
         {isMobileFilterOpen && <div className="fixed inset-0 bg-black/60 z-50 lg:hidden backdrop-blur-sm" onClick={() => setIsMobileFilterOpen(false)} />}
@@ -361,19 +376,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
         {/* MAIN */}
         <main className="flex-1 min-h-[50vh]">
           {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 pb-12">
-              {Array.from({ length: 8 }).map((_, idx) => (
-                <div key={idx} className="bg-white dark:bg-[#1F2937] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 animate-pulse flex flex-col h-80">
-                  <div className="w-full h-48 bg-slate-200 dark:bg-slate-800 rounded-xl mb-4" />
-                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-auto" />
-                  <div className="flex justify-between items-center mt-4">
-                    <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
-                    <div className="w-8 h-8 bg-slate-200 dark:bg-slate-800 rounded-full" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ProductGridSkeleton count={8} />
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-24 bg-white dark:bg-[#1F2937] rounded-[2rem] flex flex-col items-center justify-center animate-in fade-in zoom-in-95 mx-4 border border-slate-200 dark:border-slate-800 transition-colors">
               <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-6 transition-colors">

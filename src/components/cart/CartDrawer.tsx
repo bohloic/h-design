@@ -41,7 +41,11 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
           <h2 className="text-xl font-bold flex items-center">
             Mon Panier <span className="ml-2">🛍️</span>
           </h2>
-          <button onClick={onClose} className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-pure hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+          <button 
+            onClick={onClose} 
+            aria-label="Fermer le panier"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-500 hover:text-slate-900 dark:hover:text-pure hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>

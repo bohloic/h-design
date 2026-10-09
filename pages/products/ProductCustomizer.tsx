@@ -391,6 +391,31 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     }
   }, [currentCanvasColor.hex]);
 
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  // 🪄 Détection ouverture du clavier virtuel (masque le header pour laisser 100% de la hauteur au vêtement)
+  useEffect(() => {
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        setIsKeyboardOpen(true);
+      }
+    };
+    const handleFocusOut = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+        setIsKeyboardOpen(false);
+      }
+    };
+
+    window.addEventListener('focusin', handleFocusIn);
+    window.addEventListener('focusout', handleFocusOut);
+    return () => {
+      window.removeEventListener('focusin', handleFocusIn);
+      window.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
   if (!selectedProduct) return (
     <div className="h-screen flex items-center justify-center flex-col gap-3 bg-slate-50 dark:bg-carbon">
       <LoadingSpinner size={100} />
@@ -401,8 +426,8 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] lg:h-[calc(100vh-64px)] bg-slate-50 dark:bg-carbon overflow-hidden relative transition-colors">
       
-      {/* HEADER */}
-      <div className="bg-white dark:bg-carbon border-b border-slate-200 dark:border-slate-800 p-3 flex justify-between items-center shadow-sm z-20 shrink-0 h-16 transition-colors">
+      {/* HEADER - Masquage dynamique lors du focus clavier */}
+      <div className={`bg-white dark:bg-carbon border-b border-slate-200 dark:border-slate-800 p-3 justify-between items-center shadow-sm z-20 shrink-0 h-16 transition-all duration-300 ${isKeyboardOpen ? '-translate-y-full hidden' : 'translate-y-0 flex'}`}>
           <div className="flex items-center gap-3">
              <button onClick={() => navigate(-1)} title="Retour" className="p-2 hover-theme-bg rounded-full transition-colors"><ArrowLeft size={20} className="text-slate-600 dark:text-slate-300"/></button>
              <div className="flex flex-col">
@@ -446,12 +471,22 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
       </div>
 
       <div className="flex flex-1 overflow-hidden relative z-10 min-h-0">
-        {/* SIDEBAR PRODUITS */}
-        <aside className={`absolute lg:relative inset-y-0 left-0 z-30 w-full lg:w-80 bg-white dark:bg-carbon border-r border-slate-200 dark:border-slate-800 shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} h-full`}>
+        {/* SIDEBAR PRODUITS - BOTTOM SHEET SUR MOBILE */}
+        <aside className={`fixed lg:relative inset-x-0 bottom-0 lg:inset-y-0 lg:left-0 z-40 w-full lg:w-80 bg-white dark:bg-[#111827] border-t lg:border-t-0 lg:border-r border-slate-200 dark:border-slate-800 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:-translate-x-full lg:translate-x-0'} max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
+            <div className="lg:hidden py-2 flex justify-center shrink-0">
+              <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+            </div>
             <div className="h-full flex flex-col">
                 <div className="lg:hidden p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 shrink-0">
                     <h3 className="font-bold text-slate-800 dark:text-pure flex items-center gap-2 text-sm"><Shirt size={18}/> Produits</h3>
-                    <button onClick={() => setMobileView('canvas')} title="Fermer" className="p-1"><X size={20} className="text-slate-400"/></button>
+                    <button 
+                      onClick={() => setMobileView('canvas')} 
+                      title="Fermer" 
+                      aria-label="Fermer le menu produits"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+                    >
+                      <X size={22} className="text-slate-500 dark:text-slate-300"/>
+                    </button>
                 </div>
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     <SidebarLeft products={products} categories={categories} onSelectProduct={(p) => handleSelectProduct(p)} selectedProductId={selectedProduct.id} />
@@ -467,13 +502,24 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                     className="absolute inset-0 pointer-events-none z-0 mix-blend-multiply opacity-10" 
                  ></div>
             </div>
-            {(mobileView === 'products' || mobileView === 'tools') && <div className="lg:hidden absolute inset-0 bg-black/40 z-20 backdrop-blur-sm transition-opacity" onClick={() => setMobileView('canvas')} />}
+            {(mobileView === 'products' || mobileView === 'tools') && <div className="lg:hidden fixed inset-0 bg-black/50 z-30 backdrop-blur-sm transition-opacity" onClick={() => setMobileView('canvas')} />}
         </main>
 
-        <aside className={`absolute lg:relative inset-y-0 right-0 z-30 w-full lg:w-80 bg-white dark:bg-carbon border-l border-slate-200 dark:border-slate-800 shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} h-full flex flex-col`}>
-             <div className="lg:hidden p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-pure shrink-0">
-                 <h3 className="font-bold flex items-center gap-2 text-sm"><Palette size={18}/> Outils</h3>
-                  <button onClick={() => setMobileView('canvas')} title="Fermer" className="p-1"><X size={20} className="text-slate-400"/></button>
+        {/* SIDEBAR OUTILS - BOTTOM SHEET SUR MOBILE */}
+        <aside className={`fixed lg:relative inset-x-0 bottom-0 lg:inset-y-0 lg:right-0 z-40 w-full lg:w-80 bg-white dark:bg-[#111827] border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-x-full lg:translate-x-0'} max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
+             <div className="lg:hidden py-2 flex justify-center shrink-0">
+               <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+             </div>
+             <div className="lg:hidden px-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-pure shrink-0">
+                 <h3 className="font-bold flex items-center gap-2 text-sm"><Palette size={18}/> Paramètres du Design</h3>
+                  <button 
+                    onClick={() => setMobileView('canvas')} 
+                    title="Fermer" 
+                    aria-label="Fermer les paramètres du design"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+                  >
+                    <X size={22} className="text-slate-500 dark:text-slate-300"/>
+                  </button>
              </div>
              <div className="flex-1 overflow-hidden">
                  <ToolsPanel onAddText={handleAddText} hideBaseDesign={hideBaseDesign} setHideBaseDesign={setHideBaseDesign} onAddImage={handleAddImage} onUpdateElement={handleUpdateElement} onDeleteElement={handleDeleteElement} onAIGenerate={handleAIGenerate} activeElement={designElements.find(el => el.id === activeElementId) || null} colors={toolsColors} selectedColor={currentCanvasColor} onSelectColor={(colorObj) => { const variant = availableColors.find(v => (v.hex || v.colorCode) === colorObj.hex); if (variant) setSelectedVariant(variant); }} />

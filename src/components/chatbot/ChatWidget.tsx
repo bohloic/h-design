@@ -132,7 +132,13 @@ const ChatWidget: React.FC = () => {
                 </p>
               </div>
             </div>
-            <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1 rounded-full transition-colors"><X size={18} /></button>
+            <button 
+              onClick={() => setIsOpen(false)} 
+              aria-label="Fermer le chat"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+            >
+              <X size={20} />
+            </button>
           </div>
 
           {/* Zone Messages — flex-1 + overflow pour que le chat défile sans pousser l'input */}
@@ -236,11 +242,11 @@ const ChatWidget: React.FC = () => {
         </div>
       )}
 
-      {/* Bouton Flottant */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{ backgroundColor: 'var(--theme-primary)' }}
-        className={`text-white p-3 md:p-4 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 relative backdrop-blur-sm ${!isOpen ? 'opacity-70 hover:opacity-100' : 'opacity-100'}`}
+        aria-label={isOpen ? "Fermer le chat" : "Ouvrir le chat"}
+        className={`min-w-[48px] min-h-[48px] flex items-center justify-center text-white p-3 md:p-4 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 relative z-50 backdrop-blur-sm cursor-pointer touch-target-44 ${!isOpen ? 'opacity-70 hover:opacity-100' : 'opacity-100'}`}
       >
         {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
         {!isOpen && (

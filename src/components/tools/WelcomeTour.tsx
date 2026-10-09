@@ -35,7 +35,8 @@ const WelcomeTour: React.FC = () => {
         {/* Bouton Fermer Rapide */}
         <button 
           onClick={closeTour}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+          aria-label="Fermer le guide"
+          className="absolute top-4 right-4 min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
         >
           <X size={20} />
         </button>

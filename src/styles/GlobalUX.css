@@ -305,6 +305,22 @@ img {
 }
 
 /* ====================================================
+   📏 TYPOGRAPHIE FLUIDE (clamp) & TOUCH TARGETS 44x44px
+   ==================================================== */
+.fluid-hero-title {
+  font-size: clamp(2rem, 7.5vw, 4.5rem) !important;
+  line-height: 1.15 !important;
+}
+
+.touch-target-44 {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* ====================================================
    🎨 REGLAGES STRICTS DES COULEURS ET CONTRASTES (Light/Dark Mode)
    ==================================================== */
 body {
@@ -353,6 +369,19 @@ body {
 .dark .border-slate-300,
 .dark .border-slate-800 {
   border-color: #374151 !important;
+}
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #1f2937 !important;
+  color: #f9fafb !important;
+  border-color: #374151 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #9ca3af !important;
 }
 
 /* 🌐 COMPATIBILITÉ ANCIENS NAVIGATEURS (Safari <15, Firefox anciens, Chrome anciens) */

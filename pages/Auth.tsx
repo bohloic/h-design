@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { authFetch } from '../src/utils/apiClient';
+import { ADMIN_BASE_PATH } from '../src/constants';
 import { Mail, Loader2, ShieldCheck, Eye, EyeOff, KeyRound, RefreshCw, ArrowLeft } from 'lucide-react';
 import { useNotificationStore } from '../src/store/useNotificationStore';
 import { jwtDecode } from 'jwt-decode';
@@ -162,7 +163,7 @@ function Auth() {
                 // 🪄 REDIRECTION INTELLIGENTE
                 const state = location.state as any;
                 const destination = data.user?.role === 'admin' 
-                    ? '/admin' 
+                    ? ADMIN_BASE_PATH 
                     : (state?.from?.pathname === '/checkout' ? '/checkout' : '/dashboard');
 
                 setTimeout(() => navigate(destination), 1000);
@@ -231,7 +232,7 @@ function Auth() {
                     // 🪄 REDIRECTION INTELLIGENTE (Fix Checkout Flow)
                     const state = location.state as any;
                     const destination = data.user?.role === 'admin' 
-                        ? '/admin' 
+                        ? ADMIN_BASE_PATH 
                         : (state?.from?.pathname === '/checkout' ? '/checkout' : '/dashboard');
 
                     setTimeout(() => navigate(destination), 500);

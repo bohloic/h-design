@@ -1,5 +1,6 @@
 import React from "react";
 import { Outlet, Link } from "react-router-dom";
+import { ADMIN_BASE_PATH } from "../constants";
 
 const AdminLayout: React.FC = () => {
   return (
@@ -8,9 +9,9 @@ const AdminLayout: React.FC = () => {
       <aside className="admin-sidebar">
         <h3>Admin Panel</h3>
         <nav>
-          <Link to="/admin">Vue d'ensemble</Link>
-          <Link to="/admin/produits">Produits</Link>
-          <Link to="/admin/commandes">Commandes</Link>
+          <Link to={ADMIN_BASE_PATH}>Vue d'ensemble</Link>
+          <Link to={`${ADMIN_BASE_PATH}/produits`}>Produits</Link>
+          <Link to={`${ADMIN_BASE_PATH}/commandes`}>Commandes</Link>
           <Link to="/">Retour au site</Link>
         </nav>
       </aside>

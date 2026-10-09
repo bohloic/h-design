@@ -157,16 +157,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         <div className={`absolute bottom-3 left-0 right-0 flex justify-center gap-3 transition-all duration-300 transform z-20 ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
             <button 
                 onClick={(e) => { e.stopPropagation(); toggleWishlist(product); }}
-                className={`bg-white dark:bg-[#111827] p-2.5 rounded-full shadow-lg transition-colors ${isInWishlist ? 'text-rose-500' : 'text-[#111827] dark:text-[#F9FAFB] card-hover-theme-heart'}`}
+                className={`min-w-[44px] min-h-[44px] w-11 h-11 bg-white dark:bg-[#111827] rounded-full shadow-lg transition-colors flex items-center justify-center ${isInWishlist ? 'text-rose-500' : 'text-[#111827] dark:text-[#F9FAFB] card-hover-theme-heart'}`}
                 title={isInWishlist ? "Retirer des favoris" : "Ajouter aux favoris"}
+                aria-label="Ajouter aux favoris"
             >
-                <Heart size={18} fill={isInWishlist ? "currentColor" : "none"} />
+                <Heart size={20} fill={isInWishlist ? "currentColor" : "none"} />
             </button>
             
             <button 
                 onClick={handleQuickAction}
                 disabled={isOutOfStock && !product.hasOptions}
-                className={`p-2.5 rounded-full shadow-lg transition-all duration-300 flex items-center gap-2 px-4 ${
+                className={`min-w-[44px] min-h-[44px] h-11 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center gap-2 px-4 ${
                   isOutOfStock && !product.hasOptions
                     ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
                     : isAdded
@@ -174,15 +175,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
                     : 'bg-[#111827] dark:bg-[#F9FAFB] text-white dark:text-[#111827] hover:bg-[var(--theme-primary)] dark:hover:bg-[var(--theme-primary)] dark:hover:text-white card-hover-theme-btn'
                 }`}
                 title={isOutOfStock && !product.hasOptions ? "Épuisé" : (product.hasOptions ? "Voir le produit" : "Ajouter au panier")}
+                aria-label="Action rapide produit"
             >
                 {isOutOfStock && !product.hasOptions ? (
-                    <AlertCircle size={18} />
+                    <AlertCircle size={20} />
                 ) : isAdded ? (
                     <span className="inline-flex items-center gap-1 font-bold text-xs"><span className="w-2 h-2 rounded-full bg-white animate-ping"></span>Ajouté !</span>
                 ) : product.hasOptions ? (
-                    <Eye size={18} />
+                    <Eye size={20} />
                 ) : (
-                    <ShoppingCart size={18} />
+                    <ShoppingCart size={20} />
                 )}
                 {!isAdded && (
                   <span className="text-xs font-bold hidden sm:inline">
@@ -204,23 +206,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
             {product.name}
         </h3>
 
-        {/* VARIANTES + MAIN COLOR */}
-        <div className="h-6 mb-2">
+        {/* VARIANTES + MAIN COLOR avec Zone Cliquable 44x44px pour Mobile */}
+        <div className="min-h-[44px] mb-1 flex items-center">
             {displayColors.length > 0 ? (
-                <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-1" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5" onClick={(e) => e.stopPropagation()}>
                     {displayColors.map((v: any, idx: number) => (
                         <button
                             key={v.id || idx}
-                            className={`w-4 h-4 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm transition-transform hover:scale-125 focus:outline-none ring-1 ring-transparent hover:ring-slate-300 relative ${v.colorName === 'Blanc' ? 'bg-white' : ''}`}
-                            style={{ backgroundColor: v.finalColor }}
+                            className="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center focus:outline-none cursor-pointer touch-target-44"
                             title={v.colorName}
+                            aria-label={`Couleur ${v.colorName}`}
                             onMouseEnter={(e) => v.image && handleVariantHover(e, v.image, v.colorName)}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if(v.image) setDisplayImage(v.image);
                                 setSelectedColorName(v.colorName);
                             }}
-                        />
+                        >
+                            <span
+                              className={`w-4 h-4 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm transition-transform hover:scale-125 block ${v.colorName === 'Blanc' ? 'bg-white' : ''}`}
+                              style={{ backgroundColor: v.finalColor }}
+                            />
+                        </button>
                     ))}
                 </div>
             ) : (

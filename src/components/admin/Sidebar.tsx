@@ -190,7 +190,8 @@ export const Sidebar = ({
             <button 
               onClick={onClose}
               title="Fermer le menu"
-              className="lg:hidden p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
+              aria-label="Fermer le menu"
+              className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl transition-all cursor-pointer relative z-50 touch-target-44 active:scale-95"
             >
               <X size={20} />
             </button>
@@ -320,8 +321,9 @@ export const Sidebar = ({
               </h3>
               <button 
                 onClick={() => setShowProfileModal(false)}
-                className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
                 title="Fermer (Échap)"
+                aria-label="Fermer la fenêtre du profil"
               >
                 <X size={20} />
               </button>

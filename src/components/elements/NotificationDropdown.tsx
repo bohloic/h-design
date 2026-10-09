@@ -12,7 +12,7 @@ export const NotificationDropdown: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const isAdminZone = location.pathname.startsWith('/admin');
+  const isAdminZone = location.pathname.startsWith(ADMIN_BASE_PATH);
 
   const token = localStorage.getItem('token');
 
@@ -82,7 +82,10 @@ export const NotificationDropdown: React.FC = () => {
     }
 
     if (notif.link) {
-      navigate(notif.link);
+      const targetLink = notif.link.startsWith('/admin') 
+        ? notif.link.replace(/^\/admin/, ADMIN_BASE_PATH) 
+        : notif.link;
+      navigate(targetLink);
       setIsOpen(false);
     }
   };

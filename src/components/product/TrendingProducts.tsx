@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { authFetch } from '../../utils/apiClient';
 import CollectionCarousel from '../../../pages/products/CollectionCarousel';
-import LoadingSpinner from '../../components/tools/LoadingSpinner';
+import { ProductGridSkeleton } from '../tools/ProductCardSkeleton';
 
 const TrendingSection = () => {
     // 🪄 Typage direct du state pour éviter les "as any" plus bas
@@ -47,12 +47,11 @@ const TrendingSection = () => {
             });
     }, []);
 
-    // 🪄 LOADER DYNAMIQUE PLUS PROPRE
+    // 🪄 SKELETON SCREEN FOR PERCEIVED PERFORMANCE
     if (loading) {
         return (
-            <div className="py-16 bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center border-t border-slate-200 dark:border-slate-800 transition-colors">
-                <LoadingSpinner size={32} className="animate-spin mb-3" />
-                <p className="text-slate-500 dark:text-slate-400 font-medium">Chargement des tendances...</p>
+            <div className="py-8 bg-transparent dark:bg-[#111827] transition-colors max-w-7xl mx-auto px-4">
+                <ProductGridSkeleton count={4} />
             </div>
         );
     }

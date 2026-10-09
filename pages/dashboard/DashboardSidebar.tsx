@@ -45,11 +45,13 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, activeTab, is
       `}>
         
         {/* BOUTON FERMER (Mobile seulement) */}
-        <div className="flex justify-end mb-4 lg:hidden">
-            <button onClick={onClose} className="p-2 bg-white dark:bg-slate-800 rounded-full shadow-sm text-slate-500 dark:text-slate-400">
+            <button 
+              onClick={onClose} 
+              aria-label="Fermer le menu"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-white dark:bg-slate-800 rounded-full shadow-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+            >
                 <X size={24} />
             </button>
-        </div>
 
         <div className="space-y-4 lg:space-y-6">
             {/* CARTE PROFIL */}

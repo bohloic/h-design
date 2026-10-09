@@ -7,6 +7,7 @@ import { useNotificationStore } from '../../src/store/useNotificationStore';
 import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
 import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
 import Pagination from '../../src/components/tools/Pagination';
+import { ADMIN_BASE_PATH } from '../../src/constants';
 
 // 🪄 LE TRADUCTEUR UNIVERSEL (Le nettoyeur de base de données)
 const normalizeStatus = (dbStatus: string) => {
@@ -145,7 +146,7 @@ export const OrderView = () => {
         title: "Statut mis à jour",
         message: `La commande #HD-${String(orderId).padStart(5, '0')} est passée à : ${translateStatus(newStatus)}`,
         type: newStatus === OrderStatus.CANCELLED || newStatus === OrderStatus.RETURNED ? 'error' : 'success',
-        link: `/admin/orders/${orderId}`
+        link: `${ADMIN_BASE_PATH}/orders/${orderId}`
       });
       
     } catch (error) {
@@ -280,8 +281,8 @@ export const OrderView = () => {
                                         </div>
                                         
                                         <button 
-                                            onClick={() => navigate(`/admin/orders/${order.id}`)}
-                                            className="p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 hover:text-slate-900 transition-colors"
+                                            onClick={() => navigate(`${ADMIN_BASE_PATH}/orders/${order.id}`)}
+                                            className="min-w-[44px] min-h-[44px] p-2 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 hover:text-slate-900 transition-colors flex items-center justify-center cursor-pointer touch-target-44"
                                             title="Voir détails"
                                         >
                                             <Eye size={18} />
@@ -350,10 +351,10 @@ export const OrderView = () => {
                                 </div>
                                 
                                 <button 
-                                    onClick={() => navigate(`/admin/orders/${order.id}`)}
+                                    onClick={() => navigate(`${ADMIN_BASE_PATH}/orders/${order.id}`)}
                                     title="Voir les détails de la commande"
                                     aria-label="Voir les détails de la commande"
-                                    className="px-4 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-slate-800 transition-colors shadow-lg active:scale-95"
+                                    className="min-w-[44px] min-h-[44px] px-4 bg-slate-900 text-white rounded-xl flex items-center justify-center hover:bg-slate-800 transition-colors shadow-lg active:scale-95 cursor-pointer relative z-10 touch-target-44"
                                 >
                                     <Eye size={20} />
                                 </button>

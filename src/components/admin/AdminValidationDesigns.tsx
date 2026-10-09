@@ -33,9 +33,31 @@ export const AdminValidationDesigns = () => {
                     return { ...order, items: Array.isArray(items) ? items : [] };
                 });
                 
-                // 🪄 Filtrage précis : uniquement les commandes avec des designs personnalisés en attente de validation
+                // 🪄 Filtrage précis : uniquement les commandes valides avec des designs personnalisés en attente de validation (exclut les commandes annulées ou non en règle)
                 const filteredPending = allOrders.filter((order: any) => {
                     const statusLower = String(order.status || '').toLowerCase().trim();
+                    const paymentStatusLower = String(order.payment_status || order.etat_paiement || order.paymentStatus || '').toLowerCase().trim();
+
+                    // 🛑 EXCLUSION STRICTE DES COMMANDES ANNULÉES, REFUSÉES, ÉCHOUÉES OU NON EN RÈGLE
+                    const isCanceledOrNonCompliant = 
+                        statusLower.includes('annul') ||
+                        statusLower.includes('cancel') ||
+                        statusLower.includes('refus') ||
+                        statusLower.includes('reject') ||
+                        statusLower.includes('echec') ||
+                        statusLower.includes('failed') ||
+                        statusLower.includes('rembours') ||
+                        statusLower.includes('refund') ||
+                        statusLower.includes('abandon') ||
+                        paymentStatusLower.includes('annul') ||
+                        paymentStatusLower.includes('cancel') ||
+                        paymentStatusLower.includes('refus') ||
+                        paymentStatusLower.includes('reject') ||
+                        paymentStatusLower.includes('echec') ||
+                        paymentStatusLower.includes('failed');
+
+                    if (isCanceledOrNonCompliant) return false;
+
                     const isValidationStatus = 
                         statusLower === 'paid_waiting' || 
                         statusLower === 'paid_waiting_validation' ||
@@ -64,8 +86,9 @@ export const AdminValidationDesigns = () => {
                         
                         const itemStatusLower = String(item.design_status || '').toLowerCase().trim();
                         const isApproved = ['validé', 'approved', 'valide'].includes(itemStatusLower);
+                        const isRejected = ['refusé', 'rejected', 'refuse'].includes(itemStatusLower);
                         
-                        return isCustom && !isApproved;
+                        return isCustom && !isApproved && !isRejected;
                     });
 
                     return isValidationStatus || hasUnapprovedCustomItem;
@@ -395,9 +418,10 @@ export const AdminValidationDesigns = () => {
                             <button 
                                 onClick={() => setPreviewModalItem(null)}
                                 title="Fermer (Échap)"
-                                className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                                aria-label="Fermer la fenêtre"
+                                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
                             >
-                                <X size={20} />
+                                <X size={22} />
                             </button>
                         </div>
 

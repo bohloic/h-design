@@ -14,6 +14,7 @@ import CollectionCarousel from '../pages/products/CollectionCarousel';
 import TrendingSection from '@/components/product/TrendingProducts';
 import SafeImage from '../src/components/tools/SafeImage';
 import LoadingSpinner from '../src/components/tools/LoadingSpinner';
+import { ProductGridSkeleton } from '../src/components/tools/ProductCardSkeleton';
 
 // Images (Assurez-vous que ces imports fonctionnent, sinon remplacez par vos chemins)
 import imageHome2 from '../src/assets/h_designer_hero_fashion_atelier_1774889548518.png';
@@ -90,9 +91,9 @@ const Home: React.FC<HomeProps> = () => {
 
   if (isPageLoading) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-offwhite dark:bg-carbon text-slate-900 dark:text-pure gap-4">
-        <LoadingSpinner size={120} />
-        <p className="text-slate-900 dark:text-pure font-bold text-lg tracking-widest uppercase">Chargement...</p>
+      <div className="min-h-screen max-w-7xl mx-auto px-4 py-8 bg-[#F3F4F6] dark:bg-[#111827]">
+        <div className="w-full h-72 sm:h-96 rounded-3xl bg-slate-200 dark:bg-slate-800 animate-pulse skeleton-shimmer mb-8" />
+        <ProductGridSkeleton count={8} />
       </div>
     );
   }
@@ -116,28 +117,29 @@ const Home: React.FC<HomeProps> = () => {
         </div>
 
         <div className="relative z-10 container mx-auto px-4 md:px-8">
-          <div className="max-w-3xl bg-black/40 backdrop-blur-md border border-white/20 p-8 md:p-12 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-10 duration-1000">
+          <div className="max-w-3xl bg-black/40 backdrop-blur-md border border-white/20 p-6 md:p-12 rounded-[2.5rem] shadow-2xl animate-in slide-in-from-bottom-10 duration-1000">
             <span
-              className="inline-block py-1.5 px-4 rounded-full text-white text-xs font-bold uppercase tracking-widest mb-6 hero-text-shadow shadow-sm"
+              className="inline-block py-1.5 px-4 rounded-full text-white text-xs font-bold uppercase tracking-widest mb-4 sm:mb-6 hero-text-shadow shadow-sm"
               style={{ backgroundColor: 'var(--theme-primary)' }}
             >
               Nouvelle Collection
             </span>
-            {/* 🪄 Textes détachés visuellement avec text-shadow */}
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white leading-tight mb-6 hero-text-shadow">
-              IMPRIMEZ <br /> VOTRE
-              <span className="rainbow-text ml-4 hero-text-shadow">
+            {/* 🪄 Typographie fluide clamp() pour grands titres */}
+            <h1 className="fluid-hero-title font-black text-white mb-4 sm:mb-6 hero-text-shadow">
+              IMPRIMEZ <br className="hidden sm:inline" /> VOTRE
+              <span className="rainbow-text ml-2 sm:ml-4 hero-text-shadow">
                 STYLE
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-white/95 mb-8 font-medium max-w-xl leading-relaxed hero-text-shadow">
+            <p className="text-base sm:text-lg md:text-xl text-white/95 mb-6 sm:mb-8 font-medium max-w-xl leading-relaxed hero-text-shadow">
               Créez des vêtements uniques ou découvrez des designs originaux créés par des artistes indépendants.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            {/* 📱 Disposition verticale 100% sur mobile avec gap-4 (16px) */}
+            <div className="flex flex-col sm:flex-row gap-4 w-full">
               <button
                 onClick={() => navigate('/personnaliser/mon-design')}
-                className="group bg-white text-[#111827] px-8 py-4 rounded-full font-black text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto group bg-white text-[#111827] px-8 py-4 rounded-full font-black text-base sm:text-lg shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Palette className="w-5 h-5 group-hover:rotate-12 transition-transform" style={{ color: 'var(--theme-primary)' }} />
                 Je personnalise
@@ -145,7 +147,7 @@ const Home: React.FC<HomeProps> = () => {
               {/* 🔘 Bouton Outline dynamique (Noir en Clair, Blanc en Sombre) */}
               <button
                 onClick={() => navigate('/boutique')}
-                className="btn-outline px-8 py-4 rounded-full font-bold text-lg backdrop-blur-sm transition-all flex items-center justify-center gap-2 group cursor-pointer hero-text-shadow"
+                className="w-full sm:w-auto btn-outline px-8 py-4 rounded-full font-bold text-base sm:text-lg backdrop-blur-sm transition-all flex items-center justify-center gap-2 group cursor-pointer hero-text-shadow"
               >
                 Acheter
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
