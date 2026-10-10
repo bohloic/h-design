@@ -90,18 +90,21 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
         // 🪄 CHARGEMENT DESIGN EXISTANT (MODE ÉDITION)
         if (state?.isEdit && state.existingDesign) {
             console.log("🛠️ Mode Édition activé, chargement du design...");
-            if (state.existingDesign.elements) {
-                setDesignElements(state.existingDesign.elements);
+            let rawDesign = state.existingDesign;
+            if (typeof rawDesign === 'string') {
+                try { rawDesign = JSON.parse(rawDesign); } catch (e) {}
             }
-            if (state.existingDesign.options?.size) {
-                setSelectedSize(state.existingDesign.options.size);
+            const elems = rawDesign?.elements || rawDesign?.design || (Array.isArray(rawDesign) ? rawDesign : []);
+            if (Array.isArray(elems)) setDesignElements(elems);
+            if (rawDesign?.options?.size) {
+                setSelectedSize(rawDesign.options.size);
             }
-            if (state.existingDesign.hideBaseDesign !== undefined) {
-                setHideBaseDesign(state.existingDesign.hideBaseDesign);
+            if (rawDesign?.hideBaseDesign !== undefined) {
+                setHideBaseDesign(rawDesign.hideBaseDesign);
             }
-            // On saute directement au canvas pour l'édition
+            // 🎯 Accès direct aux outils de personnalisation (Texte, Images, Couleurs, IA)
             setCurrentStep(2);
-            setMobileView('canvas');
+            setMobileView(window.innerWidth < 1024 ? 'tools' : 'canvas');
         }
 
       } catch (error) {
@@ -481,6 +484,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                     <h3 className="font-bold text-slate-800 dark:text-pure flex items-center gap-2 text-sm"><Shirt size={18}/> Produits</h3>
                     <button 
                       onClick={() => setMobileView('canvas')} 
+                      onTouchEnd={(e) => { e.preventDefault(); setMobileView('canvas'); }}
                       title="Fermer" 
                       aria-label="Fermer le menu produits"
                       className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
@@ -514,6 +518,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                  <h3 className="font-bold flex items-center gap-2 text-sm"><Palette size={18}/> Paramètres du Design</h3>
                   <button 
                     onClick={() => setMobileView('canvas')} 
+                    onTouchEnd={(e) => { e.preventDefault(); setMobileView('canvas'); }}
                     title="Fermer" 
                     aria-label="Fermer les paramètres du design"
                     className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"

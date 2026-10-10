@@ -41,14 +41,37 @@ export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ customiz
         return `/images/${cleanPath}`;
     };
 
-    const downloadSourceImage = (url: string, index: number) => {
-        const link = document.createElement('a');
-        // On utilise l'URL nettoyée pour le téléchargement
-        link.href = getCleanUrl(url);
-        link.download = `element_source_${index + 1}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const downloadHighResFile = async (url: string, index: number) => {
+        const fileName = `source_element_hd_${index + 1}.png`;
+        try {
+            let targetUrl = getCleanUrl(url);
+            if (targetUrl.includes('res.cloudinary.com')) {
+                // Strips downscaling transform parameters from Cloudinary URLs to obtain maximum quality
+                targetUrl = targetUrl.replace(/\/w_\d+,c_[^\/]+/, '/q_100,f_png').replace(/\/c_thumb,w_\d+/, '/q_100,f_png');
+            }
+            
+            const res = await fetch(targetUrl);
+            if (!res.ok) throw new Error("Fetch failed");
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+        } catch (e) {
+            // Direct download fallback
+            const link = document.createElement('a');
+            link.href = getCleanUrl(url);
+            link.target = '_blank';
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     };
 
     return (
@@ -58,14 +81,14 @@ export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ customiz
                 <h4 
                     className="text-xs font-bold uppercase flex items-center gap-2 text-theme-primary"
                 >
-                    Fichiers Sources (HD)
+                    Fichiers Sources Original Haute Définition (HD)
                 </h4>
                 
                 {elements.map((el: any, idx: number) => (
                     el.type === 'image' ? (
                         <div key={idx} className="flex items-center justify-between bg-white p-2 rounded border border-slate-100 shadow-sm">
                             <div className="flex items-center gap-3">
-                                {/* Aperçu de l'image avec l'URL corrigée */}
+                                {/* Aperçu de l'image avec l'URL nettoyée */}
                                 <div className="w-10 h-10 bg-slate-50 rounded border flex-shrink-0 overflow-hidden">
                                     <img 
                                         src={getCleanUrl(el.content)}
@@ -74,16 +97,16 @@ export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ customiz
                                     />
                                 </div>
                                 <div>
-                                    <span className="text-xs font-bold text-slate-700 block">Image #{idx + 1}</span>
-                                    <span className="text-[10px] text-slate-400">Fichier original pour impression</span>
+                                    <span className="text-xs font-bold text-slate-700 block">Image Source #{idx + 1}</span>
+                                    <span className="text-[10px] text-slate-400">Qualité originale d'impression (PNG/HD)</span>
                                 </div>
                             </div>
-                            {/* Le bouton télécharger reste bleu (action neutre/sémantique en admin) */}
                             <button 
-                                onClick={() => downloadSourceImage(el.content, idx)}
-                                className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1.5 rounded font-bold hover:bg-blue-100 border border-blue-200 transition-colors"
+                                onClick={() => downloadHighResFile(el.content, idx)}
+                                title="Télécharger le fichier original en haute définition"
+                                className="text-[10px] bg-theme-primary/10 text-theme-primary hover:bg-theme-primary hover:text-white px-3 py-1.5 rounded font-bold border border-theme-primary/30 transition-all cursor-pointer shadow-sm active:scale-95 flex items-center gap-1"
                             >
-                                Télécharger HD
+                                📥 Télécharger HD
                             </button>
                         </div>
                     ) : (

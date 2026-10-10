@@ -256,6 +256,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             <h2 className="text-xl font-black text-[#111827] dark:text-[#F9FAFB] uppercase">Filtres</h2>
             <button
               onClick={() => setIsMobileFilterOpen(false)}
+              onTouchEnd={(e) => { e.preventDefault(); setIsMobileFilterOpen(false); }}
               aria-label="Fermer les filtres"
               className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 text-[#111827] dark:text-[#F9FAFB] transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
             >

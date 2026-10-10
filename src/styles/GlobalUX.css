@@ -408,4 +408,31 @@ body {
   }
 }
 
+/* 📱 OPTIMISATIONS TOUCH & MOBILE INTERACTIFS (Safari, Chrome, Firefox, Samsung) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, [role="button"] {
+  touch-action: manipulation;
+}
+
+.touch-target-44 {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  touch-action: manipulation !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Safe Area Padding pour appareils à encoche (iPhone, Galaxy) */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+
 

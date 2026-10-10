@@ -43,6 +43,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
           </h2>
           <button 
             onClick={onClose} 
+            onTouchEnd={(e) => { e.preventDefault(); onClose(); }}
             aria-label="Fermer le panier"
             className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-500 hover:text-slate-900 dark:hover:text-pure hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
           >

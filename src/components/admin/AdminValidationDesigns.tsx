@@ -440,10 +440,31 @@ export const AdminValidationDesigns = () => {
                                         />
                                     </div>
                                     <button
-                                        onClick={() => window.open(previewModalItem.imgUrl.startsWith('http') ? previewModalItem.imgUrl : (previewModalItem.imgUrl.startsWith('h-designer/') ? `https://res.cloudinary.com/dwyx9e7zw/image/upload/${previewModalItem.imgUrl}` : BASE_IMG_URL + previewModalItem.imgUrl), '_blank')}
-                                        className="mt-3 text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5"
+                                        onClick={async () => {
+                                            let fullUrl = previewModalItem.imgUrl.startsWith('http') 
+                                                ? previewModalItem.imgUrl 
+                                                : (previewModalItem.imgUrl.startsWith('h-designer/') 
+                                                    ? `https://res.cloudinary.com/dwyx9e7zw/image/upload/q_100,f_png/${previewModalItem.imgUrl}` 
+                                                    : BASE_IMG_URL + previewModalItem.imgUrl);
+                                            try {
+                                                const res = await fetch(fullUrl);
+                                                const blob = await res.blob();
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `rendu_canvas_hd_${previewModalItem.orderSlug}.png`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                document.body.removeChild(a);
+                                                setTimeout(() => URL.revokeObjectURL(url), 2000);
+                                            } catch (e) {
+                                                window.open(fullUrl, '_blank');
+                                            }
+                                        }}
+                                        title="Télécharger l'image HD du rendu canvas"
+                                        className="mt-3 text-xs font-bold text-theme-primary hover:underline flex items-center gap-1.5 cursor-pointer"
                                     >
-                                        <Download size={14} /> Télécharger le rendu HD original
+                                        <Download size={14} /> Télécharger le rendu HD original (PNG)
                                     </button>
                                 </div>
 

@@ -134,6 +134,7 @@ const ChatWidget: React.FC = () => {
             </div>
             <button 
               onClick={() => setIsOpen(false)} 
+              onTouchEnd={(e) => { e.preventDefault(); setIsOpen(false); }}
               aria-label="Fermer le chat"
               className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
             >

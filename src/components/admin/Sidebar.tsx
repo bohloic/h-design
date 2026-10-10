@@ -189,6 +189,7 @@ export const Sidebar = ({
           {onClose && (
             <button 
               onClick={onClose}
+              onTouchEnd={(e) => { e.preventDefault(); onClose(); }}
               title="Fermer le menu"
               aria-label="Fermer le menu"
               className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl transition-all cursor-pointer relative z-50 touch-target-44 active:scale-95"
@@ -321,6 +322,7 @@ export const Sidebar = ({
               </h3>
               <button 
                 onClick={() => setShowProfileModal(false)}
+                onTouchEnd={(e) => { e.preventDefault(); setShowProfileModal(false); }}
                 className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
                 title="Fermer (Échap)"
                 aria-label="Fermer la fenêtre du profil"
