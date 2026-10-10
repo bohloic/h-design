@@ -425,8 +425,8 @@ button, a, [role="button"] {
   justify-content: center !important;
   touch-action: manipulation !important;
   cursor: pointer !important;
-  user-select: none !important;
   -webkit-user-select: none !important;
+  user-select: none !important;
 }
 
 /* Safe Area Padding pour appareils à encoche (iPhone, Galaxy) */
