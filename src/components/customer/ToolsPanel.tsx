@@ -109,7 +109,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabType)}
-            className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 transition-all active:bg-gray-50 dark:active:bg-slate-900 tab-button ${
+            className={`flex-1 min-h-[48px] flex flex-col items-center justify-center gap-1 py-2.5 transition-all active:bg-gray-50 dark:active:bg-slate-900 tab-button touch-target-44 ${
               activeTab === tab.id ? 'active' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
             }`}
           >
@@ -135,13 +135,13 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     key={color.hex}
                     onClick={() => onSelectColor(color)}
                     title={`Couleur ${color.name}`}
-                    className={`aspect-square rounded-full border-2 transition-all shadow-sm relative group color-dot color-bg-${color.hex.replace('#', '')} ${
-                      selectedColor.hex === color.hex ? 'active' : 'border-gray-200'
+                    className={`min-w-[44px] min-h-[44px] w-11 h-11 rounded-full border-2 transition-all shadow-sm relative group color-dot color-bg-${color.hex.replace('#', '')} touch-target-44 active:scale-95 flex items-center justify-center ${
+                      selectedColor.hex === color.hex ? 'active ring-2 ring-theme-primary ring-offset-2' : 'border-gray-200 dark:border-slate-700'
                     }`}
                   >
                       {selectedColor.hex === color.hex && (
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <Check size={14} className={['#FFFFFF', '#fff', '#ffffff'].includes(color.hex) ? 'text-black' : 'text-white'} />
+                            <Check size={16} className={['#FFFFFF', '#fff', '#ffffff'].includes(color.hex) ? 'text-black' : 'text-white'} />
                           </div>
                       )}
                   </button>
@@ -185,7 +185,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                   <button
                     key={font}
                     onClick={() => setSelectedFont(font)}
-                    className={`shrink-0 px-4 py-2 rounded-xl border text-sm font-medium whitespace-nowrap transition-all font-button font-family-${font.replace(/\s+/g, '-')} ${
+                    className={`shrink-0 px-4 py-2.5 min-h-[44px] rounded-xl border text-sm font-medium whitespace-nowrap transition-all font-button touch-target-44 font-family-${font.replace(/\s+/g, '-')} ${
                       selectedFont === font ? 'active' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
                     }`}
                   >
@@ -196,7 +196,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
               <button
                 onClick={() => { if (inputText) { onAddText(inputText, selectedFont); setInputText(''); } }}
                 disabled={!inputText}
-                className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors disabled:opacity-50 active:scale-95"
+                className="w-full bg-slate-900 text-white min-h-[44px] py-3.5 rounded-xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors disabled:opacity-50 active:scale-95 touch-target-44 cursor-pointer"
               >
                 <Plus size={18} /> Ajouter au design
               </button>
@@ -209,9 +209,9 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                   <button 
                     onClick={() => onDeleteElement(activeElement.id)} 
                     title="Supprimer cet élément"
-                    className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2.5 rounded-xl transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center touch-target-44"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={20} />
                   </button>
                 </div>
 
@@ -227,7 +227,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                     <button
                       key={font}
                       onClick={() => onUpdateElement(activeElement.id, { fontFamily: font })}
-                    className={`shrink-0 px-4 py-2 rounded-xl border text-xs font-medium whitespace-nowrap transition-all font-button font-family-${font.replace(/\s+/g, '-')} ${
+                    className={`shrink-0 px-4 py-2.5 min-h-[44px] rounded-xl border text-xs font-medium whitespace-nowrap transition-all font-button touch-target-44 font-family-${font.replace(/\s+/g, '-')} ${
                       activeElement.fontFamily === font ? 'active' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700'
                     }`}
                     >
@@ -242,7 +242,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                         key={c}
                         onClick={() => onUpdateElement(activeElement.id, { color: c })} 
                         title={`Changer couleur en ${c}`}
-                        className={`w-10 h-10 rounded-full border shadow-sm shrink-0 transition-transform active:scale-95 color-bg-${c.replace('#', '')} ${activeElement.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
+                        className={`min-w-[44px] min-h-[44px] w-11 h-11 rounded-full border shadow-sm shrink-0 transition-transform active:scale-95 touch-target-44 color-bg-${c.replace('#', '')} ${activeElement.color === c ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`}
                       />
                   ))}
                 </div>

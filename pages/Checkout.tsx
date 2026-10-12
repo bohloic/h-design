@@ -62,18 +62,40 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
 
   const [stockErrors, setStockErrors] = useState<any[]>([]);
 
-  const [formData, setFormData] = useState({
-    userId: data?.id || '',
-    nom: data?.nom || '',
-    prenom: data?.prenom || '',
-    address: data?.address || '',
-    phone: data?.phone || '',
-    email: data?.email || '',
-    city: data?.city || ''
+  // 💾 Persistance des formulaires en sessionStorage (anti-perte en cas de rechargement/navigation accidentelle)
+  const [formData, setFormData] = useState(() => {
+    try {
+      const savedDraft = sessionStorage.getItem('hdesigner_checkout_draft');
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        return {
+          userId: data?.id || parsed.userId || '',
+          nom: data?.nom || parsed.nom || '',
+          prenom: data?.prenom || parsed.prenom || '',
+          address: data?.address || parsed.address || '',
+          phone: data?.phone || parsed.phone || '',
+          email: data?.email || parsed.email || '',
+          city: data?.city || parsed.city || ''
+        };
+      }
+    } catch (e) {}
+    return {
+      userId: data?.id || '',
+      nom: data?.nom || '',
+      prenom: data?.prenom || '',
+      address: data?.address || '',
+      phone: data?.phone || '',
+      email: data?.email || '',
+      city: data?.city || ''
+    };
   });
 
   const progressBarRef = useRef<HTMLDivElement>(null);
 
+  // Synchronise automatiquement toute saisie dans sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('hdesigner_checkout_draft', JSON.stringify(formData));
+  }, [formData]);
 
   useEffect(() => {
     if (data && Object.keys(data).length > 0) {
@@ -209,6 +231,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
 
       if (paymentData?.authorization_url) {
         console.log("🔗 Redirection automatique vers Paystack:", paymentData.authorization_url);
+        sessionStorage.removeItem('hdesigner_checkout_draft');
         window.location.href = paymentData.authorization_url;
       } else {
         throw new Error("L'URL de paiement Paystack est manquante.");

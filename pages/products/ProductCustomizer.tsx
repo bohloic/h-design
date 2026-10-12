@@ -8,7 +8,7 @@ import { Product, DesignElement, ProductVariant, Category } from '../../types';
 import { ShoppingCart, X, Layers, Shirt, Palette, ArrowLeft, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import { BASE_IMG_URL } from '@/components/images/VoirImage';
-import LoadingSpinner from '../../src/components/tools/LoadingSpinner';
+import WorkshopSkeleton from '../../src/components/tools/WorkshopSkeleton';
 
 const DESIGN_PRICE = 5000; // Forfait unique de personnalisation 5000 FCFA
 const TEXTILE_COLORS_MAP: Record<string, string> = {
@@ -419,12 +419,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     };
   }, []);
 
-  if (!selectedProduct) return (
-    <div className="h-screen flex items-center justify-center flex-col gap-3 bg-slate-50 dark:bg-carbon">
-      <LoadingSpinner size={100} />
-      <span className="text-slate-500 font-bold">Chargement de l'atelier...</span>
-    </div>
-  );
+  if (!selectedProduct) return <WorkshopSkeleton />;
 
   return (
     <div className="flex flex-col h-[calc(100dvh-64px)] lg:h-[calc(100vh-64px)] bg-slate-50 dark:bg-carbon overflow-hidden relative transition-colors">

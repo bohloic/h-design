@@ -17,6 +17,7 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
   }
 
   // 2. PRÉPARER LES HEADERS
+  // 🛡️ OWASP: Les tokens sont dans les cookies HttpOnly, transmis via credentials: 'include'
   const token = localStorage.getItem('token');
   const headers: Record<string, string> = {
     ...options.headers as Record<string, string>,
@@ -27,6 +28,7 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
     headers['Content-Type'] = 'application/json';
   }
 
+  // Support header de secours si présent
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -34,6 +36,7 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
   try {
     let response = await fetch(url, {
       ...options,
+      credentials: 'include', // 🛡️ Crucial : Envoie et reçoit les cookies HttpOnly (SameSite / Secure)
       headers,
     });
 
@@ -43,14 +46,16 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
       console.warn(`⚠️ 404 sur ${url}, fallback sur ${fallbackUrl}`);
       response = await fetch(fallbackUrl, {
         ...options,
+        credentials: 'include',
         headers,
       });
     }
 
-    if (response.status === 401 && window.location.pathname !== '/login') {
+    if (response.status === 401 && !url.includes('/api/auth/me') && window.location.pathname !== '/login') {
       console.warn("Session expirée. Déconnexion...");
       localStorage.removeItem('token');
       localStorage.removeItem('data');
+      localStorage.removeItem('role');
       window.location.href = '/login';
       return null;
     }

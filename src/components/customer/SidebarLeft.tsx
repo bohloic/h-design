@@ -55,7 +55,7 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
            <button
               onClick={() => setActiveTab('Tous')}
               style={activeTab === 'Tous' ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-all ${
+              className={`flex-shrink-0 px-4 py-2.5 min-h-[44px] rounded-full text-xs font-bold border transition-all touch-target-44 flex items-center justify-center cursor-pointer ${
                 activeTab === 'Tous' 
                 ? 'text-white shadow-sm' 
                 : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover-border-theme'
@@ -74,7 +74,7 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
                   backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)',
                   borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)'
               } : {}}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-bold border transition-all ${
+              className={`flex-shrink-0 px-4 py-2.5 min-h-[44px] rounded-full text-xs font-bold border transition-all touch-target-44 flex items-center justify-center cursor-pointer ${
                 activeTab === cat.name 
                 ? '' 
                 : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover-border-theme'
@@ -98,7 +98,7 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
                     backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)',
                     '--tw-ring-color': 'var(--theme-primary)'
                 } as React.CSSProperties : {}}
-                className={`w-full group text-left rounded-2xl overflow-hidden border transition-all p-2 flex items-center gap-3 ${
+                className={`w-full min-h-[64px] group text-left rounded-2xl overflow-hidden border transition-all p-2.5 flex items-center gap-3 cursor-pointer ${
                     selectedProductId === product.id 
                     ? 'ring-1' 
                     : 'border-gray-100 dark:border-slate-800 hover:shadow-sm bg-white dark:bg-slate-900/50 hover-border-theme'

@@ -57,6 +57,32 @@ function Auth() {
         return () => clearInterval(timer);
     }, [resendCooldown]);
 
+    // 💾 Persistance des formulaires en sessionStorage (anti-perte en navigation accidentelle)
+    useEffect(() => {
+        const savedDraft = sessionStorage.getItem('hdesigner_auth_draft');
+        if (savedDraft) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                setFormData(prev => ({
+                    ...prev,
+                    email: parsed.email || prev.email,
+                    nom: parsed.nom || prev.nom,
+                    prenom: parsed.prenom || prev.prenom,
+                    phone: parsed.phone || prev.phone
+                }));
+            } catch (e) {}
+        }
+    }, []);
+
+    useEffect(() => {
+        sessionStorage.setItem('hdesigner_auth_draft', JSON.stringify({
+            email: formData.email,
+            nom: formData.nom,
+            prenom: formData.prenom,
+            phone: formData.phone
+        }));
+    }, [formData.email, formData.nom, formData.prenom, formData.phone]);
+
     // --- HANDLERS ---
     const handleChange = (e) => {
         let value = e.target.value;
@@ -214,6 +240,7 @@ function Auth() {
                 }
                 else {
                     authLogin(data.token, data.user);
+                    sessionStorage.removeItem('hdesigner_auth_draft');
                     setStatus({ type: 'success', message: "Connexion réussie !" });
 
                     let decodedUserId = '';

@@ -359,14 +359,17 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
           </div>
 
-          {/* 📌 BOUTON STICKY MOBILE EN BAS DE LA MODALE DES FILTRES */}
-          <div className="sticky bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 lg:hidden z-20">
+          {/* 📌 BOUTON STICKY MOBILE EN BAS DE LA MODALE DES FILTRES (position: sticky; bottom: 0) */}
+          <div 
+            style={{ position: 'sticky', bottom: 0 }}
+            className="sticky bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 lg:hidden z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+          >
             <button
               onClick={() => setIsMobileFilterOpen(false)}
               style={{ backgroundColor: 'var(--theme-primary)' }}
-              className="w-full py-3.5 text-white rounded-xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[48px] py-3.5 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer touch-target-44"
             >
-              Afficher {filteredProducts.length} résultat{filteredProducts.length > 1 ? 's' : ''}
+              Appliquer ({filteredProducts.length} résultat{filteredProducts.length > 1 ? 's' : ''})
             </button>
           </div>
 

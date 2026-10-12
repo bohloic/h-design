@@ -338,6 +338,7 @@ body {
   color: #f9fafb !important;
 }
 
+/* 🌙 Inversion automatique des cartes et conteneurs clairs */
 .dark .bg-white {
   background-color: #1f2937 !important;
   color: #f9fafb !important;
@@ -345,12 +346,28 @@ body {
 
 .dark .bg-offwhite,
 .dark .bg-slate-50,
-.dark .bg-slate-100 {
+.dark .bg-slate-100,
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
   background-color: #111827 !important;
+}
+
+/* 🌙 Aucun texte ne doit rester noir ou sombre sur fond sombre */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #f9fafb !important;
 }
 
 .dark .text-slate-900,
 .dark .text-slate-800,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-neutral-900,
+.dark .text-zinc-900,
 .dark .text-black {
   color: #f9fafb !important;
 }
@@ -359,9 +376,34 @@ body {
 .dark .text-slate-600,
 .dark .text-slate-500,
 .dark .text-slate-400,
+.dark .text-gray-700,
+.dark .text-gray-600,
 .dark .text-gray-500,
-.dark .text-gray-600 {
+.dark .text-gray-400 {
   color: #d1d5db !important;
+}
+
+/* 🌙 Footer en mode sombre */
+.dark footer {
+  background-color: #111827 !important;
+  color: #d1d5db !important;
+  border-color: #374151 !important;
+}
+
+.dark footer h4 {
+  color: #f9fafb !important;
+}
+
+.dark footer p,
+.dark footer li,
+.dark footer a,
+.dark footer span {
+  color: #d1d5db !important;
+}
+
+.dark footer a:hover,
+.dark footer li:hover span {
+  color: #f9fafb !important;
 }
 
 .dark .border-slate-100,
@@ -382,6 +424,22 @@ body {
 .dark input::placeholder,
 .dark textarea::placeholder {
   color: #9ca3af !important;
+}
+
+/* 📐 Typographie fluide avec clamp() */
+.fluid-h1 {
+  font-size: clamp(2rem, 6vw, 3.75rem) !important;
+  line-height: 1.15 !important;
+}
+
+.fluid-h2 {
+  font-size: clamp(1.5rem, 4vw, 2.5rem) !important;
+  line-height: 1.25 !important;
+}
+
+.fluid-h3 {
+  font-size: clamp(1.15rem, 2.5vw, 1.75rem) !important;
+  line-height: 1.3 !important;
 }
 
 /* 🌐 COMPATIBILITÉ ANCIENS NAVIGATEURS (Safari <15, Firefox anciens, Chrome anciens) */

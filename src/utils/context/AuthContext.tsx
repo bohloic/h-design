@@ -35,17 +35,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   const refreshUser = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
     try {
-      const decoded: any = jwtDecode(token);
-      const response = await authFetch(`/api/users/${decoded.userId}`);
-      if (response.ok) {
-        const userData = await response.json();
+      // 🛡️ OWASP: On vérifie l'identité directement via le cookie HttpOnly sur le backend
+      const response = await authFetch('/api/auth/me');
+      if (response && response.ok) {
+        const data = await response.json();
+        const userData = data.user || data;
         const { password, ...safeUser } = userData;
         setUser(safeUser);
         setIsAuthenticated(true);
@@ -53,11 +48,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (safeUser.role) {
           localStorage.setItem('role', safeUser.role);
         }
-      } else if (response.status === 401) {
-        logout();
+      } else {
+        // Non connecté / Session expirée
+        setIsAuthenticated(false);
+        setUser(null);
       }
     } catch (error) {
-      console.error("Erreur refreshUser:", error);
+      console.warn("Vérification session:", error);
+      setIsAuthenticated(false);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -68,11 +67,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // 📡 Écoute la déconnexion cross-onglets (Admin, Dashboard, etc.)
-  // Quand un autre onglet se déconnecte, celui-ci se recharge aussi immédiatement
   useEffect(() => {
     const handleStorageLogout = (e: StorageEvent) => {
       if (e.key === '__logout_event__') {
-        // Un autre onglet vient de se déconnecter → on recharge cette fenêtre aussi
         window.location.href = '/login';
       }
     };
@@ -80,41 +77,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener('storage', handleStorageLogout);
   }, []);
 
-  const login = (token: string, userData: UserData) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('data', JSON.stringify(userData));
-    if (userData.role) {
-      localStorage.setItem('role', userData.role);
+  const login = (tokenOrUser: any, possibleUserData?: UserData) => {
+    const finalUserData = possibleUserData || tokenOrUser;
+    // 🛡️ OWASP: Strictement AUCUN token dans le localStorage !
+    localStorage.removeItem('token');
+    if (finalUserData) {
+      localStorage.setItem('data', JSON.stringify(finalUserData));
+      if (finalUserData.role) {
+        localStorage.setItem('role', finalUserData.role);
+      }
+      setUser(finalUserData);
+      setIsAuthenticated(true);
     }
-    setUser(userData);
-    setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    // 🔐 1. Nettoyage complet du localStorage
+  const logout = async () => {
+    // 🔐 1. Révoquer la session côté serveur (Suppression du Cookie HttpOnly)
+    try {
+      await authFetch('/api/logout', { method: 'POST' });
+    } catch (err) {
+      console.warn("Erreur déconnexion backend:", err);
+    }
+
+    // 🔐 2. Nettoyage complet du localStorage & sessionStorage
     localStorage.removeItem('token');
     localStorage.removeItem('data');
     localStorage.removeItem('role');
     localStorage.removeItem('cart');
+    sessionStorage.removeItem('hdesigner_checkout_draft');
+    sessionStorage.removeItem('hdesigner_auth_email');
 
-    // 🧹 2. Réinitialisation de tous les stores Zustand
+    // 🧹 3. Réinitialisation de tous les stores Zustand
     useNotificationStore.getState().reset();
     useWishlistStore.getState().reset();
     usePaymentStore.getState().reset();
 
-    // 🛒 3. Événement pour vider le panier dans App.tsx
+    // 🛒 4. Événement pour vider le panier dans App.tsx
     window.dispatchEvent(new Event('userLoggedOut'));
 
-    // 📡 4. Synchronise la déconnexion sur TOUS les onglets/fenêtres ouverts
-    //    (storage event est émis sur les autres onglets mais pas l'actuel)
+    // 📡 5. Synchronise la déconnexion sur TOUS les onglets/fenêtres ouverts
     localStorage.setItem('__logout_event__', String(Date.now()));
     localStorage.removeItem('__logout_event__');
 
     setUser(null);
     setIsAuthenticated(false);
     
-    // 🔄 5. Rechargement complet pour purger la mémoire React
-    //    et s'assurer qu'aucune donnée sensible n'est plus visible
+    // 🔄 6. Rechargement complet
     window.location.href = '/login';
   };
 

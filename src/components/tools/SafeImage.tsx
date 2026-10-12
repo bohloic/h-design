@@ -51,7 +51,8 @@ const SafeImage: React.FC<SafeImageProps> = ({ src, fallback = '/placeholder.png
       <img
         src={getSource()}
         alt={alt}
-        loading="eager"
+        loading="lazy"
+        decoding="async"
         className="w-full h-full object-cover max-w-full block"
         onError={() => {
           if (!error) {

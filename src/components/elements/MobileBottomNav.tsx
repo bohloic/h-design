@@ -26,7 +26,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onO
         {/* 1. ACCUEIL */}
         <Link 
           to="/" 
-          className={`flex flex-col items-center justify-center py-1 transition-all ${
+          className={`flex flex-col items-center justify-center min-h-[48px] py-1 transition-all touch-target-44 ${
             isActive('/') && !location.pathname.startsWith('/boutique') && !location.pathname.startsWith('/personnaliser') && !location.pathname.startsWith('/dashboard')
               ? 'text-theme-primary font-bold scale-105' 
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -39,7 +39,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onO
         {/* 2. BOUTIQUE */}
         <Link 
           to="/boutique" 
-          className={`flex flex-col items-center justify-center py-1 transition-all ${
+          className={`flex flex-col items-center justify-center min-h-[48px] py-1 transition-all touch-target-44 ${
             isActive('/boutique') 
               ? 'text-theme-primary font-bold scale-105' 
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -52,7 +52,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onO
         {/* 3. PERSONNALISATION */}
         <Link 
           to="/personnaliser/mon-design" 
-          className={`flex flex-col items-center justify-center py-1 transition-all ${
+          className={`flex flex-col items-center justify-center min-h-[48px] py-1 transition-all touch-target-44 ${
             isActive('/personnaliser/mon-design') 
               ? 'text-theme-primary font-bold scale-105' 
               : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -67,7 +67,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onO
         {/* 4. PANIER */}
         <button
           onClick={onOpenCart}
-          className="flex flex-col items-center justify-center py-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 relative transition-all"
+          className="flex flex-col items-center justify-center min-h-[48px] py-1 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 relative transition-all touch-target-44 cursor-pointer"
         >
           <div className="relative">
             <ShoppingCart size={20} />
@@ -85,7 +85,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onO
           role === 'admin' ? (
             <Link 
               to={ADMIN_BASE_PATH}
-              className={`flex flex-col items-center justify-center py-1 transition-all ${
+              className={`flex flex-col items-center justify-center min-h-[48px] py-1 transition-all touch-target-44 ${
                 location.pathname.startsWith(ADMIN_BASE_PATH) 
                   ? 'text-theme-primary font-bold scale-105' 
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -97,7 +97,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onO
           ) : (
             <Link 
               to="/dashboard" 
-              className={`flex flex-col items-center justify-center py-1 transition-all ${
+              className={`flex flex-col items-center justify-center min-h-[48px] py-1 transition-all touch-target-44 ${
                 isActive('/dashboard') 
                   ? 'text-theme-primary font-bold scale-105' 
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
@@ -110,7 +110,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onO
         ) : (
           <Link 
             to="/login" 
-            className={`flex flex-col items-center justify-center py-1 transition-all ${
+            className={`flex flex-col items-center justify-center min-h-[48px] py-1 transition-all touch-target-44 ${
               isActive('/login') 
                 ? 'text-theme-primary font-bold scale-105' 
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'

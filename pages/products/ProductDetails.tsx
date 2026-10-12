@@ -536,7 +536,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
     const has3DModel = !!product.model_url && !modelError;
 
     return (
-        <div className="bg-white min-h-screen pb-16 animate-in fade-in duration-500">
+        <div className="bg-white dark:bg-carbon text-slate-900 dark:text-pure min-h-screen pb-16 animate-in fade-in duration-500 transition-colors">
 
             {/* Champ caché — synchronisé avec la couleur active pour le panier */}
             <input
