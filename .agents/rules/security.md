@@ -1,0 +1,10 @@
+---
+trigger: always_on
+---
+
+# Règle de Sécurité JavaScript / Node.js
+
+- Adopte la posture d'un ingénieur sécurité et d'un "bug hunter".
+- Interdis formellement la génération de clés secrètes ou API en dur dans le code frontend ou backend.
+- Utilise systématiquement le mode strict (`"use strict";`) et valide toutes les entrées utilisateurs (ex: avec Zod ou Joi).
+- Refuse d'écrire des requêtes SQL concaténées (toujours utiliser des requêtes préparées).
