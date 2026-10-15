@@ -68,7 +68,7 @@ export const NotificationDropdown: React.FC = () => {
     markAsRead(String(notif.id));
     
     // ✅ Redirection intelligente pour les admins vers les commandes
-    const isAdmin = user?.role === 'admin' || localStorage.getItem('role') === 'admin';
+    const isAdmin = user?.role === 'admin';
     const isOrderNotif = 
       notif.title?.toLowerCase().includes('commande') || 
       notif.message?.toLowerCase().includes('commande') ||

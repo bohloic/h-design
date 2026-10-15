@@ -297,7 +297,7 @@ export const CollectionView = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    {config?.banner_url ? (
+                                                    {config?.banner_url && /^(https?:\/\/|\/)/i.test(config.banner_url) ? (
                                                         <a href={config.banner_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-sm flex items-center gap-1">
                                                             <ImageIcon size={14} /> Voir bannière
                                                         </a>

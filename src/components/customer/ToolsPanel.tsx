@@ -95,6 +95,22 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
+      // 🛡️ Validation de sécurité : Type MIME autorisé
+      const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
+      if (!allowedTypes.includes(file.type)) {
+        alert("Format non supporté. Veuillez sélectionner une image au format PNG, JPEG, WEBP ou SVG.");
+        e.target.value = '';
+        return;
+      }
+
+      // 🛡️ Validation de sécurité : Limite de taille max (5 Mo)
+      const MAX_FILE_SIZE = 5 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        alert("L'image est trop volumineuse. La taille maximale autorisée est de 5 Mo.");
+        e.target.value = '';
+        return;
+      }
       
       try {
         const { uploadDesignToServer } = await import('../../../src/utils/apiClient');
@@ -107,6 +123,8 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
       } catch (error) {
         console.error("Erreur upload direct:", error);
         alert("Impossible d'ajouter l'image : erreur de connexion au serveur.");
+      } finally {
+        e.target.value = '';
       }
     }
   };
@@ -290,7 +308,7 @@ const ToolsPanel: React.FC<ToolsPanelProps> = ({
                 <p className="mb-1 text-sm text-slate-800 font-bold">Toucher pour importer</p>
                 <p className="text-xs text-slate-400">PNG, JPG (Max. 5Mo)</p>
               </div>
-              <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
+              <input type="file" className="hidden" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={handleFileUpload} />
             </label>
 
             {activeElement?.type === 'image' && (

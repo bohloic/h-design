@@ -17,9 +17,8 @@ const AdminRoute: React.FC = () => {
     }
 
     // 2. Si l'utilisateur n'est pas connecté ou n'est pas admin
-    const role = user?.role || localStorage.getItem('role');
-    
-    if (!isAuthenticated || role !== 'admin') {
+    // 🛡️ OWASP: Validation stricte sur l'état authentifié et le rôle utilisateur vérifié
+    if (!isAuthenticated || user?.role !== 'admin') {
         return <Navigate to="/login" replace />;
     }
 

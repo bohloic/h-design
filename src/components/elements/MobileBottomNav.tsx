@@ -12,7 +12,7 @@ interface MobileBottomNavProps {
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onOpenCart }) => {
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
-  const role = user?.role || localStorage.getItem('role');
+  const role = user?.role;
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';

@@ -23,7 +23,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
   const { themeMode, toggleThemeMode } = useTheme();
 
   const isActive = (path: string) => location.pathname === path;
-  const role = user?.role || localStorage.getItem('role');
+  const role = user?.role;
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
