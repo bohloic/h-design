@@ -212,48 +212,27 @@ img {
 }
 
 /* ====================================================
-   🎨 DESIGN TOKENS (LIGHT / DARK MODE ACCESSIBILITÉ WCAG)
+   🎨 DESIGN TOKENS EXCLUSIFS MODE CLAIR (ACCESSIBILITÉ & ÉLÉGANCE)
    ==================================================== */
 :root {
-  --bg-main: #ffffff;
-  --bg-sec: #f3f4f6;
+  color-scheme: light;
+  --bg-main: #f8fafc;
+  --bg-sec: #f1f5f9;
   --bg-card: #ffffff;
-  --text-main: #111827;
-  --text-muted: #4b5563;
-  --border-color: #e5e7eb;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --border-color: #e2e8f0;
 
   /* Button Tokens */
-  --btn-outline-border: #111827;
-  --btn-outline-text: #111827;
+  --btn-outline-border: #0f172a;
+  --btn-outline-text: #0f172a;
   --btn-outline-bg: transparent;
-  --btn-outline-hover-bg: #111827;
+  --btn-outline-hover-bg: #0f172a;
   --btn-outline-hover-text: #ffffff;
 
   --btn-filter-bg: #ffffff;
-  --btn-filter-text: #4b5563;
-  --btn-filter-border: #e5e7eb;
-  --btn-filter-active-bg: var(--theme-primary, #1e3a8a);
-  --btn-filter-active-text: #ffffff;
-}
-
-.dark {
-  --bg-main: #111827;
-  --bg-sec: #1f2937;
-  --bg-card: #1f2937;
-  --text-main: #f9fafb;
-  --text-muted: #d1d5db;
-  --border-color: #374151;
-
-  /* Button Tokens */
-  --btn-outline-border: #f9fafb;
-  --btn-outline-text: #f9fafb;
-  --btn-outline-bg: transparent;
-  --btn-outline-hover-bg: #f9fafb;
-  --btn-outline-hover-text: #111827;
-
-  --btn-filter-bg: #1f2937;
-  --btn-filter-text: #d1d5db;
-  --btn-filter-border: #374151;
+  --btn-filter-text: #475569;
+  --btn-filter-border: #e2e8f0;
   --btn-filter-active-bg: var(--theme-primary, #1e3a8a);
   --btn-filter-active-text: #ffffff;
 }
@@ -301,7 +280,7 @@ img {
   background-color: var(--btn-filter-active-bg) !important;
   color: var(--btn-filter-active-text) !important;
   border-color: var(--btn-filter-active-bg) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* ====================================================
@@ -321,109 +300,12 @@ img {
 }
 
 /* ====================================================
-   🎨 REGLAGES STRICTS DES COULEURS ET CONTRASTES (Light/Dark Mode)
+   🎨 REGLAGES STRICTS DES COULEURS ET CONTRASTES (Mode Clair Exclusif)
    ==================================================== */
 body {
   background-color: var(--bg-main);
   color: var(--text-main);
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.dark {
-  color-scheme: dark;
-}
-
-.dark body {
-  background-color: #111827 !important;
-  color: #f9fafb !important;
-}
-
-/* 🌙 Inversion automatique des cartes et conteneurs clairs */
-.dark .bg-white {
-  background-color: #1f2937 !important;
-  color: #f9fafb !important;
-}
-
-.dark .bg-offwhite,
-.dark .bg-slate-50,
-.dark .bg-slate-100,
-.dark .bg-gray-50,
-.dark .bg-gray-100 {
-  background-color: #111827 !important;
-}
-
-/* 🌙 Aucun texte ne doit rester noir ou sombre sur fond sombre */
-.dark h1,
-.dark h2,
-.dark h3,
-.dark h4,
-.dark h5,
-.dark h6 {
-  color: #f9fafb !important;
-}
-
-.dark .text-slate-900,
-.dark .text-slate-800,
-.dark .text-gray-900,
-.dark .text-gray-800,
-.dark .text-neutral-900,
-.dark .text-zinc-900,
-.dark .text-black {
-  color: #f9fafb !important;
-}
-
-.dark .text-slate-700,
-.dark .text-slate-600,
-.dark .text-slate-500,
-.dark .text-slate-400,
-.dark .text-gray-700,
-.dark .text-gray-600,
-.dark .text-gray-500,
-.dark .text-gray-400 {
-  color: #d1d5db !important;
-}
-
-/* 🌙 Footer en mode sombre */
-.dark footer {
-  background-color: #111827 !important;
-  color: #d1d5db !important;
-  border-color: #374151 !important;
-}
-
-.dark footer h4 {
-  color: #f9fafb !important;
-}
-
-.dark footer p,
-.dark footer li,
-.dark footer a,
-.dark footer span {
-  color: #d1d5db !important;
-}
-
-.dark footer a:hover,
-.dark footer li:hover span {
-  color: #f9fafb !important;
-}
-
-.dark .border-slate-100,
-.dark .border-slate-200,
-.dark .border-slate-300,
-.dark .border-slate-800 {
-  border-color: #374151 !important;
-}
-
-.dark input,
-.dark select,
-.dark textarea {
-  background-color: #1f2937 !important;
-  color: #f9fafb !important;
-  border-color: #374151 !important;
-}
-
-.dark input::placeholder,
-.dark textarea::placeholder {
-  color: #9ca3af !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* 📐 Typographie fluide avec clamp() */
@@ -466,13 +348,22 @@ body {
   }
 }
 
-/* 📱 OPTIMISATIONS TOUCH & MOBILE INTERACTIFS (Safari, Chrome, Firefox, Samsung) */
+/* 📱 OPTIMISATIONS TOUCH & MOBILE INTERACTIFS (Safari, Chrome, Firefox, Samsung, Android 6/8) */
+html, body {
+  touch-action: manipulation;
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
-button, a, [role="button"] {
+button, a, input, select, textarea, [role="button"] {
   touch-action: manipulation;
+}
+
+/* 🛡️ Crucial anciens Android (Android 6/8) : L'icône SVG ne doit jamais intercepter le tap/touch à la place du bouton */
+button svg, a svg, [role="button"] svg {
+  pointer-events: none !important;
 }
 
 .touch-target-44 {
@@ -485,6 +376,12 @@ button, a, [role="button"] {
   cursor: pointer !important;
   -webkit-user-select: none !important;
   user-select: none !important;
+}
+
+/* Fallback robuste pour la hauteur viewport 100vh / 100dvh */
+.h-screen-responsive {
+  height: 100vh;
+  height: 100dvh;
 }
 
 /* Safe Area Padding pour appareils à encoche (iPhone, Galaxy) */

@@ -355,6 +355,8 @@ export const OrderDetails: React.FC = () => {
                                                                     sizeName: sizeName, // On passe la taille pour qu'elle soit présélectionnée
                                                                     orderItemId: item.id,
                                                                     isEdit: true,
+                                                                    orderId: order?.id || order?.order_number || orderId || orderSlug || '',
+                                                                    rejectionReason: item.rejection_reason,
                                                                     existingDesign: customization
                                                                 } 
                                                             });

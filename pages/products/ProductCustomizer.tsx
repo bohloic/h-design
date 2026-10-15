@@ -3,9 +3,9 @@ import { authFetch, uploadDesignToServer } from '../../src/utils/apiClient';
 import { useToast } from '../../src/utils/context/ToastContext';
 import SidebarLeft from '../../src/components/customer/SidebarLeft';
 import Canvas, { CanvasHandle } from '../../src/components/customer/Canvas';
-import ToolsPanel from '../../src/components/customer/ToolsPanel';
+import ToolsPanel, { ToolTabType } from '../../src/components/customer/ToolsPanel';
 import { Product, DesignElement, ProductVariant, Category } from '../../types';
-import { ShoppingCart, X, Layers, Shirt, Palette, ArrowLeft, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, X, Layers, Shirt, Palette, ArrowLeft, Loader2, CheckCircle2, Type, Image as ImageIcon, Sparkles, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import WorkshopSkeleton from '../../src/components/tools/WorkshopSkeleton';
@@ -45,10 +45,30 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   const canvasRef = useRef<CanvasHandle>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const [mobileView, setMobileView] = useState<'products' | 'canvas' | 'tools'>('products');
-  const [currentStep, setCurrentStep] = useState(1); // 1: Product, 2: Design, 3: Review
+  // Vue Mobile / Tablette : 'canvas' (vêtement seul) | 'products' (tiroir produits) | 'tools' (tiroir outils)
+  const [mobileView, setMobileView] = useState<'canvas' | 'products' | 'tools'>('canvas');
+  const [activeToolTab, setActiveToolTab] = useState<ToolTabType>('text');
   const [hideBaseDesign, setHideBaseDesign] = useState(false);
 
+  // État Mode Édition
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editOrderId, setEditOrderId] = useState<string | number | null>(null);
+  const [editOrderItemId, setEditOrderItemId] = useState<string | number | null>(null);
+  const [editRejectionReason, setEditRejectionReason] = useState<string | null>(null);
+
+  // Clavier virtuel mobile
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  // Écouteur pour la touche Échap pour fermer les tiroirs
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileView !== 'canvas') {
+        setMobileView('canvas');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileView]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,6 +89,9 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             colorName?: string;
             sizeName?: string;
             isEdit?: boolean;
+            orderId?: number | string;
+            orderItemId?: number | string;
+            rejectionReason?: string;
             existingDesign?: any;
         } | null;
         
@@ -79,7 +102,6 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             const found = productsData.find((p: Product) => p.id === Number(state.productId));
             if (found) productToSelect = found;
         } else if (!fromProduct) {
-            // 🎯 Accès direct (via le menu) : on pré-sélectionne le premier produit par défaut (souvent un T-shirt)
             productToSelect = productsData.length > 0 ? productsData[0] : null;
         }
 
@@ -89,10 +111,16 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
 
         // 🪄 CHARGEMENT DESIGN EXISTANT (MODE ÉDITION)
         if (state?.isEdit && state.existingDesign) {
-            console.log("🛠️ Mode Édition activé, chargement du design...");
+            setIsEditMode(true);
+            if (state.orderId) setEditOrderId(state.orderId);
+            if (state.orderItemId) setEditOrderItemId(state.orderItemId);
+            if (state.rejectionReason) setEditRejectionReason(state.rejectionReason);
+
             let rawDesign = state.existingDesign;
             if (typeof rawDesign === 'string') {
-                try { rawDesign = JSON.parse(rawDesign); } catch (e) {}
+                try { rawDesign = JSON.parse(rawDesign); } catch (e) {
+                  console.error("Erreur parsing design", e);
+                }
             }
             const elems = rawDesign?.elements || rawDesign?.design || (Array.isArray(rawDesign) ? rawDesign : []);
             if (Array.isArray(elems)) setDesignElements(elems);
@@ -102,18 +130,18 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             if (rawDesign?.hideBaseDesign !== undefined) {
                 setHideBaseDesign(rawDesign.hideBaseDesign);
             }
-            // 🎯 Accès direct aux outils de personnalisation (Texte, Images, Couleurs, IA)
-            setCurrentStep(2);
-            setMobileView(window.innerWidth < 1024 ? 'tools' : 'canvas');
+
+            // 🎯 Accès complet immédiat aux outils de personnalisation (Texte, Images, Couleurs, Calques, IA)
+            setActiveToolTab('text');
+            setMobileView('tools');
         }
 
       } catch (error) {
-        console.error("Erreur API:", error);
+        console.error("Erreur API Customizer:", error);
       }
     };
     fetchData();
   }, []);
-
 
   const handleSelectProduct = (product: Product, targetVariantId?: number | string | null, targetColorName?: string, targetSizeName?: string) => {
     setSelectedProduct(product);
@@ -182,21 +210,14 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     }
 
     setSelectedVariant(variantToSelect);
-    // 🎯 Taille M ou taille précédente
     const sizes = product.sizes && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL', 'XXL'];
     const defaultSize = targetSizeName || (sizes.includes('M') ? 'M' : sizes[0]);
     setSelectedSize(defaultSize);
-    
-    // Sur mobile/tablette, on passe automatiquement à l'étape suivante après choix produit
-    if (window.innerWidth < 1024) {
-      setMobileView('canvas');
-      setCurrentStep(2);
-    }
   };
 
   const handleAddToCartAction = async () => {
     if (!selectedProduct) return;
-    if (!selectedSize) { showToast("⚠️ Veuillez sélectionner une taille avant d'ajouter au panier.", "warning"); return; }
+    if (!selectedSize) { showToast("⚠️ Veuillez sélectionner une taille avant de continuer.", "warning"); return; }
     if (!selectedVariant) { showToast("⚠️ Veuillez sélectionner une couleur.", "warning"); return; }
 
     setIsUploading(true);
@@ -205,26 +226,18 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
         let designUrl = null;
 
         if (canvasRef.current) {
-            console.log("📸 Tentative d'exportation du canvas...");
             const blob = await canvasRef.current.exportAsImage();
             
             if (blob) {
-                console.log("✅ Canvas exporté (Blob size:", blob.size, ")");
                 const file = new File([blob], `design_${Date.now()}.png`, { type: "image/png" });
-                
                 try {
                     designUrl = await uploadDesignToServer(file);
-                    console.log("☁️ Design uploadé avec succès:", designUrl);
                 } catch (err) {
-                    console.error("❌ Erreur upload serveur:", err);
+                    console.error("Erreur upload serveur:", err);
                     showToast("Impossible de sauvegarder le design sur le serveur.", "error");
                     setIsUploading(false);
                     return; 
                 }
-            } else {
-                console.error("❌ L'exportation du canvas a renvoyé NULL (Problème html2canvas)");
-                // Optionnel : ne pas bloquer l'ajout au panier mais prévenir
-                // alert("Attention: La photo personnalisée n'a pas pu être générée.");
             }
         }
 
@@ -253,11 +266,9 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             }
         };
 
-        const editState = location.state as { isEdit?: boolean; orderItemId?: number } | null;
-
-        if (editState?.isEdit) {
-            // ✅ MODE ÉDITION : On met à jour l'article existant
-            const response = await authFetch(`/api/orders/items/${editState.orderItemId}/design`, {
+        if (isEditMode && editOrderItemId) {
+            // ✅ MODE ÉDITION : Mise à jour de l'article existant
+            const response = await authFetch(`/api/orders/items/${editOrderItemId}/design`, {
                 method: 'PUT',
                 body: JSON.stringify({
                     customization: JSON.stringify({
@@ -274,7 +285,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
 
             if (response && response.ok) {
                 showToast("✅ Votre design a été mis à jour avec succès !", "success");
-                navigate(-1); // Retour aux détails de la commande
+                navigate(-1);
             } else {
                 throw new Error("Erreur lors de la mise à jour du design");
             }
@@ -288,67 +299,72 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                 quantity: 1, 
                 image_url: designUrl || selectedProduct.image_url 
             });
-            // ✅ NOTIFICATION PERSISTANTE (Correctif Prod)
-            const toast = document.createElement('div');
-            toast.id = 'cart-success-toast';
-            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000] flex items-center gap-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 animate-in slide-in-from-bottom-5 duration-300';
-            
-            toast.innerHTML = `
-              <div class="flex items-center gap-3">
-                <span class="text-xl">✅</span>
-                <span class="font-bold whitespace-nowrap">Article ajouté au panier !</span>
-              </div>
-              <button class="ml-4 p-1 hover:bg-white/10 dark:hover:bg-black/10 rounded-full transition-colors" onclick="this.parentElement.remove()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </button>
-            `;
-            
-            // On supprime l'ancien toast s'il existe
-            const oldToast = document.getElementById('cart-success-toast');
-            if (oldToast) oldToast.remove();
-            
-            document.body.appendChild(toast);
-            
-            // On laisse quand même une fermeture automatique très longue (15s) au cas où l'utilisateur oublie
-            setTimeout(() => { 
-                if (document.body.contains(toast)) {
-                    toast.style.opacity = '0'; 
-                    toast.style.transition = 'opacity 0.8s'; 
-                    setTimeout(() => toast.remove(), 800); 
-                }
-            }, 15000);
+
+            showToast("✅ Article personnalisé ajouté au panier !", "success");
             navigate('/boutique');
         }
 
     } catch (error) {
-        console.error("Erreur générale:", error);
-        showToast("Une erreur est survenue lors de l'ajout au panier.", "error");
+        console.error("Erreur générale Customizer:", error);
+        showToast("Une erreur est survenue lors de l'enregistrement.", "error");
     } finally {
         setIsUploading(false);
     }
   };
 
   const handleAddText = (text: string, font: string) => {
-    // Détection automatique du contraste : si le t-shirt est sombre → texte blanc par défaut
     const shirtHex = selectedVariant?.hex || selectedVariant?.colorCode || '#FFFFFF';
     const r = parseInt(shirtHex.slice(1, 3), 16) || 0;
     const g = parseInt(shirtHex.slice(3, 5), 16) || 0;
     const b = parseInt(shirtHex.slice(5, 7), 16) || 0;
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     const defaultColor = luminance < 0.5 ? '#FFFFFF' : '#000000';
-    const newEl: DesignElement = { id: `txt-${Date.now()}`, type: 'text', content: text, x: 150, y: 150, width: 200, height: 50, rotation: 0, fontSize: 30, fontFamily: font, color: defaultColor };
+    const newEl: DesignElement = { 
+      id: `txt-${Date.now()}`, 
+      type: 'text', 
+      content: text, 
+      x: 150, 
+      y: 150, 
+      width: 200, 
+      height: 50, 
+      rotation: 0, 
+      fontSize: 30, 
+      fontFamily: font, 
+      color: defaultColor 
+    };
     setDesignElements([...designElements, newEl]);
     setActiveElementId(newEl.id);
-    setMobileView('canvas');
+    if (window.innerWidth < 1024) {
+      setMobileView('canvas');
+    }
   };
+
   const handleAddImage = (url: string) => {
-    const newEl: DesignElement = { id: `img-${Date.now()}`, type: 'image', content: url, x: 150, y: 150, width: 150, height: 150, rotation: 0 };
+    const newEl: DesignElement = { 
+      id: `img-${Date.now()}`, 
+      type: 'image', 
+      content: url, 
+      x: 150, 
+      y: 150, 
+      width: 150, 
+      height: 150, 
+      rotation: 0 
+    };
     setDesignElements([...designElements, newEl]);
     setActiveElementId(newEl.id);
-    setMobileView('canvas');
+    if (window.innerWidth < 1024) {
+      setMobileView('canvas');
+    }
   };
-  const handleUpdateElement = (id: string, updates: Partial<DesignElement>) => setDesignElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
-  const handleDeleteElement = (id: string) => { setDesignElements(prev => prev.filter(el => el.id !== id)); setActiveElementId(null); };
+
+  const handleUpdateElement = (id: string, updates: Partial<DesignElement>) => {
+    setDesignElements(prev => prev.map(el => el.id === id ? { ...el, ...updates } : el));
+  };
+
+  const handleDeleteElement = (id: string) => {
+    setDesignElements(prev => prev.filter(el => el.id !== id));
+    if (activeElementId === id) setActiveElementId(null);
+  };
   
   const handleAIGenerate = async (prompt: string) => {
       try {
@@ -365,14 +381,13 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
               return null;
           }
       } catch (error) {
-          console.error("Erreur generate:", error);
+          console.error("Erreur IA generate:", error);
           showToast("Erreur de connexion.", "error");
           return null;
       }
   };
 
   const basePrice = selectedProduct ? parseFloat(selectedProduct.price.toString()) : 0;
-
   const toolsColors = availableColors.map(v => ({ name: v.colorName, hex: v.hex || v.colorCode || '#FFFFFF' }));
   const currentCanvasColor = selectedVariant ? { name: selectedVariant.colorName, hex: selectedVariant.hex || selectedVariant.colorCode || '#FFFFFF' } : { name: 'Défaut', hex: '#FFFFFF' };
 
@@ -394,9 +409,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     }
   }, [currentCanvasColor.hex]);
 
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-
-  // 🪄 Détection ouverture du clavier virtuel (masque le header pour laisser 100% de la hauteur au vêtement)
+  // Focus clavier mobile
   useEffect(() => {
     const handleFocusIn = (e: FocusEvent) => {
       const target = e.target as HTMLElement;
@@ -419,192 +432,296 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     };
   }, []);
 
+  const openToolTab = (tab: ToolTabType) => {
+    setActiveToolTab(tab);
+    setMobileView('tools');
+  };
+
   if (!selectedProduct) return <WorkshopSkeleton />;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] lg:h-[calc(100vh-64px)] bg-slate-50 dark:bg-carbon overflow-hidden relative transition-colors">
+    <div className="flex flex-col h-[calc(100dvh-64px)] lg:h-[calc(100vh-64px)] bg-slate-50 overflow-hidden relative transition-colors">
       
-      {/* HEADER - Masquage dynamique lors du focus clavier */}
-      <div className={`bg-white dark:bg-carbon border-b border-slate-200 dark:border-slate-800 p-3 justify-between items-center shadow-sm z-20 shrink-0 h-16 transition-all duration-300 ${isKeyboardOpen ? '-translate-y-full hidden' : 'translate-y-0 flex'}`}>
+      {/* ⚠️ BANDEAU MODE ÉDITION DE COMMANDE CLIENT */}
+      {isEditMode && (
+        <div className="bg-amber-500 text-white px-4 py-2 shrink-0 flex items-center justify-between shadow-md z-30 transition-all text-xs sm:text-sm">
+          <div className="flex items-center gap-2">
+            <span className="p-1 bg-white/20 rounded-lg">
+              <AlertCircle size={16} />
+            </span>
+            <span className="font-bold">
+              Mode Édition : Commande #{editOrderId || ''}
+            </span>
+            <span className="hidden sm:inline bg-black/20 px-2 py-0.5 rounded-full text-xs font-semibold">
+              Action Requise / Refusé
+            </span>
+          </div>
+          {editRejectionReason && (
+            <div className="hidden md:flex items-center gap-1.5 italic text-amber-100 text-xs">
+              <span>Motif : "{editRejectionReason}"</span>
+            </div>
+          )}
+          <span className="text-[11px] bg-white text-amber-900 font-bold px-2 py-0.5 rounded-md">
+            Tous les outils actifs
+          </span>
+        </div>
+      )}
+
+      {/* HEADER PRINCIPAL */}
+      <div className={`bg-white border-b border-slate-200 p-3 justify-between items-center shadow-sm z-20 shrink-0 h-16 transition-all duration-300 ${isKeyboardOpen ? '-translate-y-full hidden' : 'translate-y-0 flex'}`}>
           <div className="flex items-center gap-3">
-             <button onClick={() => navigate(-1)} title="Retour" className="p-2 hover-theme-bg rounded-full transition-colors"><ArrowLeft size={20} className="text-slate-600 dark:text-slate-300"/></button>
+             <button 
+                onClick={() => navigate(-1)} 
+                title="Retour" 
+                style={{ touchAction: 'manipulation' }}
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
+             >
+                <ArrowLeft size={20} className="text-slate-600"/>
+             </button>
              <div className="flex flex-col">
-                 <span className="font-bold text-slate-800 dark:text-pure text-sm line-clamp-1">{selectedProduct.name}</span>
-                 {/* 🪄 PRIX TRANSPARENT */}
+                 <span className="font-bold text-slate-800 text-sm line-clamp-1">{selectedProduct.name}</span>
                   <span className="text-xs font-black text-theme-primary">
                     {basePrice.toLocaleString()} FCFA
                     {designElements.length > 0 && (
-                      <span className="font-normal text-slate-400 dark:text-slate-500 ml-1">
+                      <span className="font-normal text-slate-500 ml-1">
                         {`+ Forfait Design ${DESIGN_PRICE.toLocaleString()} FCFA`}
                       </span>
                     )}
                   </span>
              </div>
           </div>
+
           <div className="flex items-center gap-3">
               <div className="relative">
-                  {/* 🪄 SELECT DYNAMIQUE */}
                    <select 
                     value={selectedSize} 
                     onChange={(e) => setSelectedSize(e.target.value)} 
                     title="Sélectionner la taille"
-                    className={`appearance-none pl-3 pr-8 py-2 rounded-lg border-2 text-xs font-bold uppercase focus:outline-none cursor-pointer transition-all ${!selectedSize ? 'border-theme-primary/40 bg-theme-primary/5 text-theme-primary' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800'}`}
+                    style={{ touchAction: 'manipulation' }}
+                    className={`appearance-none pl-3 pr-8 py-2 rounded-lg border-2 text-xs font-bold uppercase focus:outline-none cursor-pointer transition-all ${!selectedSize ? 'border-theme-primary/40 bg-theme-primary/5 text-theme-primary' : 'border-slate-200 text-slate-700 bg-slate-50'}`}
                   >
                       <option value="" disabled>Taille</option>
                       {(selectedProduct.sizes && selectedProduct.sizes.length > 0 ? selectedProduct.sizes : ['S', 'M', 'L', 'XL', 'XXL', '3XL']).map(size => (<option key={size} value={size}>{size}</option>))}
                   </select>
               </div>
-               <button 
+
+              {/* Bouton d'action principal (Enregistrer / Ajouter) */}
+              <button 
                 onClick={handleAddToCartAction} 
                 disabled={isUploading} 
-                title={location.state?.isEdit ? "Mettre à jour" : "Ajouter au panier"}
-                className="text-white px-4 py-2 rounded-lg font-bold shadow-lg flex items-center gap-2 active:scale-95 transition-all text-xs sm:text-sm disabled:opacity-70 bg-theme-primary"
+                style={{ touchAction: 'manipulation', backgroundColor: isEditMode ? '#16A34A' : 'var(--theme-primary)' }}
+                title={isEditMode ? "Valider le design modifié" : "Ajouter au panier"}
+                className="text-white px-4 py-2 rounded-xl font-bold shadow-md flex items-center gap-2 active:scale-95 transition-all text-xs sm:text-sm disabled:opacity-70 cursor-pointer"
               >
-                {isUploading ? <Loader2 className="animate-spin" size={16} /> : (location.state?.isEdit ? <CheckCircle2 size={16} /> : <ShoppingCart size={16} />)} 
+                {isUploading ? <Loader2 className="animate-spin" size={16} /> : (isEditMode ? <CheckCircle2 size={16} /> : <ShoppingCart size={16} />)} 
                 <span className="hidden sm:inline">
-                   {location.state?.isEdit ? "Mettre à jour" : "Ajouter"}
+                   {isEditMode ? "Valider la modification" : "Ajouter"}
                 </span>
               </button>
           </div>
       </div>
 
+      {/* ZONE CENTRALE : CANVAS ET TIROIRS RESPONSIVES */}
       <div className="flex flex-1 overflow-hidden relative z-10 min-h-0">
-        {/* SIDEBAR PRODUITS - BOTTOM SHEET SUR MOBILE */}
-        <aside className={`fixed lg:relative inset-x-0 bottom-0 lg:inset-y-0 lg:left-0 z-40 w-full lg:w-80 bg-white dark:bg-[#111827] border-t lg:border-t-0 lg:border-r border-slate-200 dark:border-slate-800 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:-translate-x-full lg:translate-x-0'} max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
+        
+        {/* SIDEBAR PRODUITS - DRAWER FLUIDE SUR MOBILE/TABLETTE */}
+        <aside className={`fixed lg:relative inset-x-0 bottom-0 lg:inset-y-0 lg:left-0 z-40 w-full lg:w-80 bg-white border-t lg:border-t-0 lg:border-r border-slate-200 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:-translate-x-full lg:translate-x-0'} max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
             <div className="lg:hidden py-2 flex justify-center shrink-0">
-              <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+              <div className="w-12 h-1.5 rounded-full bg-slate-300" />
             </div>
             <div className="h-full flex flex-col">
-                <div className="lg:hidden p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 shrink-0">
-                    <h3 className="font-bold text-slate-800 dark:text-pure flex items-center gap-2 text-sm"><Shirt size={18}/> Produits</h3>
+                <div className="lg:hidden p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm"><Shirt size={18}/> Sélection du Produit</h3>
                     <button 
                       onClick={() => setMobileView('canvas')} 
-                      onTouchEnd={(e) => { e.preventDefault(); setMobileView('canvas'); }}
+                      style={{ touchAction: 'manipulation' }}
                       title="Fermer" 
                       aria-label="Fermer le menu produits"
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
                     >
-                      <X size={22} className="text-slate-500 dark:text-slate-300"/>
+                      <X size={22} className="pointer-events-none"/>
                     </button>
                 </div>
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    <SidebarLeft products={products} categories={categories} onSelectProduct={(p) => handleSelectProduct(p)} selectedProductId={selectedProduct.id} />
+                    <SidebarLeft 
+                      products={products} 
+                      categories={categories} 
+                      onSelectProduct={(p) => {
+                        handleSelectProduct(p);
+                        if (window.innerWidth < 1024) setMobileView('canvas');
+                      }} 
+                      selectedProductId={selectedProduct.id} 
+                    />
                 </div>
             </div>
         </aside>
 
-        <main className="flex-1 flex flex-col relative bg-slate-100 dark:bg-slate-900/40 items-center justify-center p-3 lg:p-6 transition-colors min-h-0 overflow-hidden">
-            <div className="relative shadow-2xl rounded-2xl overflow-hidden bg-white dark:bg-slate-800 w-full max-w-[500px] transition-all duration-500 ease-in-out aspect-square max-h-full">
-                <Canvas ref={canvasRef} product={selectedProduct} bgImage={getBgImage()} hideBaseImage={hideBaseDesign} color={currentCanvasColor} elements={designElements} activeElementId={activeElementId} onSelectElement={(id) => setActiveElementId(id)} onUpdateElement={handleUpdateElement} onDeleteElement={handleDeleteElement} />
+        {/* CANVAS DU PRODUIT */}
+        <main className="flex-1 flex flex-col relative bg-slate-100 items-center justify-center p-3 lg:p-6 transition-colors min-h-0 overflow-hidden">
+            <div className="relative shadow-2xl rounded-2xl overflow-hidden bg-white w-full max-w-[500px] transition-all duration-500 ease-in-out aspect-square max-h-full border border-slate-200">
+                <Canvas 
+                  ref={canvasRef} 
+                  product={selectedProduct} 
+                  bgImage={getBgImage()} 
+                  hideBaseImage={hideBaseDesign} 
+                  color={currentCanvasColor} 
+                  elements={designElements} 
+                  activeElementId={activeElementId} 
+                  onSelectElement={(id) => setActiveElementId(id)} 
+                  onUpdateElement={handleUpdateElement} 
+                  onDeleteElement={handleDeleteElement} 
+                />
                  <div 
                     id="product-color-overlay"
                     className="absolute inset-0 pointer-events-none z-0 mix-blend-multiply opacity-10" 
                  ></div>
             </div>
-            {(mobileView === 'products' || mobileView === 'tools') && <div className="lg:hidden fixed inset-0 bg-black/50 z-30 backdrop-blur-sm transition-opacity" onClick={() => setMobileView('canvas')} />}
+
+            {/* Backdrop sur mobile/tablette lors de l'ouverture d'un tiroir */}
+            {(mobileView === 'products' || mobileView === 'tools') && (
+              <div 
+                className="lg:hidden fixed inset-0 bg-black/40 z-30 backdrop-blur-xs transition-opacity cursor-pointer" 
+                onClick={() => setMobileView('canvas')} 
+              />
+            )}
         </main>
 
-        {/* SIDEBAR OUTILS - BOTTOM SHEET SUR MOBILE */}
-        <aside className={`fixed lg:relative inset-x-0 bottom-0 lg:inset-y-0 lg:right-0 z-40 w-full lg:w-80 bg-white dark:bg-[#111827] border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-x-full lg:translate-x-0'} max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
+        {/* SIDEBAR OUTILS - DRAWER FLUIDE SUR MOBILE/TABLETTE */}
+        <aside className={`fixed lg:relative inset-x-0 bottom-0 lg:inset-y-0 lg:right-0 z-40 w-full lg:w-80 bg-white border-t lg:border-t-0 lg:border-l border-slate-200 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-x-full lg:translate-x-0'} max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
              <div className="lg:hidden py-2 flex justify-center shrink-0">
-               <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+               <div className="w-12 h-1.5 rounded-full bg-slate-300" />
              </div>
-             <div className="lg:hidden px-4 pb-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-pure shrink-0">
-                 <h3 className="font-bold flex items-center gap-2 text-sm"><Palette size={18}/> Paramètres du Design</h3>
+             <div className="lg:hidden px-4 pb-3 border-b border-slate-100 flex justify-between items-center bg-slate-50 text-slate-800 shrink-0">
+                 <h3 className="font-bold flex items-center gap-2 text-sm">
+                   <Palette size={18} className="text-theme-primary"/> Outils de Personnalisation
+                 </h3>
                   <button 
                     onClick={() => setMobileView('canvas')} 
-                    onTouchEnd={(e) => { e.preventDefault(); setMobileView('canvas'); }}
+                    style={{ touchAction: 'manipulation' }}
                     title="Fermer" 
                     aria-label="Fermer les paramètres du design"
-                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
                   >
-                    <X size={22} className="text-slate-500 dark:text-slate-300"/>
+                    <X size={22} className="pointer-events-none"/>
                   </button>
              </div>
              <div className="flex-1 overflow-hidden">
-                 <ToolsPanel onAddText={handleAddText} hideBaseDesign={hideBaseDesign} setHideBaseDesign={setHideBaseDesign} onAddImage={handleAddImage} onUpdateElement={handleUpdateElement} onDeleteElement={handleDeleteElement} onAIGenerate={handleAIGenerate} activeElement={designElements.find(el => el.id === activeElementId) || null} colors={toolsColors} selectedColor={currentCanvasColor} onSelectColor={(colorObj) => { const variant = availableColors.find(v => (v.hex || v.colorCode) === colorObj.hex); if (variant) setSelectedVariant(variant); }} />
+                 <ToolsPanel 
+                   onAddText={handleAddText} 
+                   hideBaseDesign={hideBaseDesign} 
+                   setHideBaseDesign={setHideBaseDesign} 
+                   onAddImage={handleAddImage} 
+                   onUpdateElement={handleUpdateElement} 
+                   onDeleteElement={handleDeleteElement} 
+                   onAIGenerate={handleAIGenerate} 
+                   activeElement={designElements.find(el => el.id === activeElementId) || null} 
+                   colors={toolsColors} 
+                   selectedColor={currentCanvasColor} 
+                   onSelectColor={(colorObj) => { 
+                     const variant = availableColors.find(v => (v.hex || v.colorCode) === colorObj.hex); 
+                     if (variant) setSelectedVariant(variant); 
+                   }}
+                   elements={designElements}
+                   onSelectElement={(id) => setActiveElementId(id)}
+                   onReorderElements={(newElements) => setDesignElements(newElements)}
+                   currentTab={activeToolTab}
+                   onTabChange={(tab) => setActiveToolTab(tab)}
+                 />
              </div>
         </aside>
       </div>
 
-      {/* MOBILE MENU - 🪄 COMPACT & PREMIUM */}
-      <div className="lg:hidden bg-white dark:bg-carbon border-t border-slate-200 dark:border-slate-800 pb-safe z-30 shrink-0 relative transition-all shadow-[0_-10px_30px_rgba(0,0,0,0.08)]">
-          
-          {/* Barre de progression d'étapes amincie */}
-          <div className="flex items-center px-8 pt-2 pb-1 gap-2">
-            {[1, 2, 3].map((s) => (
-               <div 
-                key={s} 
-                className={`h-1 flex-1 rounded-full transition-all duration-700 ${currentStep >= s ? "bg-theme-primary" : "bg-slate-100 dark:bg-slate-800"}`}
-              />
-            ))}
-          </div>
-
-          <div className="flex justify-around items-center py-1.5 shrink-0">
-              <button 
-                 onClick={() => { setMobileView('products'); setCurrentStep(1); }} 
-                 className={`flex flex-col items-center gap-0.5 p-1 transition-colors ${currentStep === 1 ? 'scale-105 text-theme-primary' : 'text-slate-400 opacity-70'}`}
-              >
-                <Shirt size={18} className={currentStep === 1 ? "animate-pulse" : ""} />
-                <span className="text-[10px] font-bold uppercase tracking-tight">Article</span>
-              </button>
+      {/* 🚀 DOCK INTERACTIF FLOTTANT SUR MOBILE ET TABLETTE (< 1024px) */}
+      <div className="lg:hidden bg-white/95 backdrop-blur-md border-t border-slate-200 pb-safe z-30 shrink-0 relative transition-all shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
+          <div className="flex items-center justify-around px-2 py-2 overflow-x-auto no-scrollbar">
               
+              {/* 1. Produit */}
               <button 
-                 onClick={() => { setMobileView('canvas'); setCurrentStep(2); }} 
-                 className={`flex flex-col items-center gap-0.5 p-1 transition-colors ${currentStep === 2 ? 'scale-105 text-theme-primary' : 'text-slate-400 opacity-70'}`}
+                 onClick={() => setMobileView('products')} 
+                 style={{ touchAction: 'manipulation' }}
+                 className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all cursor-pointer min-w-[52px] ${mobileView === 'products' ? 'bg-slate-100 text-theme-primary font-bold scale-105' : 'text-slate-500 hover:text-slate-800 active:scale-95'}`}
+                 title="Changer d'article"
               >
-                <Palette size={18} className={currentStep === 2 ? "animate-pulse" : ""} />
-                <span className="text-[10px] font-bold uppercase tracking-tight">Design</span>
+                <Shirt size={20} />
+                <span className="text-[10px] tracking-tight">Produit</span>
               </button>
-              
-              <button 
-                 onClick={() => { setMobileView('tools'); setCurrentStep(3); }} 
-                 className={`flex flex-col items-center gap-0.5 p-1 transition-colors ${currentStep === 3 ? 'scale-105 text-theme-primary' : 'text-slate-400 opacity-70'}`}
-              >
-                <Layers size={18} className={currentStep === 3 ? "animate-pulse" : ""} />
-                <span className="text-[10px] font-bold uppercase tracking-tight">Revue</span>
-              </button>
-          </div>
 
-          {/* Bouton d'action principale optimisé */}
-          <div className="px-4 pb-2">
-            {currentStep === 1 && selectedProduct && (
+              {/* 2. Couleur */}
               <button 
-                 onClick={() => { setMobileView('canvas'); setCurrentStep(2); }}
-                 className="w-full py-2.5 rounded-xl text-white font-black text-xs shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all bg-theme-primary"
+                 onClick={() => openToolTab('product')} 
+                 style={{ touchAction: 'manipulation' }}
+                 className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all cursor-pointer min-w-[52px] ${mobileView === 'tools' && activeToolTab === 'product' ? 'bg-slate-100 text-theme-primary font-bold scale-105' : 'text-slate-500 hover:text-slate-800 active:scale-95'}`}
+                 title="Changer la couleur"
               >
-                Personnaliser <ArrowRight size={16} />
+                <div 
+                  className="w-5 h-5 rounded-full border border-slate-300 shadow-xs" 
+                  style={{ backgroundColor: currentCanvasColor.hex }}
+                />
+                <span className="text-[10px] tracking-tight">Couleur</span>
               </button>
-            )}
-            {currentStep === 2 && (
+
+              {/* 3. Texte */}
               <button 
-                 onClick={() => { setMobileView('tools'); setCurrentStep(3); }}
-                 className="w-full py-2.5 rounded-xl text-white font-black text-xs shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all bg-theme-primary"
+                 onClick={() => openToolTab('text')} 
+                 style={{ touchAction: 'manipulation' }}
+                 className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all cursor-pointer min-w-[52px] ${mobileView === 'tools' && activeToolTab === 'text' ? 'bg-slate-100 text-theme-primary font-bold scale-105' : 'text-slate-500 hover:text-slate-800 active:scale-95'}`}
+                 title="Ajouter ou éditer du texte"
               >
-                Finitions <ArrowRight size={16} />
+                <Type size={20} />
+                <span className="text-[10px] tracking-tight">Texte</span>
               </button>
-            )}
-             {currentStep === 3 && (
+
+              {/* 4. Images */}
               <button 
-                 onClick={handleAddToCartAction}
-                 disabled={isUploading}
-                 className="w-full py-3 bg-green-600 text-white rounded-xl font-black text-xs shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-70"
+                 onClick={() => openToolTab('image')} 
+                 style={{ touchAction: 'manipulation' }}
+                 className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all cursor-pointer min-w-[52px] ${mobileView === 'tools' && activeToolTab === 'image' ? 'bg-slate-100 text-theme-primary font-bold scale-105' : 'text-slate-500 hover:text-slate-800 active:scale-95'}`}
+                 title="Importer des images"
               >
-                 {isUploading ? <Loader2 className="animate-spin" size={16}/> : (location.state?.isEdit ? <CheckCircle2 size={16} /> : <ShoppingCart size={16} />)}
-                 {location.state?.isEdit ? "METTRE À JOUR LE DESIGN" : "AJOUTER AU PANIER"}
+                <ImageIcon size={20} />
+                <span className="text-[10px] tracking-tight">Images</span>
               </button>
-            )}
+
+              {/* 5. IA Magic */}
+              <button 
+                 onClick={() => openToolTab('ai')} 
+                 style={{ touchAction: 'manipulation' }}
+                 className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all cursor-pointer min-w-[52px] ${mobileView === 'tools' && activeToolTab === 'ai' ? 'bg-slate-100 text-theme-primary font-bold scale-105' : 'text-slate-500 hover:text-slate-800 active:scale-95'}`}
+                 title="Générateur de design IA"
+              >
+                <Sparkles size={20} className="text-amber-500" />
+                <span className="text-[10px] tracking-tight">IA Magic</span>
+              </button>
+
+              {/* 6. Calques (avec compteur) */}
+              <button 
+                 onClick={() => openToolTab('layers')} 
+                 style={{ touchAction: 'manipulation' }}
+                 className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all cursor-pointer min-w-[52px] relative ${mobileView === 'tools' && activeToolTab === 'layers' ? 'bg-slate-100 text-theme-primary font-bold scale-105' : 'text-slate-500 hover:text-slate-800 active:scale-95'}`}
+                 title="Gérer les calques"
+              >
+                <Layers size={20} />
+                {designElements.length > 0 && (
+                  <span className="absolute top-1 right-2 w-4 h-4 rounded-full bg-theme-primary text-white text-[9px] font-bold flex items-center justify-center">
+                    {designElements.length}
+                  </span>
+                )}
+                <span className="text-[10px] tracking-tight">Calques</span>
+              </button>
+
+              {/* 7. Toggle Motif */}
+              <button 
+                 onClick={() => setHideBaseDesign(prev => !prev)} 
+                 style={{ touchAction: 'manipulation' }}
+                 className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all cursor-pointer min-w-[52px] ${hideBaseDesign ? 'text-amber-600 bg-amber-50 font-bold' : 'text-slate-400 hover:text-slate-600 active:scale-95'}`}
+                 title={hideBaseDesign ? "Motif masqué (T-shirt vierge)" : "Motif d'origine visible"}
+              >
+                {hideBaseDesign ? <EyeOff size={20} /> : <Eye size={20} />}
+                <span className="text-[10px] tracking-tight">{hideBaseDesign ? 'Vierge' : 'Motif'}</span>
+              </button>
+
           </div>
       </div>
-
-      <style>{`
-        .hover-theme-bg:hover {
-            background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
-        }
-        .hover-theme-bg:hover svg {
-            color: var(--theme-primary) !important;
-        }
-      `}</style>
     </div>
   );
 };

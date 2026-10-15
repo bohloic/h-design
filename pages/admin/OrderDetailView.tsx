@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import { AdminDesignPreview } from '@/components/admin/AdminDesignPreview';
+import { downloadHDImage } from '@/utils/imageDownloader';
 import { translateStatus, getStatusColorClass } from '../../src/utils/statusTranslations';
 import { useToast } from '../../src/utils/context/ToastContext';
 import LoadingSpinner from '../../src/components/tools/LoadingSpinner';
@@ -315,7 +316,13 @@ export const OrderDetailView = () => {
                                                                     <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm inline-block">
                                                                         <img src={maquetteUrl} alt="Maquette Finale" className="max-w-full h-auto max-h-[300px] object-contain rounded" />
                                                                     </div>
-                                                                    <a href={maquetteUrl} download={`maquette-${order.id}-${item.id}.png`} target="_blank" rel="noreferrer" className="text-xs flex items-center gap-2 text-blue-600 font-bold hover:underline bg-blue-50 px-3 py-2 rounded-lg border border-blue-100"><Download size={14} /> Télécharger la maquette</a>
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => downloadHDImage(maquetteUrl, `maquette-${order.id}-${item.id}.png`)} 
+                                                                        className="text-xs flex items-center gap-2 text-blue-600 font-bold hover:underline bg-blue-50 px-3 py-2 rounded-lg border border-blue-100 cursor-pointer active:scale-95 transition-all"
+                                                                    >
+                                                                        <Download size={14} className="pointer-events-none" /> Télécharger la maquette (HD)
+                                                                    </button>
                                                                 </div>
                                                             ) : (
                                                                 <div className="p-3 bg-yellow-50 text-yellow-700 text-xs rounded border border-yellow-100 flex items-center gap-2"><AlertTriangle size={14} /><span>Image de maquette non disponible.</span></div>

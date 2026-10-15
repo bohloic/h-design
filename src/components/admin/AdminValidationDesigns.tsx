@@ -8,6 +8,7 @@ import LoadingSpinner from '../tools/LoadingSpinner';
 import { CheckCircle, XCircle, Palette, Eye, Loader2, AlertCircle, X, Download, ZoomIn, Layers } from 'lucide-react';
 import { useAutoRefresh } from '@/utils/hooks/useAutoRefresh';
 import { AdminDesignPreview } from './AdminDesignPreview';
+import { downloadHDImage } from '@/utils/imageDownloader';
 
 export const AdminValidationDesigns = () => {
     const { showToast } = useToast();
@@ -95,6 +96,11 @@ export const AdminValidationDesigns = () => {
                 });
 
                 setPendingOrders(filteredPending);
+
+                // 🪄 Synchronisation temps réel immédiate du badge Sidebar
+                window.dispatchEvent(new CustomEvent('admin_badges_updated', { 
+                    detail: { pendingDesigns: filteredPending.length } 
+                }));
             }
         } catch (error) {
             console.error("Erreur chargement des designs :", error);
@@ -441,28 +447,11 @@ export const AdminValidationDesigns = () => {
                                     </div>
                                     <button
                                         onClick={async () => {
-                                            let fullUrl = previewModalItem.imgUrl.startsWith('http') 
-                                                ? previewModalItem.imgUrl 
-                                                : (previewModalItem.imgUrl.startsWith('h-designer/') 
-                                                    ? `https://res.cloudinary.com/dwyx9e7zw/image/upload/q_100,f_png/${previewModalItem.imgUrl}` 
-                                                    : BASE_IMG_URL + previewModalItem.imgUrl);
-                                            try {
-                                                const res = await fetch(fullUrl);
-                                                const blob = await res.blob();
-                                                const url = URL.createObjectURL(blob);
-                                                const a = document.createElement('a');
-                                                a.href = url;
-                                                a.download = `rendu_canvas_hd_${previewModalItem.orderSlug}.png`;
-                                                document.body.appendChild(a);
-                                                a.click();
-                                                document.body.removeChild(a);
-                                                setTimeout(() => URL.revokeObjectURL(url), 2000);
-                                            } catch (e) {
-                                                window.open(fullUrl, '_blank');
-                                            }
+                                            const fileName = `rendu_canvas_hd_${previewModalItem.orderSlug}.png`;
+                                            await downloadHDImage(previewModalItem.imgUrl, fileName);
                                         }}
                                         title="Télécharger l'image HD du rendu canvas"
-                                        className="mt-3 text-xs font-bold text-theme-primary hover:underline flex items-center gap-1.5 cursor-pointer"
+                                        className="mt-3 text-xs font-bold text-theme-primary hover:underline flex items-center gap-1.5 cursor-pointer active:scale-95 transition-transform"
                                     >
                                         <Download size={14} /> Télécharger le rendu HD original (PNG)
                                     </button>

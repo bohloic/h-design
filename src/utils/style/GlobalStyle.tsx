@@ -8,16 +8,13 @@ const StyledGlobalStyle = createGlobalStyle<{ isDarkMode?: boolean }>`
     }
 
     body {
-        background-color: ${(props) =>
-          props.isDarkMode ? '#2F2E41' : 'white'};
+        background-color: #F8FAFC;
         margin: 0;
     }
 `;
 
 function GlobalStyle() {
-  const { theme } = useTheme();
-
-  return <StyledGlobalStyle isDarkMode={theme === 'dark'} />;
+  return <StyledGlobalStyle isDarkMode={false} />;
 }
 
 export default GlobalStyle;

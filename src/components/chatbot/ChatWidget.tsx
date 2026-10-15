@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { MessageCircle, X, Send, Bot, ArrowRight, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, ArrowRight, Loader2, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authFetch } from '@/utils/apiClient';
 import { BASE_IMG_URL } from '@/components/images/VoirImage';
@@ -13,17 +13,49 @@ interface Message {
   products?: any[];
 }
 
+const DEFAULT_GREETING: Message = {
+  text: "Bonjour ! Je suis l'assistant **H-Designer**. Comment puis-je vous aider ? (ex: 'Quelles sont vos catégories ?' ou 'Je cherche un T-shirt XL')", 
+  sender: 'bot'
+};
+
 const ChatWidget: React.FC = () => {
   const { isOpen, setIsOpen } = useChatStore();
-  const [messages, setMessages] = useState<Message[]>([
-    { text: "Bonjour ! Je suis l'assistant **H-Designer**. Comment puis-je vous aider ? (ex: 'Quelles sont vos catégories ?' ou 'Je cherche un T-shirt XL')", sender: 'bot' }
-  ]);
+  
+  // 💬 Persistance des anciennes discussions dans le localStorage
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      const saved = localStorage.getItem('hdesigner_chat_messages');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [DEFAULT_GREETING];
+  });
+
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('hdesigner_chat_messages', JSON.stringify(messages));
+    } catch {}
+  }, [messages]);
+
+  // ⌨️ Fermeture du Chat via la touche Échap
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, setIsOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -37,6 +69,13 @@ const ChatWidget: React.FC = () => {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen]);
+
+  const handleResetChat = () => {
+    setMessages([DEFAULT_GREETING]);
+    try {
+      localStorage.setItem('hdesigner_chat_messages', JSON.stringify([DEFAULT_GREETING]));
+    } catch {}
+  };
 
   const sanitizeBotResponse = (text: string): string => {
     if (!text) return "Bonjour ! Je suis l'assistant virtuel H-Designer. Comment puis-je vous aider aujourd'hui ?";
@@ -59,7 +98,8 @@ const ChatWidget: React.FC = () => {
     if (!input.trim()) return;
 
     const userMessage = input.trim();
-    setMessages(prev => [...prev, { text: userMessage, sender: 'user' }]);
+    const updatedMessages = [...messages, { text: userMessage, sender: 'user' as const }];
+    setMessages(updatedMessages);
     setInput("");
     setIsLoading(true);
 
@@ -67,12 +107,23 @@ const ChatWidget: React.FC = () => {
     const isTypoOrGibberish = /^[b-df-hj-np-tv-z]{5,}$/i.test(userMessage.replace(/\s+/g, '')) || 
                               /(.)\1{4,}/i.test(userMessage);
 
+    // Formatage de l'historique de discussion pour Gemini API
+    const history = updatedMessages
+      .slice(0, -1) // Exclut le dernier message actuel qui est transmis via 'message'
+      .filter(m => m.text)
+      .slice(-10) // Mémorise les 10 derniers échanges
+      .map(m => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }]
+      }));
+
     try {
       const response = await authFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          message: `[SYSTÈME: Tu es l'assistant virtuel de la marque H-Designer (T-shirts, Sweats, Mugs, casquettes personnalisables). Tu réponds poliment en français. NE MENTIONNE JAMAIS LA BOUTIQUE DE NOËL, NI LE PÈRE NOËL, NI LES FÊTES DE NOËL.]\n\nQuestion client: ${userMessage}`
+          message: `[SYSTÈME: Tu es l'assistant virtuel de la marque H-Designer (T-shirts, Sweats, Mugs, casquettes personnalisables). Tu réponds poliment en français. NE MENTIONNE JAMAIS LA BOUTIQUE DE NOËL, NI LE PÈRE NOËL, NI LES FÊTES DE NOËL.]\n\nQuestion client: ${userMessage}`,
+          history
         })
       });
 
@@ -132,14 +183,28 @@ const ChatWidget: React.FC = () => {
                 </p>
               </div>
             </div>
-            <button 
-              onClick={() => setIsOpen(false)} 
-              onTouchEnd={(e) => { e.preventDefault(); setIsOpen(false); }}
-              aria-label="Fermer le chat"
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
-            >
-              <X size={20} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button 
+                type="button"
+                onClick={handleResetChat}
+                style={{ touchAction: 'manipulation' }}
+                title="Effacer l'historique et recommencer"
+                aria-label="Nouvelle conversation"
+                className="min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors cursor-pointer relative z-50 active:scale-95 text-white/80 hover:text-white"
+              >
+                <RotateCcw size={16} className="pointer-events-none" />
+              </button>
+              <button 
+                type="button"
+                onClick={() => setIsOpen(false)} 
+                style={{ touchAction: 'manipulation' }}
+                title="Fermer le chat (Échap)"
+                aria-label="Fermer le chat"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-white/10 rounded-full transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+              >
+                <X size={20} className="pointer-events-none" />
+              </button>
+            </div>
           </div>
 
           {/* Zone Messages — flex-1 + overflow pour que le chat défile sans pousser l'input */}

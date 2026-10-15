@@ -75,6 +75,14 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
   useEffect(() => {
     if (isMobileFilterOpen) {
       document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setIsMobileFilterOpen(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
     } else {
       document.body.style.overflow = 'unset';
     }
@@ -245,22 +253,22 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
         {/* SIDEBAR */}
         <aside className={`
-            fixed inset-0 z-[60] bg-[#F3F4F6] dark:bg-[#111827] transition-transform duration-300
+            fixed inset-0 z-[60] bg-white transition-transform duration-300
             flex flex-col h-full
             lg:static lg:h-auto lg:w-72 lg:bg-transparent lg:block lg:z-auto lg:translate-x-0
             ${isMobileFilterOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
 
           {/* Header Sidebar Mobile */}
-          <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-[#F3F4F6] dark:bg-[#111827] lg:hidden transition-colors">
-            <h2 className="text-xl font-black text-[#111827] dark:text-[#F9FAFB] uppercase">Filtres</h2>
+          <div className="flex-none flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50 lg:hidden transition-colors">
+            <h2 className="text-xl font-black text-slate-900 uppercase">Filtres</h2>
             <button
               onClick={() => setIsMobileFilterOpen(false)}
-              onTouchEnd={(e) => { e.preventDefault(); setIsMobileFilterOpen(false); }}
+              style={{ touchAction: 'manipulation' }}
               aria-label="Fermer les filtres"
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-slate-300 dark:hover:bg-slate-700 text-[#111827] dark:text-[#F9FAFB] transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-slate-200 rounded-full hover:bg-slate-300 text-slate-900 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
             >
-              <X size={20} />
+              <X size={20} className="pointer-events-none" />
             </button>
           </div>
 
@@ -362,11 +370,11 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
           {/* 📌 BOUTON STICKY MOBILE EN BAS DE LA MODALE DES FILTRES (position: sticky; bottom: 0) */}
           <div 
             style={{ position: 'sticky', bottom: 0 }}
-            className="sticky bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 lg:hidden z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+            className="sticky bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-slate-200 lg:hidden z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
           >
             <button
               onClick={() => setIsMobileFilterOpen(false)}
-              style={{ backgroundColor: 'var(--theme-primary)' }}
+              style={{ backgroundColor: 'var(--theme-primary)', touchAction: 'manipulation' }}
               className="w-full min-h-[48px] py-3.5 text-white rounded-2xl font-black text-sm shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer touch-target-44"
             >
               Appliquer ({filteredProducts.length} résultat{filteredProducts.length > 1 ? 's' : ''})

@@ -49,14 +49,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('role', safeUser.role);
         }
       } else {
-        // Non connecté / Session expirée
-        setIsAuthenticated(false);
-        setUser(null);
+        // Fallback résilient avec les données locales si le cookie n'est pas envoyé en cross-origin
+        const storedToken = localStorage.getItem('token');
+        const storedData = localStorage.getItem('data');
+        if (storedToken && storedData) {
+          try {
+            const parsed = JSON.parse(storedData);
+            setUser(parsed);
+            setIsAuthenticated(true);
+          } catch {
+            setIsAuthenticated(false);
+            setUser(null);
+          }
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
       }
     } catch (error) {
       console.warn("Vérification session:", error);
-      setIsAuthenticated(false);
-      setUser(null);
+      const storedToken = localStorage.getItem('token');
+      const storedData = localStorage.getItem('data');
+      if (storedToken && storedData) {
+        try {
+          setUser(JSON.parse(storedData));
+          setIsAuthenticated(true);
+        } catch {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -78,9 +103,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = (tokenOrUser: any, possibleUserData?: UserData) => {
-    const finalUserData = possibleUserData || tokenOrUser;
-    // 🛡️ OWASP: Strictement AUCUN token dans le localStorage !
-    localStorage.removeItem('token');
+    let tokenStr: string | null = null;
+    let finalUserData: UserData | null = null;
+
+    if (typeof tokenOrUser === 'string') {
+      tokenStr = tokenOrUser;
+      finalUserData = possibleUserData || null;
+    } else {
+      finalUserData = tokenOrUser;
+      tokenStr = (possibleUserData as any) || null;
+    }
+
+    if (tokenStr) {
+      localStorage.setItem('token', tokenStr);
+    }
+
     if (finalUserData) {
       localStorage.setItem('data', JSON.stringify(finalUserData));
       if (finalUserData.role) {

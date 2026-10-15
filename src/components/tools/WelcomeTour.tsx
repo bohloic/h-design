@@ -18,6 +18,16 @@ const WelcomeTour: React.FC = () => {
     localStorage.setItem('hasSeenWelcomeTour', 'true');
   };
 
+  // Fermeture via la touche Échap
+  useEffect(() => {
+    if (!isVisible) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeTour();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isVisible]);
+
   const nextStep = () => {
     if (step < 3) {
       setStep(prev => prev + 1);
@@ -29,17 +39,23 @@ const WelcomeTour: React.FC = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-carbon w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative border border-white/10">
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+      onClick={closeTour}
+    >
+      <div 
+        className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden relative border border-slate-100"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Bouton Fermer Rapide */}
         <button 
           onClick={closeTour}
-          onTouchEnd={(e) => { e.preventDefault(); closeTour(); }}
+          style={{ touchAction: 'manipulation' }}
           aria-label="Fermer le guide"
-          className="absolute top-4 right-4 min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+          className="absolute top-4 right-4 min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
         >
-          <X size={20} />
+          <X size={20} className="pointer-events-none" />
         </button>
 
         {/* CONTENU DES ÉTAPES */}
@@ -52,8 +68,8 @@ const WelcomeTour: React.FC = () => {
                 <Sparkles size={32} />
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-2xl font-black text-slate-900 dark:text-pure uppercase tracking-tight">Bienvenue chez H-Designer</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Bienvenue chez H-Designer</h2>
+                <p className="text-slate-500 text-sm leading-relaxed">
                   Découvrez l'élégance du sur-mesure à Abidjan. Laissez-nous vous guider à travers nos services exclusifs.
                 </p>
               </div>
@@ -63,12 +79,12 @@ const WelcomeTour: React.FC = () => {
           {/* Étape 2 : Chatbot IA */}
           {step === 2 && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 mx-auto">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mx-auto">
                 <MessageCircle size={32} />
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-2xl font-black text-slate-900 dark:text-pure uppercase tracking-tight">Votre Assistant IA</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Votre Assistant IA</h2>
+                <p className="text-slate-500 text-sm leading-relaxed">
                   Besoin d'un conseil style ou d'une idée cadeau ? Notre Chatbot intelligent est là pour vous aider 24h/24 !
                 </p>
               </div>
@@ -78,12 +94,12 @@ const WelcomeTour: React.FC = () => {
           {/* Étape 3 : Personnalisation */}
           {step === 3 && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center text-purple-600 mx-auto">
+              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mx-auto">
                 <Palette size={32} />
               </div>
               <div className="text-center space-y-2">
-                <h2 className="text-2xl font-black text-slate-900 dark:text-pure uppercase tracking-tight">Créez votre Style</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Créez votre Style</h2>
+                <p className="text-slate-500 text-sm leading-relaxed">
                   Utilisez notre atelier pour personnaliser vos t-shirts avec vos textes, images ou même des designs générés par IA.
                 </p>
               </div>
@@ -105,7 +121,7 @@ const WelcomeTour: React.FC = () => {
                 {[1, 2, 3].map(i => (
                   <div 
                     key={i} 
-                    className={`h-1.5 rounded-full transition-all duration-300 ${step === i ? 'w-8 bg-theme-primary' : 'w-2 bg-slate-200 dark:bg-slate-800'}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${step === i ? 'w-8 bg-theme-primary' : 'w-2 bg-slate-200'}`}
                     style={step === i ? { backgroundColor: 'var(--theme-primary)' } : {}}
                   />
                 ))}

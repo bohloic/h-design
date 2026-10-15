@@ -19,6 +19,16 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
   
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  // Fermeture via la touche Échap
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleCheckoutClick = () => {
@@ -36,24 +46,24 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white dark:bg-carbon h-full shadow-2xl flex flex-col animate-slide-in-right text-slate-900 dark:text-pure transition-colors">
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between transition-colors">
-          <h2 className="text-xl font-bold flex items-center">
+      <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-slide-in-right text-slate-900 transition-colors">
+        <div className="p-6 border-b border-slate-200 flex items-center justify-between transition-colors bg-white">
+          <h2 className="text-xl font-bold flex items-center text-slate-900">
             Mon Panier <span className="ml-2">🛍️</span>
           </h2>
           <button 
             onClick={onClose} 
-            onTouchEnd={(e) => { e.preventDefault(); onClose(); }}
+            style={{ touchAction: 'manipulation' }}
             aria-label="Fermer le panier"
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-500 hover:text-slate-900 dark:hover:text-pure hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6 pointer-events-none" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
           {items.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 space-y-4 text-center">
+            <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-4 text-center">
               <ShoppingCart size={64} className="opacity-20" />
               <p className="text-lg">Votre panier est vide comme une nuit sans étoiles.</p>
               <button 
@@ -66,43 +76,40 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
             </div>
           ) : (
             items.map((item) => (
-              <div key={item.id} className="flex space-x-4 animate-fade-in">
+              <div key={item.id} className="flex space-x-4 animate-fade-in bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
                 <SafeImage 
                     src={item.image_url || (item as any).image || (item as any).options?.customizationImage} 
                     alt={item.name} 
-                    className="w-20 h-24 object-cover rounded-lg border border-slate-200 dark:border-slate-800" 
+                    className="w-20 h-24 object-cover rounded-lg border border-slate-200" 
                 />
                 
                 <div className="flex-1">
-                  <h3 className="font-semibold text-slate-900 dark:text-pure">{item.name}</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">{formatCurrency(item.price)}</p>
+                  <h3 className="font-semibold text-slate-900">{item.name}</h3>
+                  <p className="text-sm text-slate-500 mb-2">{formatCurrency(item.price)}</p>
                   
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2 border border-slate-700 rounded-full px-2 py-1">
+                    <div className="flex items-center space-x-2 border border-slate-200 rounded-full px-2 py-1 bg-slate-50">
                       <button 
-                        // 🪄 FIX 2 : Conversion de l'ID en String
                         onClick={() => onUpdateQuantity(String(item.id), -1)}
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors disabled:opacity-30 theme-cart-btn"
+                        className="p-1 hover:bg-slate-200 rounded-full transition-colors disabled:opacity-30 theme-cart-btn"
                         disabled={item.quantity <= 1}
                       >
                         <Minus className="w-4 h-4" />
                       </button>
                       
-                      <span className="w-8 text-center font-medium">{item.quantity}</span>
+                      <span className="w-8 text-center font-medium text-slate-800">{item.quantity}</span>
                       
                       <button 
-                        // 🪄 FIX 3 : Conversion de l'ID en String
                         onClick={() => onUpdateQuantity(String(item.id), 1)}
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors theme-cart-btn"
+                        className="p-1 hover:bg-slate-200 rounded-full transition-colors theme-cart-btn"
                       >
                         <Plus className="w-4 h-4" />
                       </button>
                     </div>
                     
                     <button 
-                      // 🪄 FIX 4 : Conversion de l'ID en String
                       onClick={() => onRemove(String(item.id))}
-                      className="p-2 text-red-500 hover:bg-red-900/30 rounded-full transition-colors"
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -114,12 +121,12 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
         </div>
 
         {items.length > 0 && (
-          <div className="p-6 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-800 space-y-4 transition-colors">
+          <div className="p-6 bg-slate-50 border-t border-slate-200 space-y-4 transition-colors">
             <div className="flex justify-between items-center text-lg font-bold">
               <span>Total</span>
               <span style={{ color: 'var(--theme-primary)' }}>{formatCurrency(total)}</span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 text-center italic">
+            <p className="text-xs text-slate-500 text-center italic">
               Livraison gratuite disponible selon votre zone !
             </p>
             

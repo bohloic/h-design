@@ -113,6 +113,15 @@ export const Sidebar = ({
 
   useEffect(() => {
     fetchBadges();
+
+    const handleBadgeSync = (e: any) => {
+      if (e.detail) {
+        setBadges(prev => ({ ...prev, ...e.detail }));
+      }
+    };
+
+    window.addEventListener('admin_badges_updated', handleBadgeSync);
+    return () => window.removeEventListener('admin_badges_updated', handleBadgeSync);
   }, []);
 
   useAutoRefresh(fetchBadges, 30000);
@@ -188,13 +197,14 @@ export const Sidebar = ({
           {/* Bouton Fermer Mobile */}
           {onClose && (
             <button 
+              type="button"
               onClick={onClose}
-              onTouchEnd={(e) => { e.preventDefault(); onClose(); }}
+              style={{ touchAction: 'manipulation' }}
               title="Fermer le menu"
               aria-label="Fermer le menu"
               className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center p-2 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl transition-all cursor-pointer relative z-50 touch-target-44 active:scale-95"
             >
-              <X size={20} />
+              <X size={20} className="pointer-events-none" />
             </button>
           )}
         </div>
@@ -322,12 +332,12 @@ export const Sidebar = ({
               </h3>
               <button 
                 onClick={() => setShowProfileModal(false)}
-                onTouchEnd={(e) => { e.preventDefault(); setShowProfileModal(false); }}
+                style={{ touchAction: 'manipulation' }}
                 className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
                 title="Fermer (Échap)"
                 aria-label="Fermer la fenêtre du profil"
               >
-                <X size={20} />
+                <X size={20} className="pointer-events-none" />
               </button>
             </div>
 

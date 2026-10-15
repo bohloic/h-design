@@ -93,14 +93,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
           {/* 3. ICONES ACTIONS */}
           <div className="flex items-center space-x-1 md:space-x-3">
 
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleThemeMode}
-              className="p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors hidden sm:block"
-              title={themeMode === 'dark' ? "Passer en mode clair" : "Passer en mode sombre"}
-            >
-              {themeMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
+            {/* Compte & Notifications */}
 
 
             {isAuthenticated ? (
@@ -181,13 +174,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
               </Link>
             )}
 
-            <div className="border-t border-slate-200 dark:border-slate-800 my-2 pt-2">
-              <button
-                onClick={() => { toggleThemeMode(); closeMenu(); }}
-                className="w-full flex items-center px-4 py-3 rounded-xl text-base font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
-              >
-                {themeMode === 'dark' ? <><Sun className="w-5 h-5 mr-3" /> Mode Clair</> : <><Moon className="w-5 h-5 mr-3" /> Mode Sombre</>}
-              </button>
+            <div className="border-t border-slate-200 my-2 pt-2">
               {isAuthenticated ? (
                 <>
                   <Link

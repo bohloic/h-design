@@ -8,6 +8,7 @@ import { useAutoRefresh } from '../../src/utils/hooks/useAutoRefresh';
 import { translateStatus, getStatusColorClass, OrderStatus } from '../../src/utils/statusTranslations';
 import Pagination from '../../src/components/tools/Pagination';
 import { ADMIN_BASE_PATH } from '../../src/constants';
+import { ConfirmDestructiveModal } from '../../src/components/admin/ConfirmDestructiveModal';
 
 // 🪄 LE TRADUCTEUR UNIVERSEL (Le nettoyeur de base de données)
 const normalizeStatus = (dbStatus: string) => {
@@ -98,9 +99,17 @@ export const OrderView = () => {
     }
   };
 
+  // 🛡️ MODALE DE CONFIRMATION STATUT CRITIQUE (Annulé / Retourné)
+  const [confirmStatusModal, setConfirmStatusModal] = useState<{
+    orderId: number;
+    newStatus: string;
+    orderRef: string;
+  } | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
   useAutoRefresh(() => fetchOrders(false), 10000);
 
-  const handleStatusChange = async (orderId: number, newStatus: string) => {
+  const applyStatusChange = async (orderId: number, newStatus: string) => {
     const orderBeingUpdated = orders.find((o: any) => o.id === orderId) as any;
     if (!orderBeingUpdated) return;
 
@@ -117,6 +126,7 @@ export const OrderView = () => {
     setOrders(orders.map((o: any) => o.id === orderId ? { ...o, status: newStatus } : o));
 
     try {
+      setIsUpdatingStatus(true);
       const response = await authFetch(`/api/orders/${orderId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -140,7 +150,6 @@ export const OrderView = () => {
           }
       }
 
-
       // 1. Notification locale pour l'Admin (Confirmation immédiate)
       useNotificationStore.getState().addNotification({
         title: "Statut mis à jour",
@@ -153,7 +162,22 @@ export const OrderView = () => {
       console.error("Erreur update", error);
       setOrders(oldOrders);
       showToast("Erreur lors de la mise à jour", "error");
+    } finally {
+      setIsUpdatingStatus(false);
     }
+  };
+
+  const handleStatusChange = (orderId: number, newStatus: string) => {
+    // Si passage à Annulé ou Retourné -> modale de confirmation
+    if (newStatus === OrderStatus.CANCELLED || newStatus === OrderStatus.RETURNED) {
+      setConfirmStatusModal({
+        orderId,
+        newStatus,
+        orderRef: `#HD-${String(orderId).padStart(5, '0')}`
+      });
+      return;
+    }
+    applyStatusChange(orderId, newStatus);
   };
 
 
@@ -225,7 +249,7 @@ export const OrderView = () => {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 text-sm font-semibold">
-                                <th className="px-6 py-4 w-28 uppercase tracking-wider text-xs">ID</th>
+                                <th className="px-6 py-4 w-28 uppercase tracking-wider text-xs sticky left-0 bg-slate-50 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">ID</th>
                                 <th className="px-6 py-4 uppercase tracking-wider text-xs">Client</th>
                                 <th className="px-6 py-4 uppercase tracking-wider text-xs">Date</th>
                                 <th className="px-6 py-4 uppercase tracking-wider text-xs">Total</th>
@@ -236,7 +260,7 @@ export const OrderView = () => {
                         <tbody className="divide-y divide-slate-100">
                             {paginatedOrders.map((order: any) => (
                                 <tr key={order.id} className="hover:bg-slate-50 transition-colors group">
-                                    <td className="px-6 py-4 font-mono text-slate-500 font-bold relative">
+                                    <td className="px-6 py-4 font-mono text-slate-500 font-bold relative sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
                                         <div className="flex items-center gap-2">
                                             #HD-{String(order.id).padStart(5, '0')}
                                             {order.isSeen === 0 && (
@@ -389,6 +413,23 @@ export const OrderView = () => {
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 15%, transparent);
         }
       `}</style>
+
+      {/* 🛡️ MODALE DE CONFIRMATION DESTRUCTICE POUR CHANGEMENT DE STATUT CRITIQUE */}
+      <ConfirmDestructiveModal
+        isOpen={!!confirmStatusModal}
+        onClose={() => setConfirmStatusModal(null)}
+        onConfirm={async () => {
+          if (confirmStatusModal) {
+            await applyStatusChange(confirmStatusModal.orderId, confirmStatusModal.newStatus);
+            setConfirmStatusModal(null);
+          }
+        }}
+        title="Confirmer le changement de statut critique"
+        itemName={confirmStatusModal?.orderRef}
+        message={`Attention : Vous êtes sur le point de passer cette commande au statut « ${translateStatus(confirmStatusModal?.newStatus || '')} ». Cette action impactera les stocks et les notifications du client.`}
+        isLoading={isUpdatingStatus}
+        requireTyping={false}
+      />
     </div>
   );
 };

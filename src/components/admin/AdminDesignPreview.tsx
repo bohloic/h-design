@@ -1,7 +1,8 @@
-import React from 'react';
+import { downloadHDImage } from '@/utils/imageDownloader';
+import { BASE_IMG_URL } from '../images/VoirImage';
 
 interface AdminDesignPreviewProps {
-    productImage: string;
+    productImage?: string;
     customizationJson: any;
 }
 
@@ -10,10 +11,8 @@ export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ customiz
     let elements: any[] = [];
 
     try {
-        // On utilise 'any' pour éviter que TypeScript ne bloque sur .design ou .elements
         const rawData: any = typeof customizationJson === 'string' ? JSON.parse(customizationJson) : customizationJson;
         
-        // Extraction des données selon le format (nouveau ou ancien)
         if (Array.isArray(rawData)) {
             elements = rawData;
         } else if (rawData?.design) {
@@ -22,56 +21,28 @@ export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ customiz
             elements = rawData.elements;
         }
 
-        // Sécurité : si ce n'est toujours pas un tableau, on vide
         if (!Array.isArray(elements)) elements = [];
 
     } catch (e) {
         return <div className="text-red-500 text-xs">Erreur de lecture du design</div>;
     }
 
-    // --- FONCTION INTELLIGENTE DE NETTOYAGE D'URL (Comme dans OrderDetailView) ---
+    // --- FONCTION INTELLIGENTE DE NETTOYAGE D'URL ---
     const getCleanUrl = (path: string) => {
         if (!path) return '';
-        if (path.startsWith('http') || path.startsWith('data:')) {
+        if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:') || path.startsWith('blob:')) {
             return path;
         }
-        // On enlève les /images/ en trop et les doubles //
-        const cleanPath = path.replace('//', '/').replace('/images/', '');
-        // On retourne le chemin propre qui passera par ton proxy Vite
-        return `/images/${cleanPath}`;
+        if (path.startsWith('h-designer/') || path.startsWith('v1')) {
+            return `https://res.cloudinary.com/dwyx9e7zw/image/upload/q_100,f_png/${path}`;
+        }
+        const cleanPath = path.replace(/^\/+/, '').replace(/^images\//, '');
+        return `${BASE_IMG_URL}${cleanPath}`;
     };
 
-    const downloadHighResFile = async (url: string, index: number) => {
+    const handleDownload = async (url: string, index: number) => {
         const fileName = `source_element_hd_${index + 1}.png`;
-        try {
-            let targetUrl = getCleanUrl(url);
-            if (targetUrl.includes('res.cloudinary.com')) {
-                // Strips downscaling transform parameters from Cloudinary URLs to obtain maximum quality
-                targetUrl = targetUrl.replace(/\/w_\d+,c_[^\/]+/, '/q_100,f_png').replace(/\/c_thumb,w_\d+/, '/q_100,f_png');
-            }
-            
-            const res = await fetch(targetUrl);
-            if (!res.ok) throw new Error("Fetch failed");
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-        } catch (e) {
-            // Direct download fallback
-            const link = document.createElement('a');
-            link.href = getCleanUrl(url);
-            link.target = '_blank';
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        await downloadHDImage(url, fileName);
     };
 
     return (
@@ -102,7 +73,7 @@ export const AdminDesignPreview: React.FC<AdminDesignPreviewProps> = ({ customiz
                                 </div>
                             </div>
                             <button 
-                                onClick={() => downloadHighResFile(el.content, idx)}
+                                onClick={() => handleDownload(el.content, idx)}
                                 title="Télécharger le fichier original en haute définition"
                                 className="text-[10px] bg-theme-primary/10 text-theme-primary hover:bg-theme-primary hover:text-white px-3 py-1.5 rounded font-bold border border-theme-primary/30 transition-all cursor-pointer shadow-sm active:scale-95 flex items-center gap-1"
                             >

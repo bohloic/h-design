@@ -21,7 +21,6 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => {
-        // 🪄 Remplacement de p.category par p.category_name (ou en forçant la lecture avec un fallback)
         const matchesCategory = activeTab === 'Tous' || p.category_name === activeTab || (p as any).category === activeTab; 
         const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesCategory && matchesSearch;
@@ -29,24 +28,24 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
   }, [products, activeTab, searchTerm]);
 
   return (
-    <div className="w-full h-full bg-white dark:bg-carbon flex flex-col transition-colors">
+    <div className="w-full h-full bg-white flex flex-col transition-colors">
       
       <div className="p-4 pb-0 transition-colors">
         <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
                 type="text"
                 placeholder="Chercher un produit..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-slate-800 dark:text-pure rounded-xl text-sm focus:outline-none transition-all theme-input-sidebar"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 text-slate-800 rounded-xl text-sm focus:outline-none transition-all theme-input-sidebar focus:bg-white"
             />
         </div>
       </div>
 
       {/* En-tête Catégories */}
-      <div className="p-4 border-b border-gray-100 dark:border-slate-800 transition-colors">
-        <h2 className="text-xs font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+      <div className="p-4 border-b border-slate-100 transition-colors">
+        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
            <Grid size={14} /> Catégories
         </h2>
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
@@ -54,11 +53,11 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
           {/* Bouton "Tous" */}
            <button
               onClick={() => setActiveTab('Tous')}
-              style={activeTab === 'Tous' ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)' } : {}}
+              style={activeTab === 'Tous' ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)', touchAction: 'manipulation' } : { touchAction: 'manipulation' }}
               className={`flex-shrink-0 px-4 py-2.5 min-h-[44px] rounded-full text-xs font-bold border transition-all touch-target-44 flex items-center justify-center cursor-pointer ${
                 activeTab === 'Tous' 
                 ? 'text-white shadow-sm' 
-                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover-border-theme'
+                : 'bg-white text-slate-600 border-slate-200 hover-border-theme'
               }`}
             >
               Tous
@@ -72,12 +71,13 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
               style={activeTab === cat.name ? { 
                   color: 'var(--theme-primary)', 
                   backgroundColor: 'color-mix(in srgb, var(--theme-primary) 10%, transparent)',
-                  borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)'
-              } : {}}
+                  borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)',
+                  touchAction: 'manipulation'
+              } : { touchAction: 'manipulation' }}
               className={`flex-shrink-0 px-4 py-2.5 min-h-[44px] rounded-full text-xs font-bold border transition-all touch-target-44 flex items-center justify-center cursor-pointer ${
                 activeTab === cat.name 
                 ? '' 
-                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover-border-theme'
+                : 'bg-white text-slate-600 border-slate-200 hover-border-theme'
               }`}
             >
               {cat.name}
@@ -96,15 +96,16 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
                 style={selectedProductId === product.id ? {
                     borderColor: 'var(--theme-primary)',
                     backgroundColor: 'color-mix(in srgb, var(--theme-primary) 5%, transparent)',
-                    '--tw-ring-color': 'var(--theme-primary)'
-                } as React.CSSProperties : {}}
+                    '--tw-ring-color': 'var(--theme-primary)',
+                    touchAction: 'manipulation'
+                } as React.CSSProperties : { touchAction: 'manipulation' }}
                 className={`w-full min-h-[64px] group text-left rounded-2xl overflow-hidden border transition-all p-2.5 flex items-center gap-3 cursor-pointer ${
                     selectedProductId === product.id 
-                    ? 'ring-1' 
-                    : 'border-gray-100 dark:border-slate-800 hover:shadow-sm bg-white dark:bg-slate-900/50 hover-border-theme'
+                    ? 'ring-1 shadow-sm' 
+                    : 'border-slate-100 hover:shadow-sm bg-white hover-border-theme'
                 }`}
                 >
-                    <div className="w-16 h-16 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-100 relative">
+                    <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-100 relative">
                         <SafeImage 
                             src={product.image_url} 
                             alt={product.name} 
@@ -113,12 +114,12 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
                     </div>
                     <div className="flex-1 min-w-0">
                         <h3 
-                            className={`text-sm font-bold truncate ${selectedProductId === product.id ? '' : 'text-gray-800 dark:text-pure'}`}
+                            className={`text-sm font-bold truncate ${selectedProductId === product.id ? '' : 'text-slate-800'}`}
                             style={selectedProductId === product.id ? { color: 'var(--theme-primary)' } : {}}
                         >
                             {product.name}
                         </h3>
-                        <p className="text-xs text-gray-500 mt-0.5">{product.price} FCFA</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{product.price} FCFA</p>
                     </div>
                     
                     {/* Indicateur de sélection */}
@@ -131,7 +132,7 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
                 </button>
             ))
         ) : (
-            <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
+            <div className="text-center py-8 text-slate-400 text-sm">
                 Aucun produit trouvé.
             </div>
         )}

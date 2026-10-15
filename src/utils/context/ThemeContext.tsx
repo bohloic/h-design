@@ -14,8 +14,8 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType>({
   activeCollection: null,
   themeColor: '#1E3A8A',
-  themeMode: 'dark',
-  theme: 'dark',
+  themeMode: 'light',
+  theme: 'light',
   toggleThemeMode: () => {},
   toggleTheme: () => {},
   refreshTheme: async () => {},
@@ -24,43 +24,18 @@ const ThemeContext = createContext<ThemeContextType>({
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeCollection, setActiveCollection] = useState<any | null>(null);
   const [themeColor, setThemeColor] = useState<string>('#1E3A8A');
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('dark');
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
-  // Initialize theme mode on mount
+  // Mode clair exclusif : suppression permanente du mode sombre
   useEffect(() => {
-    const savedMode = localStorage.getItem('hdesigner_theme_mode');
-    if (savedMode === 'light' || savedMode === 'dark') {
-      setThemeMode(savedMode);
-      if (savedMode === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    } else {
-      // 🌓 DÉTECTION AUTOMATIQUE (System Preference)
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialMode = prefersDark ? 'dark' : 'light';
-      
-      setThemeMode(initialMode);
-      if (initialMode === 'dark') {
-          document.documentElement.classList.add('dark');
-      } else {
-          document.documentElement.classList.remove('dark');
-      }
-    }
+    localStorage.removeItem('hdesigner_theme_mode');
+    document.documentElement.classList.remove('dark');
   }, []);
 
   const toggleThemeMode = () => {
-    setThemeMode((prevMode) => {
-      const newMode = prevMode === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('hdesigner_theme_mode', newMode);
-      if (newMode === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return newMode;
-    });
+    // Mode sombre supprimé : maintien strict du mode clair
+    setThemeMode('light');
+    document.documentElement.classList.remove('dark');
   };
 
   const fetchActiveTheme = async () => {

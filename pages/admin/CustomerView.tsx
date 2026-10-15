@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { authFetch } from '../../src/utils/apiClient';
-import { Edit, Trash2, UserPlus, Gift, Mail, Phone, XCircle, Shield, User as UserIcon, ChevronDown, CheckCircle2, Eye, EyeOff, AlertCircle, Search, ShoppingBag, Calendar, Package, ArrowRight } from 'lucide-react';
+import { Edit, Trash2, UserPlus, Gift, Mail, Phone, XCircle, Shield, User as UserIcon, ChevronDown, CheckCircle2, Eye, EyeOff, AlertCircle, Search, ShoppingBag, Calendar, Package, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import Pagination from '../../src/components/tools/Pagination';
 import { useToast } from '../../src/utils/context/ToastContext';
 import { ADMIN_BASE_PATH, formatCurrency } from '../../src/constants';
+import { ConfirmDestructiveModal } from '../../src/components/admin/ConfirmDestructiveModal';
+import { useFormDraft } from '../../src/utils/hooks/useFormDraft';
+
+const INITIAL_CUSTOMER_FORM = {
+  nom: '',
+  prenom: '',
+  email: '',
+  phone: '',
+  password: '',
+  confirmPassword: '',
+  loyalty_points: 0
+};
 
 export const CustomerView = () => {
   const { showToast } = useToast();
@@ -57,15 +69,19 @@ export const CustomerView = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [formData, setFormData] = useState({
-    nom: '',
-    prenom: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
-    loyalty_points: 0
-  });
+  // 🛡️ PRÉVENTION DOUBLE-SUBMIT & ACTIONS DESTRUCTRICES
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteTargetUser, setDeleteTargetUser] = useState<any | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  // 📝 SAUVEGARDE BROUILLON (useFormDraft)
+  const {
+    formData,
+    setFormData,
+    hasRestoredDraft,
+    clearDraft,
+    resetForm: resetCustomerDraft
+  } = useFormDraft('admin_customer_draft', INITIAL_CUSTOMER_FORM, { enabled: !isEditing });
 
   useEffect(() => {
     fetchUsers();
@@ -233,11 +249,11 @@ export const CustomerView = () => {
   };
 
   const openCreateModal = () => {
-    setFormData({ nom: '', prenom: '', email: '', phone: '', password: '', confirmPassword: '', loyalty_points: 0 });
+    setIsEditing(false);
+    setCurrentId(null);
     setError('');
     setShowPassword(false);
     setShowConfirmPassword(false);
-    setIsEditing(false);
     setShowModal(true);
   };
 
@@ -260,10 +276,15 @@ export const CustomerView = () => {
   const closeModal = () => {
     setShowModal(false);
     setError('');
+    if (!isEditing) {
+      resetCustomerDraft(INITIAL_CUSTOMER_FORM);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return; // 🛡️ Prévention double-submit
+
     setError(''); 
 
     if (!isEditing && formData.password !== formData.confirmPassword) {
@@ -272,6 +293,7 @@ export const CustomerView = () => {
     }
 
     try {
+      setIsSubmitting(true);
       const url = isEditing ? `/api/users/${currentId}` : '/api/users';
       const method = isEditing ? 'PUT' : 'POST';
       
@@ -289,23 +311,38 @@ export const CustomerView = () => {
         throw new Error(data.message || "Cet email est peut-être déjà utilisé ou une erreur est survenue.");
       }
       
+      clearDraft();
       fetchUsers();
       closeModal();
+      showToast(isEditing ? "Utilisateur mis à jour avec succès !" : "Membre créé avec succès !", "success");
     } catch (err: any) {
       setError(err.message); 
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Supprimer définitivement cet utilisateur ?")) {
-      try {
-        const response = await authFetch(`/api/users/${id}`, { method: 'DELETE' });
-        if (!response.ok) throw new Error("Erreur");
-        fetchUsers();
-      } catch (error) {
-        console.error("Erreur suppression", error);
-        showToast("Impossible de supprimer l'utilisateur.", "error");
+  const handleDelete = (user: any) => {
+    setDeleteTargetUser(user);
+  };
+
+  const handleConfirmDeleteUser = async () => {
+    if (!deleteTargetUser) return;
+    try {
+      setIsDeletingUser(true);
+      const response = await authFetch(`/api/users/${deleteTargetUser.id}`, { method: 'DELETE' });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || "Erreur lors de la suppression.");
       }
+      showToast("Utilisateur supprimé avec succès.", "success");
+      setDeleteTargetUser(null);
+      fetchUsers();
+    } catch (error: any) {
+      console.error("Erreur suppression", error);
+      showToast(error.message || "Impossible de supprimer l'utilisateur.", "error");
+    } finally {
+      setIsDeletingUser(false);
     }
   };
 
@@ -451,9 +488,9 @@ export const CustomerView = () => {
                             <Edit size={14} /> Modifier
                         </button>
                         <button 
-                            onClick={() => handleDelete(user.id)}
-                            className="flex-none px-3.5 py-2 text-xs font-bold border rounded-xl hover:bg-red-50 flex items-center justify-center transition-colors text-theme-primary border-theme-primary-soft"
-                            title="Supprimer"
+                            onClick={() => handleDelete(user)}
+                            className="flex-none px-3.5 py-2 text-xs font-bold border border-red-200 text-red-600 bg-red-50/70 hover:bg-red-100 hover:border-red-300 rounded-xl flex items-center justify-center transition-colors shadow-xs"
+                            title="Supprimer définitivement"
                         >
                             <Trash2 size={14} />
                         </button>
@@ -602,6 +639,19 @@ export const CustomerView = () => {
               </button>
             </div>
 
+            {/* Notification de Brouillon Restauré */}
+            {hasRestoredDraft && !isEditing && (
+              <div className="mx-6 mt-4 p-3 bg-amber-50 text-amber-800 rounded-xl flex items-center justify-between text-xs border border-amber-200">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Sparkles size={14} className="text-amber-600 shrink-0" />
+                  Brouillon non soumis restauré automatiquement.
+                </span>
+                <button type="button" onClick={clearDraft} className="underline font-bold text-amber-950 ml-2">
+                  Effacer
+                </button>
+              </div>
+            )}
+
             {error && (
                 <div className="mx-6 mt-6 p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 font-medium text-sm border border-red-100">
                     <AlertCircle size={18} />
@@ -662,12 +712,20 @@ export const CustomerView = () => {
               </div>
 
               <div className="pt-4 flex gap-3">
-                  <button type="button" onClick={closeModal} className="flex-1 py-3 text-slate-600 font-bold bg-slate-100 rounded-xl hover:bg-slate-200">Annuler</button>
+                  <button type="button" onClick={closeModal} disabled={isSubmitting} className="flex-1 py-3 text-slate-600 font-bold bg-slate-100 rounded-xl hover:bg-slate-200 disabled:opacity-50">Annuler</button>
                   <button 
                     type="submit" 
-                    className="flex-[2] py-3 text-white font-bold rounded-xl opacity-95 hover:opacity-100 shadow-lg bg-theme-primary"
+                    disabled={isSubmitting}
+                    className="flex-[2] py-3 text-white font-bold rounded-xl opacity-95 hover:opacity-100 shadow-lg bg-theme-primary flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    {isEditing ? 'Mettre à jour' : 'Enregistrer'}
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Enregistrement...</span>
+                      </>
+                    ) : (
+                      <span>{isEditing ? 'Mettre à jour' : 'Enregistrer'}</span>
+                    )}
                   </button>
               </div>
 
@@ -675,6 +733,19 @@ export const CustomerView = () => {
           </div>
         </div>
       )}
+
+      {/* 🛡️ MODALE DE CONFIRMATION DESTRUCTICE À DOUBLE ÉTAPE */}
+      <ConfirmDestructiveModal
+        isOpen={!!deleteTargetUser}
+        onClose={() => setDeleteTargetUser(null)}
+        onConfirm={handleConfirmDeleteUser}
+        title="Supprimer le membre"
+        itemName={deleteTargetUser ? `${deleteTargetUser.prenom} ${deleteTargetUser.nom}` : ''}
+        message="Cette action est irréversible. L'utilisateur perdra tous ses accès, son historique et ses points de fidélité."
+        isLoading={isDeletingUser}
+        requireTyping={deleteTargetUser?.role === 'admin'}
+        confirmWord="SUPPRIMER"
+      />
 
       {/* Style local pour les inputs avec variables CSS */}
       <style>{`
