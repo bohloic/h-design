@@ -46,6 +46,17 @@ interface MonTokenCustom {
   role: string;
   exp: number;
 }
+export const DELIVERY_ZONES = [
+  { name: 'Cocody', fee: 2000, label: 'Cocody (Angré, Riviera, Deux-Plateaux) — 2 000 FCFA' },
+  { name: 'Plateau', fee: 2000, label: 'Plateau (Centre-ville) — 2 000 FCFA' },
+  { name: 'Marcory / Treichville', fee: 2000, label: 'Marcory / Treichville / Zone 4 — 2 000 FCFA' },
+  { name: 'Yopougon', fee: 2500, label: 'Yopougon (Niangon, Maroc, Selmer) — 2 500 FCFA' },
+  { name: 'Koumassi / Port-Bouët', fee: 2500, label: 'Koumassi / Port-Bouët / Vridi — 2 500 FCFA' },
+  { name: 'Abobo / Anyama', fee: 3000, label: 'Abobo / Anyama — 3 000 FCFA' },
+  { name: 'Grand-Bassam / Bingerville', fee: 3000, label: 'Grand-Bassam / Bingerville — 3 000 FCFA' },
+  { name: 'Intérieur du pays', fee: 4000, label: 'Intérieur du pays (Bouaké, Yamoussoukro...) — 4 000 FCFA' },
+];
+
 const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -75,7 +86,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
           address: data?.address || parsed.address || '',
           phone: data?.phone || parsed.phone || '',
           email: data?.email || parsed.email || '',
-          city: data?.city || parsed.city || ''
+          city: data?.city || parsed.city || 'Cocody'
         };
       }
     } catch (e) {}
@@ -86,7 +97,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
       address: data?.address || '',
       phone: data?.phone || '',
       email: data?.email || '',
-      city: data?.city || ''
+      city: data?.city || 'Cocody'
     };
   });
 
@@ -107,7 +118,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
         address: data.address || prev.address,
         phone: data.phone || prev.phone,
         email: data.email || prev.email,
-        city: data.city || prev.city
+        city: data.city || prev.city || 'Cocody'
       }));
     }
   }, [data]);
@@ -116,8 +127,13 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
   const discountAmount = useLoyaltyPoints && cartItems.length > 0 ? cartItems[0].price : 0;
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shipping = 3000; // Prix fixe quelle que soit la commande
-  const total = subtotal + shipping - discountAmount;
+  
+  // 🚚 Frais de livraison dynamiques selon la commune (ou gratuité dès 50 000 FCFA)
+  const matchedZone = DELIVERY_ZONES.find(z => z.name.toLowerCase() === (formData.city || '').toLowerCase()) || DELIVERY_ZONES[0];
+  const baseShippingFee = matchedZone ? matchedZone.fee : 2000;
+  const isFreeShipping = subtotal >= 50000;
+  const shipping = isFreeShipping ? 0 : baseShippingFee;
+  const total = Math.max(0, subtotal + shipping - discountAmount);
 
   useLayoutEffect(() => {
     if (progressBarRef.current) {
@@ -418,8 +434,25 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
                   />
                 </div>
                 <div className="md:col-span-2 space-y-2">
-                  <label htmlFor="city" className="text-xs font-bold text-slate-500 uppercase ml-1">Ville</label>
-                  <input id="city" type="text" name="city" placeholder="Ex: Dakar" title="Votre ville" value={formData.city} onChange={(e) => setFormData({ ...formData, city: e.target.value })} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
+                  <label htmlFor="city" className="text-xs font-bold text-slate-500 uppercase ml-1 flex items-center justify-between">
+                    <span>Commune / Zone de Livraison (Abidjan & Intérieur)</span>
+                    {isFreeShipping && <span className="text-emerald-600 font-bold normal-case text-xs">🎉 Livraison Offerte</span>}
+                  </label>
+                  <select
+                    id="city"
+                    name="city"
+                    title="Sélectionnez votre commune de livraison"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure font-bold cursor-pointer"
+                    required
+                  >
+                    {DELIVERY_ZONES.map(zone => (
+                      <option key={zone.name} value={zone.name}>
+                        {zone.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <label htmlFor="address" className="text-xs font-bold text-slate-500 uppercase ml-1">Adresse Complète</label>
@@ -483,7 +516,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
                   >
                     <div>
                       <p className="font-bold flex items-center gap-1 text-theme-primary">🎁 T-Shirt Offert Débloqué !</p>
-                      <p className="text-xs mt-1 text-theme-primary opacity-80">Utilisez 200 points pour déduire {discountAmount.toLocaleString()} FCFA de cette commande.</p>
+                      <p className="text-xs mt-1 text-theme-primary opacity-80">Utilisez 200 points pour déduire {formatCurrency(discountAmount)} de cette commande.</p>
                     </div>
 
                     <button
@@ -660,9 +693,9 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
               </div>
 
               <div className="flex justify-between text-sm text-slate-500 dark:text-slate-400">
-                <span>Livraison</span>
+                <span>Livraison ({formData.city})</span>
                 <span className="font-bold text-slate-800 dark:text-pure">
-                  {formatCurrency(shipping)}
+                  {shipping === 0 ? <span className="text-emerald-600 font-bold">Gratuite 🎉</span> : formatCurrency(shipping)}
                 </span>
               </div>
             </div>

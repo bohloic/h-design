@@ -9,6 +9,7 @@ import { ShoppingCart, X, Layers, Shirt, Palette, ArrowLeft, Loader2, CheckCircl
 import { useNavigate, useLocation } from 'react-router-dom'; 
 import { BASE_IMG_URL } from '@/components/images/VoirImage';
 import WorkshopSkeleton from '../../src/components/tools/WorkshopSkeleton';
+import { formatCurrency } from '@/constants';
 
 const DESIGN_PRICE = 5000; // Forfait unique de personnalisation 5000 FCFA
 const TEXTILE_COLORS_MAP: Record<string, string> = {
@@ -134,6 +135,22 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             // 🎯 Accès complet immédiat aux outils de personnalisation (Texte, Images, Couleurs, Calques, IA)
             setActiveToolTab('text');
             setMobileView('tools');
+        } else if (!state?.isEdit && !state?.productId) {
+            // 💾 Restauration du brouillon Canvas depuis localStorage (Audit P1)
+            try {
+                const savedDraft = localStorage.getItem('hdesigner_customizer_draft');
+                if (savedDraft) {
+                    const parsed = JSON.parse(savedDraft);
+                    if (Array.isArray(parsed?.designElements) && parsed.designElements.length > 0) {
+                        setDesignElements(parsed.designElements);
+                        if (parsed.selectedSize) setSelectedSize(parsed.selectedSize);
+                        if (parsed.hideBaseDesign !== undefined) setHideBaseDesign(parsed.hideBaseDesign);
+                        showToast("Projet graphique restauré depuis votre dernière session", "info");
+                    }
+                }
+            } catch (e) {
+                console.warn("Erreur lecture draft customizer:", e);
+            }
         }
 
       } catch (error) {
@@ -142,6 +159,24 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
     };
     fetchData();
   }, []);
+
+  // 💾 Persistance automatique périodique du projet graphique dans localStorage (Audit P1)
+  useEffect(() => {
+    if (isEditMode) return;
+    if (designElements.length > 0 || hideBaseDesign) {
+      const draft = {
+        productId: selectedProduct?.id,
+        variantId: selectedVariant?.id,
+        selectedSize,
+        hideBaseDesign,
+        designElements,
+        timestamp: Date.now()
+      };
+      try {
+        localStorage.setItem('hdesigner_customizer_draft', JSON.stringify(draft));
+      } catch (e) {}
+    }
+  }, [designElements, hideBaseDesign, selectedProduct, selectedVariant, selectedSize, isEditMode]);
 
   const handleSelectProduct = (product: Product, targetVariantId?: number | string | null, targetColorName?: string, targetSizeName?: string) => {
     setSelectedProduct(product);
@@ -300,6 +335,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                 image_url: designUrl || selectedProduct.image_url 
             });
 
+            try { localStorage.removeItem('hdesigner_customizer_draft'); } catch (e) {}
             showToast("✅ Article personnalisé ajouté au panier !", "success");
             navigate('/boutique');
         }
@@ -481,10 +517,10 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
              <div className="flex flex-col">
                  <span className="font-bold text-slate-800 text-sm line-clamp-1">{selectedProduct.name}</span>
                   <span className="text-xs font-black text-theme-primary">
-                    {basePrice.toLocaleString()} FCFA
+                    {formatCurrency(basePrice)}
                     {designElements.length > 0 && (
                       <span className="font-normal text-slate-500 ml-1">
-                        {`+ Forfait Design ${DESIGN_PRICE.toLocaleString()} FCFA`}
+                        {`+ Forfait Design ${formatCurrency(DESIGN_PRICE)}`}
                       </span>
                     )}
                   </span>

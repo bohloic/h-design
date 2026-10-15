@@ -10,14 +10,49 @@ import {
   ChevronRight,
   ShieldCheck,
   Search,
-  Inbox
+  Inbox,
+  Package,
+  Loader2,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 
 import { useChatStore } from '@/store/useChatStore';
+import { authFetch } from '../src/utils/apiClient';
+import { formatCurrency } from '@/constants';
 
 const HelpSupport: React.FC = () => {
   const { openChat } = useChatStore();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 🔎 État suivi de commande par numéro de ticket (Audit SAV Volet 2)
+  const [trackInput, setTrackInput] = useState('');
+  const [isTracking, setIsTracking] = useState(false);
+  const [trackResult, setTrackResult] = useState<any>(null);
+  const [trackError, setTrackError] = useState<string | null>(null);
+
+  const handleTrackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = trackInput.trim();
+    if (!clean) return;
+    setIsTracking(true);
+    setTrackError(null);
+    setTrackResult(null);
+
+    try {
+      const res = await authFetch(`/api/orders/track/${encodeURIComponent(clean)}`);
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTrackResult(data.order);
+      } else {
+        setTrackError(data.message || "Aucune commande trouvée pour cette référence.");
+      }
+    } catch (err: any) {
+      setTrackError("Erreur réseau lors de la vérification de votre commande.");
+    } finally {
+      setIsTracking(false);
+    }
+  };
 
   const faqs = [
     {
@@ -121,6 +156,88 @@ const HelpSupport: React.FC = () => {
 
       {!searchQuery && (
         <>
+          {/* 📦 SUIVI DE COMMANDE & TICKET SAV EN TEMPS RÉEL (Audit Volet 2) */}
+          <section className="container mx-auto px-4 mb-16">
+            <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-10 border border-slate-200 dark:border-slate-700 shadow-xl max-w-3xl mx-auto">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-theme-primary/10 text-theme-primary">
+                  <Package size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-pure">
+                    Suivi de Commande & Ticket SAV
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                    Saisissez votre numéro de commande (ex: HD-00042 ou 42) pour consulter l'avancement en temps réel.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleTrackSubmit} className="flex flex-col sm:flex-row gap-3 mt-6">
+                <input
+                  type="text"
+                  placeholder="Ex: HD-00042 ou 42"
+                  value={trackInput}
+                  onChange={(e) => setTrackInput(e.target.value)}
+                  className="flex-grow p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl font-bold text-slate-800 dark:text-pure focus:outline-none focus:border-theme-primary transition-all"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={isTracking || !trackInput.trim()}
+                  style={{ backgroundColor: 'var(--theme-primary)' }}
+                  className="text-white px-8 py-4 rounded-2xl font-bold shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  {isTracking ? <Loader2 size={18} className="animate-spin" /> : <Search size={18} />}
+                  <span>Vérifier</span>
+                </button>
+              </form>
+
+              {/* Erreur */}
+              {trackError && (
+                <div className="mt-6 p-4 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 flex items-center gap-3 text-red-700 dark:text-red-300 text-sm">
+                  <AlertCircle size={20} className="shrink-0" />
+                  <span>{trackError}</span>
+                </div>
+              )}
+
+              {/* Résultat du Suivi */}
+              {trackResult && (
+                <div className="mt-6 p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-700">
+                    <div>
+                      <span className="text-xs uppercase font-bold text-slate-400">Référence Commande</span>
+                      <p className="text-lg font-black text-theme-primary">#{trackResult.reference}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs uppercase font-bold text-slate-400">Statut Actuel</span>
+                      <div className="mt-1">
+                        <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                          {trackResult.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 font-semibold">Commune de livraison</span>
+                      <p className="font-bold text-slate-800 dark:text-pure text-sm mt-0.5">{trackResult.city || 'Abidjan'}</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-semibold">Nombre d'articles</span>
+                      <p className="font-bold text-slate-800 dark:text-pure text-sm mt-0.5">{trackResult.item_count} article(s)</p>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-semibold">Montant Total</span>
+                      <p className="font-black text-theme-primary text-sm mt-0.5">{formatCurrency(parseFloat(trackResult.total_amount))}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* Quick Links / Categories - Only shown when NOT searching */}
           <section className="container mx-auto px-4 mb-16 animate-in slide-in-from-bottom-4 duration-500">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

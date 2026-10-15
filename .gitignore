@@ -1,21 +1,39 @@
-# Dependencies
-node_modules
-.pnpm-store
+# ============================================
+# H-Designer Frontend — .gitignore
+# Optimisé pour un déploiement de production léger
+# ============================================
 
-# Production build outputs
-dist
-dist-ssr
-build
+# Dépendances
+node_modules/
+.pnpm-store/
 
-# Environment variables & secrets (sensible)
+# Livrables & Builds de production
+dist/
+dist-ssr/
+build/
+out/
+.next/
+.vercel/
+
+# Caches d'outillage & compilateurs
+.vite/
+.turbo/
+.parcel-cache/
+.eslintcache/
+*.tsbuildinfo
+
+# Environnements & Secrets confidentiels
 .env
 .env.local
 .env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env.production
 .env.staging
 
-# Logs & debugging
-logs
+# Logs & Traces de débogage
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -23,19 +41,35 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Editor & OS files
+# Rapports de couverture & Tests
+coverage/
+.nyc_output/
+
+# Fichiers temporaires & Backups
+tmp/
+temp/
+.temp/
+*.tmp
+*.temp
+*~
+*.bak
+
+# Fichiers Système d'Exploitation (Windows / macOS / Linux)
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+[Dd]esktop.ini
+
+# IDEs & Éditeurs de code
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-# Temporary & Cache
-.eslintcache
-.parcel-cache
-.turbo

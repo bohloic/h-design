@@ -32,14 +32,8 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
   if (!isOpen) return null;
 
   const handleCheckoutClick = () => {
-    const token = localStorage.getItem('token');
     onClose();
-    if (!token) {
-      // Redirige vers login en mémorisant l'intention de checkout
-      navigate('/login', { state: { from: { pathname: '/checkout' } } });
-    } else {
-      navigate('/checkout');
-    }
+    navigate('/checkout');
     if (onCheckout) onCheckout();
   };
 

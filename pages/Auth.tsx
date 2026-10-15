@@ -44,6 +44,7 @@ function Auth() {
     const [formData, setFormData] = useState({
         nom: '', prenom: '', email: '', phone: '', password: '', confirmPassword: ''
     });
+    const [acceptTerms, setAcceptTerms] = useState(false);
 
     const [status, setStatus] = useState({ type: '', message: '' });
     const API_BASE_URL = "/api";
@@ -186,11 +187,14 @@ function Auth() {
                 authLogin(data.token, data.user);
                 setStatus({ type: 'success', message: "Email vérifié ! Bienvenue." });
                 
-                // 🪄 REDIRECTION INTELLIGENTE
+                // 🪄 REDIRECTION INTELLIGENTE (Supporte ?redirect=/checkout et state)
+                const searchParams = new URLSearchParams(location.search);
+                const redirectParam = searchParams.get('redirect');
                 const state = location.state as any;
+                const target = redirectParam || state?.from?.pathname || '/dashboard';
                 const destination = data.user?.role === 'admin' 
                     ? ADMIN_BASE_PATH 
-                    : (state?.from?.pathname === '/checkout' ? '/checkout' : '/dashboard');
+                    : ((target.startsWith('/') && !target.startsWith('//')) ? target : '/dashboard');
 
                 setTimeout(() => navigate(destination), 1000);
             } else {
@@ -208,19 +212,45 @@ function Auth() {
         e.preventDefault();
         setStatus({ type: '', message: '' });
 
-        if (!isLoginMode && formData.password !== formData.confirmPassword) {
-            return setStatus({ type: 'error', message: "Les mots de passe ne correspondent pas." });
-        }
+        if (!isLoginMode) {
+            const nameRegex = /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/;
+            if (!nameRegex.test(formData.nom.trim())) {
+                return setStatus({ type: 'error', message: "Le nom doit comporter entre 2 et 50 caractères (lettres, accents, tirets)." });
+            }
+            if (!nameRegex.test(formData.prenom.trim())) {
+                return setStatus({ type: 'error', message: "Le prénom doit comporter entre 2 et 50 caractères (lettres, accents, tirets)." });
+            }
 
-        if (!isLoginMode && formData.phone.length !== 10) {
-            return setStatus({ type: 'error', message: "Le numéro de téléphone doit comporter exactement 10 chiffres." });
+            const phoneDigits = formData.phone.trim().replace(/\s+/g, '');
+            const ivorianPhoneRegex = /^(01|05|07)\d{8}$/;
+            if (!ivorianPhoneRegex.test(phoneDigits)) {
+                return setStatus({ type: 'error', message: "Le numéro de téléphone ivoirien doit comporter 10 chiffres (Orange, MTN, Moov débutant par 01, 05 ou 07)." });
+            }
+
+            if (formData.password.length < 8) {
+                return setStatus({ type: 'error', message: "Le mot de passe doit comporter au moins 8 caractères." });
+            }
+
+            if (formData.password !== formData.confirmPassword) {
+                return setStatus({ type: 'error', message: "Les mots de passe ne correspondent pas." });
+            }
+
+            if (!acceptTerms) {
+                return setStatus({ type: 'error', message: "Veuillez accepter les Conditions Générales de Vente et la Politique de Confidentialité." });
+            }
         }
 
         setIsLoading(true);
         const url = isLoginMode ? `${API_BASE_URL}/login` : `${API_BASE_URL}/register`;
         const bodyData = isLoginMode
-            ? { email: formData.email, password: formData.password }
-            : { nom: formData.nom, prenom: formData.prenom, email: formData.email, phone: formData.phone, password: formData.password };
+            ? { email: formData.email.trim().toLowerCase(), password: formData.password }
+            : { 
+                nom: formData.nom.trim(), 
+                prenom: formData.prenom.trim(), 
+                email: formData.email.trim().toLowerCase(), 
+                phone: formData.phone.trim().replace(/\s+/g, ''), 
+                password: formData.password 
+              };
 
         try {
             const response = await authFetch(url, {
@@ -256,11 +286,14 @@ function Auth() {
                         type: "success"
                     });
 
-                    // 🪄 REDIRECTION INTELLIGENTE (Fix Checkout Flow)
+                    // 🪄 REDIRECTION INTELLIGENTE (Supporte ?redirect=/checkout et state)
+                    const searchParams = new URLSearchParams(location.search);
+                    const redirectParam = searchParams.get('redirect');
                     const state = location.state as any;
+                    const target = redirectParam || state?.from?.pathname || '/dashboard';
                     const destination = data.user?.role === 'admin' 
                         ? ADMIN_BASE_PATH 
-                        : (state?.from?.pathname === '/checkout' ? '/checkout' : '/dashboard');
+                        : ((target.startsWith('/') && !target.startsWith('//')) ? target : '/dashboard');
 
                     setTimeout(() => navigate(destination), 500);
                 }
@@ -461,10 +494,27 @@ function Auth() {
                                     </div>
 
                                     {!isLoginMode && (
-                                        <div className="space-y-2">
-                                            <label htmlFor="auth-confirm" className="text-[13px] font-bold text-gray-700">Confirmez le mot de passe</label>
-                                            <input id="auth-confirm" type={showConfirmPassword ? "text" : "password"} name="confirmPassword" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} required={!isLoginMode} className={`w-full px-4 py-3.5 bg-white border rounded-xl focus:outline-none focus:ring-1 transition-all text-[15px] font-medium text-gray-900 placeholder:text-gray-400 placeholder:font-normal ${formData.confirmPassword && formData.password !== formData.confirmPassword ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-[#0b2e35] focus:ring-[#0b2e35]'}`} />
-                                        </div>
+                                        <>
+                                            <div className="space-y-2">
+                                                <label htmlFor="auth-confirm" className="text-[13px] font-bold text-gray-700">Confirmez le mot de passe</label>
+                                                <input id="auth-confirm" type={showConfirmPassword ? "text" : "password"} name="confirmPassword" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} required={!isLoginMode} className={`w-full px-4 py-3.5 bg-white border rounded-xl focus:outline-none focus:ring-1 transition-all text-[15px] font-medium text-gray-900 placeholder:text-gray-400 placeholder:font-normal ${formData.confirmPassword && formData.password !== formData.confirmPassword ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-200 focus:border-[#0b2e35] focus:ring-[#0b2e35]'}`} />
+                                            </div>
+
+                                            {/* ⚖️ Case obligatoire ARTCI / Loi 2013-546 */}
+                                            <div className="flex items-start gap-2.5 pt-2 pb-1">
+                                                <input
+                                                    type="checkbox"
+                                                    id="accept-terms"
+                                                    checked={acceptTerms}
+                                                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                                                    required
+                                                    className="w-4 h-4 mt-0.5 rounded border-gray-300 text-[#0b2e35] focus:ring-[#0b2e35] cursor-pointer"
+                                                />
+                                                <label htmlFor="accept-terms" className="text-[12px] text-gray-600 leading-snug cursor-pointer select-none">
+                                                    J'accepte expressément les <a href="/cgv" target="_blank" rel="noopener noreferrer" className="text-[#0b2e35] font-bold underline hover:text-black">Conditions Générales de Vente</a> et la <a href="/confidentialite" target="_blank" rel="noopener noreferrer" className="text-[#0b2e35] font-bold underline hover:text-black">Politique de Confidentialité</a> (Loi ARTCI).
+                                                </label>
+                                            </div>
+                                        </>
                                     )}
 
                                     {/* Ligne "Remember me" & "Forgot password" */}

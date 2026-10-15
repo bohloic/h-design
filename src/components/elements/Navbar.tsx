@@ -104,7 +104,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                 <NotificationDropdown />
               </div>
             ) : (
-              <Link to="/login" className="hidden md:block p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors">
+              <Link to="/login" aria-label="Accéder à la connexion" className="hidden md:block p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors">
                 <User className="w-5 h-5" />
               </Link>
             )}
@@ -112,6 +112,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             {/* Panier avec bulle dynamique et animée */}
             <button
               onClick={onOpenCart}
+              aria-label="Ouvrir le panier d'achats"
               className="p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors relative"
             >
               <ShoppingCart className="w-5 h-5" />
@@ -128,6 +129,7 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
             {/* Burger Mobile */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label={isMenuOpen ? "Fermer le menu de navigation" : "Ouvrir le menu de navigation"}
               className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg"
             >
               {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

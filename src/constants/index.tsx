@@ -73,10 +73,7 @@ export const PRODUCTS = [
 
 export const ADMIN_BASE_PATH = '/h-design-hq-manage-x92';
 
-export const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'XOF',
-    minimumFractionDigits: 0
-  }).format(amount).replace('XOF', 'FCFA');
+export const formatCurrency = (amount: number): string => {
+  if (isNaN(amount) || amount === null || amount === undefined) return '0 FCFA';
+  return `${Math.round(amount).toLocaleString('fr-FR')} FCFA`;
 };

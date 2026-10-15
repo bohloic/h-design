@@ -31,12 +31,16 @@ const Footer: React.FC = () => {
             Votre destination mode premium à Abidjan. Nous créons des designs uniques et des accessoires d'exception pour sublimer votre élégance au quotidien.
           </p>
           <div className="flex space-x-3">
-            {[Facebook, Instagram, Twitter].map((Icon, idx) => (
+            {[
+              { icon: Facebook, name: 'Facebook' },
+              { icon: Instagram, name: 'Instagram' },
+              { icon: Twitter, name: 'Twitter' }
+            ].map(({ icon: Icon, name }, idx) => (
               <a
                 key={idx}
                 href="#"
                 className="p-2.5 bg-slate-100 dark:bg-slate-800 text-[#111827] dark:text-[#F9FAFB] rounded-xl hover:text-white hover:bg-[var(--theme-primary)] dark:hover:bg-[var(--theme-primary)] transition-all duration-300 transform hover:-translate-y-1"
-                aria-label={`Réseau social ${idx + 1}`}
+                aria-label={name}
               >
                 <Icon size={18} />
               </a>
@@ -72,10 +76,10 @@ const Footer: React.FC = () => {
             Collections
           </h4>
           <ul className="space-y-3 text-sm font-medium">
-            <li><Link to="/boutique" className="hover-theme-text transition-colors text-[#4B5563] dark:text-[#D1D5DB]">T-shirt personnalisé</Link></li>
-            <li><Link to="/boutique" className="hover-theme-text transition-colors text-[#4B5563] dark:text-[#D1D5DB]">Prêt-à-porter Homme</Link></li>
-            <li><Link to="/boutique" className="hover-theme-text transition-colors text-[#4B5563] dark:text-[#D1D5DB]">Prêt-à-porter Femme</Link></li>
-            <li><Link to="/boutique" className="hover-theme-text transition-colors text-[#4B5563] dark:text-[#D1D5DB]">Nouveautés</Link></li>
+            <li><Link to="/personnaliser/mon-design" className="hover-theme-text transition-colors text-[#4B5563] dark:text-[#D1D5DB]">T-shirt personnalisé</Link></li>
+            <li><Link to="/boutique?gender=Homme" className="hover-theme-text transition-colors text-[#4B5563] dark:text-[#D1D5DB]">Prêt-à-porter Homme</Link></li>
+            <li><Link to="/boutique?gender=Femme" className="hover-theme-text transition-colors text-[#4B5563] dark:text-[#D1D5DB]">Prêt-à-porter Femme</Link></li>
+            <li><Link to="/boutique?sort=newest" className="hover-theme-text transition-colors text-[#4B5563] dark:text-[#D1D5DB]">Nouveautés</Link></li>
           </ul>
         </div>
 
@@ -91,23 +95,23 @@ const Footer: React.FC = () => {
             </li>
             <li className="flex items-start space-x-3 group">
               <Mail className="w-5 h-5 flex-shrink-0 transition-colors" style={{ color: 'var(--theme-primary)' }} />
-              <span className="group-hover:text-[#111827] dark:group-hover:text-[#F9FAFB] transition-colors text-[#4B5563] dark:text-[#D1D5DB]">contact@h-designer.ci</span>
+              <span className="group-hover:text-[#111827] dark:group-hover:text-[#F9FAFB] transition-colors text-[#4B5563] dark:text-[#D1D5DB]">contact@h-designer.com</span>
             </li>
             <li className="flex items-start space-x-3 group">
               <MapPin className="w-5 h-5 flex-shrink-0 transition-colors" style={{ color: 'var(--theme-primary)' }} />
-              <span className="group-hover:text-[#111827] dark:group-hover:text-[#F9FAFB] transition-colors text-[#4B5563] dark:text-[#D1D5DB]">Abidjan, Côte d'Ivoire</span>
+              <span className="group-hover:text-[#111827] dark:group-hover:text-[#F9FAFB] transition-colors text-[#4B5563] dark:text-[#D1D5DB]">Cocody Deux-Plateaux, Abidjan, Côte d'Ivoire</span>
             </li>
           </ul>
         </div>
       </div>
 
-      {/* COPYRIGHT */}
+      {/* COPYRIGHT & LIENS LÉGAUX CONFORMES ARTCI */}
       <div className="max-w-7xl mx-auto pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center text-xs text-[#4B5563] dark:text-[#D1D5DB] space-y-4 md:space-y-0">
-        <p>© {currentYear} H-Designer. Tous droits réservés.</p>
+        <p>© {currentYear} H-Designer SARL (RCCM CI-ABJ-2024-B-12845). Tous droits réservés.</p>
         <div className="flex flex-wrap justify-center gap-6 font-medium">
-          <a href="#" className="hover-theme-text transition-colors">Mentions Légales</a>
-          <a href="#" className="hover-theme-text transition-colors">Confidentialité</a>
-          <a href="#" className="hover-theme-text transition-colors">CGV</a>
+          <Link to="/mentions-legales" className="hover-theme-text transition-colors">Mentions Légales</Link>
+          <Link to="/confidentialite" className="hover-theme-text transition-colors">Confidentialité</Link>
+          <Link to="/cgv" className="hover-theme-text transition-colors">CGV</Link>
         </div>
       </div>
 

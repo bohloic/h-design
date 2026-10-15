@@ -163,8 +163,8 @@ const ChatWidget: React.FC = () => {
   };
 
   return (
-    // 🔑 sticky bottom — fixé sur mobile et desktop, visible même après défilement
-    <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[1002] flex flex-col items-end font-sans">
+    // 🔑 sticky bottom — élevé sur mobile pour ne pas masquer la barre de navigation
+    <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-[1002] flex flex-col items-end font-sans">
       
       {isOpen && (
         <div className="bg-white w-[calc(100vw-2rem)] md:w-96 h-[75vh] max-h-[600px] rounded-2xl shadow-2xl border border-slate-100 flex flex-col mb-4 overflow-hidden animate-in slide-in-from-bottom-5">

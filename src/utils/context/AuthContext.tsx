@@ -141,8 +141,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('data');
     localStorage.removeItem('role');
     localStorage.removeItem('cart');
-    sessionStorage.removeItem('hdesigner_checkout_draft');
-    sessionStorage.removeItem('hdesigner_auth_email');
+    localStorage.removeItem('hdesigner_customizer_draft');
+    sessionStorage.clear();
 
     // 🧹 3. Réinitialisation de tous les stores Zustand
     useNotificationStore.getState().reset();

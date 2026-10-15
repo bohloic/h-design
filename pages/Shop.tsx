@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { authFetch } from '../src/utils/apiClient';
 import { Product } from '../types';
 import { Filter, Search, X, SlidersHorizontal, ArrowUpDown, Users, Palette, Ruler, Shirt } from 'lucide-react';
@@ -32,6 +32,7 @@ const TEXTILE_COLORS = [
 ];
 
 const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,19 +47,59 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
 
   const genders = ['Tous', 'Homme', 'Femme', 'Enfant', 'Unisexe'];
 
-  const [activeCollection, setActiveCollection] = useState<string>('Toutes');
-  const [activeGender, setActiveGender] = useState<string>('Tous');
-  const [activeCategory, setActiveCategory] = useState<string>('Toutes');
-  const [activeSize, setActiveSize] = useState<string>('Toutes');
-  const [activeColor, setActiveColor] = useState<string>('Toutes');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc'>('default');
+  // Initialisation synchronisée avec l'URL (Audit P1 : Persistance et partage de recherche)
+  const [activeCollection, setActiveCollection] = useState<string>(() => searchParams.get('collection') || 'Toutes');
+  const [activeGender, setActiveGender] = useState<string>(() => {
+    const urlGender = searchParams.get('gender');
+    return urlGender && genders.some(g => g.toLowerCase() === urlGender.toLowerCase())
+      ? (genders.find(g => g.toLowerCase() === urlGender.toLowerCase()) || 'Tous')
+      : 'Tous';
+  });
+  const [activeCategory, setActiveCategory] = useState<string>(() => searchParams.get('category') || 'Toutes');
+  const [activeSize, setActiveSize] = useState<string>(() => searchParams.get('size') || 'Toutes');
+  const [activeColor, setActiveColor] = useState<string>(() => searchParams.get('color') || 'Toutes');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('q') || '');
+  const [sortBy, setSortBy] = useState<'default' | 'priceAsc' | 'priceDesc' | 'newest' | 'popular'>(() => (searchParams.get('sort') as any) || 'default');
 
   // --- PAGINATION ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
-  // --- 🪄 GESTION DE L'ÉTAT DE NAVIGATION (FILTRAGE DISCRET DEPUIS L'ACCUEIL) ---
+  // 🔄 Écouteur des changements d'URL externes (ex: clic sur les liens Footer ou retour arrière)
+  useEffect(() => {
+    const urlGender = searchParams.get('gender');
+    if (urlGender && genders.some(g => g.toLowerCase() === urlGender.toLowerCase())) {
+      setActiveGender(genders.find(g => g.toLowerCase() === urlGender.toLowerCase()) || 'Tous');
+    }
+    const urlSort = searchParams.get('sort');
+    if (urlSort && ['default', 'priceAsc', 'priceDesc', 'newest', 'popular'].includes(urlSort)) {
+      setSortBy(urlSort as any);
+    }
+    const urlCategory = searchParams.get('category');
+    if (urlCategory) {
+      setActiveCategory(urlCategory);
+    }
+    const urlQ = searchParams.get('q');
+    if (urlQ !== null) {
+      setSearchQuery(urlQ);
+    }
+  }, [searchParams]);
+
+  // 🔄 Synchronisation de l'état local vers l'URL
+  useEffect(() => {
+    const nextParams: Record<string, string> = {};
+    if (activeGender && activeGender !== 'Tous') nextParams.gender = activeGender;
+    if (activeCategory && activeCategory !== 'Toutes') nextParams.category = activeCategory;
+    if (activeCollection && activeCollection !== 'Toutes') nextParams.collection = activeCollection;
+    if (activeSize && activeSize !== 'Toutes') nextParams.size = activeSize;
+    if (activeColor && activeColor !== 'Toutes') nextParams.color = activeColor;
+    if (searchQuery.trim()) nextParams.q = searchQuery.trim();
+    if (sortBy && sortBy !== 'default') nextParams.sort = sortBy;
+
+    setSearchParams(nextParams, { replace: true });
+  }, [activeGender, activeCategory, activeCollection, activeSize, activeColor, searchQuery, sortBy, setSearchParams]);
+
+  // --- 🪄 GESTION DE L'ÉTAT DE NAVIGATION (FILTRAGE DEPUIS L'ACCUEIL) ---
   useEffect(() => {
     const state = location.state as { gender?: string, category?: string } | null;
 
@@ -182,6 +223,8 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
       .sort((a, b) => {
         if (sortBy === 'priceAsc') return a.price - b.price;
         if (sortBy === 'priceDesc') return b.price - a.price;
+        if (sortBy === 'newest') return Number(b.id || 0) - Number(a.id || 0);
+        if (sortBy === 'popular') return (Number(b.stock_quantity || 0) + Number(b.views || 0)) - (Number(a.stock_quantity || 0) + Number(a.views || 0));
         return 0;
       });
   }, [activeCollection, activeGender, activeCategory, activeSize, activeColor, searchQuery, sortBy, products]);
@@ -244,6 +287,8 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             <option value="default">Pertinence</option>
             <option value="priceAsc">Prix: - cher</option>
             <option value="priceDesc">Prix: + cher</option>
+            <option value="newest">Nouveautés</option>
+            <option value="popular">Popularité</option>
           </select>
           <ArrowUpDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
@@ -281,6 +326,8 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
                 <option value="default">Pertinence</option>
                 <option value="priceAsc">Prix croissant</option>
                 <option value="priceDesc">Prix décroissant</option>
+                <option value="newest">Nouveautés</option>
+                <option value="popular">Popularité</option>
               </select>
             </div>
 
@@ -390,18 +437,45 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
           {loading ? (
             <ProductGridSkeleton count={8} />
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-24 bg-white dark:bg-[#1F2937] rounded-[2rem] flex flex-col items-center justify-center animate-in fade-in zoom-in-95 mx-4 border border-slate-200 dark:border-slate-800 transition-colors">
+            <div className="text-center py-16 sm:py-20 bg-white dark:bg-[#1F2937] rounded-[2rem] flex flex-col items-center justify-center animate-in fade-in zoom-in-95 mx-4 border border-slate-200 dark:border-slate-800 transition-colors p-6 sm:p-10">
               <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm mb-6 transition-colors">
                 <Search className="w-8 h-8 text-[#4B5563] dark:text-[#D1D5DB]" />
               </div>
-              <h3 className="text-xl font-bold text-[#111827] dark:text-[#F9FAFB] mb-2">Aucun résultat trouvé</h3>
-              <p className="text-[#4B5563] dark:text-[#D1D5DB] mb-8 max-w-xs mx-auto">Essayez de modifier vos filtres ou cherchez un autre terme.</p>
-              <button
-                onClick={resetFilters}
-                className="btn-outline px-8 py-3 rounded-full font-bold cursor-pointer"
-              >
-                Tout réinitialiser
-              </button>
+              <h3 className="text-xl sm:text-2xl font-black text-[#111827] dark:text-[#F9FAFB] mb-2">
+                {searchQuery ? `Aucun résultat pour "${searchQuery}"` : "Aucun article trouvé"}
+              </h3>
+              <p className="text-[#4B5563] dark:text-[#D1D5DB] mb-6 max-w-md mx-auto text-sm leading-relaxed">
+                Essayez d'ajuster vos filtres ou explorez nos termes les plus recherchés :
+              </p>
+
+              {/* Suggestions guidées (Audit Volet 2) */}
+              <div className="flex flex-wrap justify-center gap-2 mb-8 max-w-md">
+                {['T-shirt', 'Noir', 'Africa', 'Blanc', 'Sport'].map(term => (
+                  <button
+                    key={term}
+                    onClick={() => { setSearchQuery(term); setActiveGender('Tous'); setActiveCategory('Toutes'); }}
+                    className="px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-[var(--theme-primary)] hover:text-white text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    "{term}"
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 items-center">
+                <button
+                  onClick={resetFilters}
+                  className="btn-outline px-6 py-3 rounded-full font-bold text-sm cursor-pointer"
+                >
+                  Tout réinitialiser
+                </button>
+                <Link
+                  to="/personnaliser/mon-design"
+                  style={{ backgroundColor: 'var(--theme-primary)' }}
+                  className="px-6 py-3 rounded-full font-bold text-sm text-white shadow-lg hover:opacity-95 transition-all inline-flex items-center gap-2 active:scale-95"
+                >
+                  <Shirt size={16} /> Créer sur mesure dans l'Atelier
+                </Link>
+              </div>
             </div>
           ) : (
             <>
@@ -413,7 +487,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
                     {activeCategory !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-[#111827] dark:text-[#F9FAFB] border border-slate-200 dark:border-slate-700">{activeCategory} <button onClick={() => setActiveCategory('Toutes')} className="cursor-pointer"><X size={12} /></button></span>}
                     {activeSize !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-[#111827] dark:text-[#F9FAFB] border border-slate-200 dark:border-slate-700">Taille: {activeSize} <button onClick={() => setActiveSize('Toutes')} className="cursor-pointer"><X size={12} /></button></span>}
                     {activeColor !== 'Toutes' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-[#111827] dark:text-[#F9FAFB] border border-slate-200 dark:border-slate-700">Couleur: {activeColor} <button onClick={() => setActiveColor('Toutes')} className="cursor-pointer"><X size={12} /></button></span>}
-                    {sortBy !== 'default' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold border text-white theme-bg-primary border-transparent">{sortBy === 'priceAsc' ? 'Prix ↑' : 'Prix ↓'} <button onClick={() => setSortBy('default')} className="opacity-80 hover:opacity-100 cursor-pointer"><X size={12} /></button></span>}
+                    {sortBy !== 'default' && <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold border text-white theme-bg-primary border-transparent">{sortBy === 'priceAsc' ? 'Prix ↑' : sortBy === 'priceDesc' ? 'Prix ↓' : sortBy === 'newest' ? 'Nouveautés ✨' : 'Populaires 🔥'} <button onClick={() => setSortBy('default')} className="opacity-80 hover:opacity-100 cursor-pointer"><X size={12} /></button></span>}
                   </div>
                 </div>
               </div>

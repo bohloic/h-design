@@ -201,8 +201,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
             {product.category || product.category_name}
         </div>
         
-        {/* 🎨 Titres des produits 100% lisibles en Mode Clair & Sombre */}
-        <h3 className={`font-bold text-sm sm:text-base mb-2 truncate leading-tight transition-colors ${isOutOfStock ? 'text-slate-400 line-through' : 'text-[#111827] dark:text-[#F9FAFB]'}`}>
+        {/* 🎨 Titres des produits sur 2 lignes harmonieuses sans troncature brute */}
+        <h3 className={`font-bold text-sm sm:text-base mb-2 line-clamp-2 min-h-[2.5rem] leading-tight transition-colors ${isOutOfStock ? 'text-slate-400 line-through' : 'text-[#111827] dark:text-[#F9FAFB]'}`} title={product.name}>
             {product.name}
         </h3>
 

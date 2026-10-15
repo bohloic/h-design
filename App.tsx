@@ -33,6 +33,9 @@ import OrderConfirmed from './pages/OrderConfirmed';
 import ProductDetails from './pages/products/ProductDetails';
 import ProductCustomizer from './pages/products/ProductCustomizer';
 import HelpSupport from './pages/HelpSupport';
+import MentionsLegales from './pages/legal/MentionsLegales';
+import Confidentialite from './pages/legal/Confidentialite';
+import CGV from './pages/legal/CGV';
 
 // Dashboard nested pages
 import { Overview } from './pages/dashboard/Overview';
@@ -159,6 +162,15 @@ const AppShell: React.FC<{
             <Route path="/boutique" element={<Shop onAddToCart={addToCart} />} />
             <Route path="/boutique/produit/:slug" element={<ProductDetails onAddToCart={addToCart} />} />
             <Route path="/personnaliser/mon-design" element={<ProductCustomizer onAddToCart={addToCart} />} />
+            {/* Redirections intuitives pour l'atelier de personnalisation (Audit P1) */}
+            <Route path="/personnalisation" element={<Navigate to="/personnaliser/mon-design" replace />} />
+            <Route path="/personnaliser" element={<Navigate to="/personnaliser/mon-design" replace />} />
+
+            {/* Pages Légales & Conformité ARTCI / RGPD (Audit P0) */}
+            <Route path="/mentions-legales" element={<MentionsLegales />} />
+            <Route path="/confidentialite" element={<Confidentialite />} />
+            <Route path="/cgv" element={<CGV />} />
+
             <Route path="/aide-sav" element={<HelpSupport />} />
 
             {/* --- Routes Invités (Login) --- */}
@@ -166,6 +178,11 @@ const AppShell: React.FC<{
               <Route path="/login" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
             </Route>
+
+            {/* --- Tunnel de Commande & Paiement (Supporte Client Connecté et Invité) --- */}
+            <Route path="/checkout" element={<Checkout cartItems={cart} onClearCart={clearCart} data={user} />} />
+            <Route path="/order-confirmed" element={<OrderConfirmed />} />
+            <Route path="/payment/callback" element={<PaymentCallback />} />
 
             {/* --- Routes Privées (Clients) --- */}
             <Route element={<PrivateRoute />}>
@@ -179,10 +196,7 @@ const AppShell: React.FC<{
                 <Route path="payments" element={<Payments />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
-              <Route path="/checkout" element={<Checkout cartItems={cart} onClearCart={clearCart} data={user} />} />
-              <Route path="/order-confirmed" element={<OrderConfirmed />} />
             </Route>
-            <Route path="/payment/callback" element={<PaymentCallback />} />
 
             {/* 🛡️ SÉCURITÉ ADMIN : /admin est masqué et renvoie 404 pour les robots */}
             <Route path="/admin" element={<NotFound />} />

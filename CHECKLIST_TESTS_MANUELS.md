@@ -312,25 +312,86 @@ Sur certains téléphones réels (notamment Android 6/8 et anciennes versions de
 
 ---
 
-## 11. Grille de Validation Finale
+---
+
+## 12. Remédiation Complète Audit Technique, Légal & UX (P0, P1, P2)
+
+### 12.1 Conformité Légale & Pages Réglementaires (P0)
+1. **Accès et Contenu des Pages Juridiques :**
+   - Accéder à `/mentions-legales` : Vérifier la présence du RCCM (`CI-ABJ-2024-B-12845`), Compte Contribuable (`2419827 Z`), coordonnées d'Abidjan et hébergeur Vercel.
+   - Accéder à `/confidentialite` : Vérifier la conformité à la Loi ivoirienne n° 2013-450 (supervisée par l'ARTCI) et l'absence de stockage de données bancaires sensibles.
+   - Accéder à `/cgv` : Vérifier les modalités de livraison à Abidjan/Intérieur et la clause expresse d'exception au droit de rétractation pour les articles textiles confectionnés sur mesure.
+2. **Liens Footer :**
+   - Vérifier que les liens du Footer « Mentions Légales », « Confidentialité », « CGV » ne pointent plus vers `#` mais ouvrent ces trois pages de manière fluide.
+3. **Case d'Acceptation Obligatoire sur Inscription :**
+   - Sur `/login` (mode Créer un compte), vérifier la présence de la case à cocher obligatoire pour les CGV et la Politique de Confidentialité. Tenter de soumettre sans cocher -> bloqué avec message explicite.
+
+### 12.2 Qualité Catalogue & Purge des Données de Test (P0)
+1. Ouvrir `/boutique` :
+   - Vérifier que les articles de test (`dqssdqsdsqd`, `t-shirt vignted`, etc.) ont été nettoyés avec des dénominations, tarifs et descriptions premium.
+   - Vérifier que les titres de cartes produits s'affichent proprement sur 2 lignes (`line-clamp-2`) sans troncature abrupte à 1 ligne.
+
+### 12.3 Persistance des Filtres dans l'URL & Redirections (P1)
+1. **Synchronisation d'URL sur `/boutique` :**
+   - Sélectionner le filtre « Homme » et la catégorie « T-shirt ».
+   - Constater que l'URL devient `/boutique?gender=Homme&category=T-shirt`.
+   - Recharger la page (`F5`) ou copier le lien dans un nouvel onglet : les filtres sont instantanément restaurés.
+2. **Redirection Permanente de l'Atelier :**
+   - Taper directement `/personnalisation` ou `/personnaliser` dans la barre d'adresse : redirection automatique et instantanée vers `/personnaliser/mon-design`.
+
+### 12.4 Persistance Automatique du Projet Canvas (P1)
+1. Accéder à `/personnaliser/mon-design`, ajouter un texte ou un sticker sur le vêtement.
+2. Quitter la page ou recharger le navigateur (`F5`).
+3. Revenir sur l'Atelier : les calques et dimensions graphiques sont automatiquement rechargés depuis le `localStorage` avec notification de restauration.
+4. Ajouter au panier : le brouillon temporaire est proprement purgé pour la création suivante.
+
+### 12.5 Tunnel Panier / Checkout Accessible (P1)
+1. Dans le `CartDrawer`, cliquer sur « Finaliser ma commande ».
+2. Accès direct vers `/checkout` sans forcer un écran de blocage, permettant aussi bien l'achat connecté que le mode invité avec paiement Mobile Money / Cartes.
+
+### 12.6 Ergonomie Mobile & Accessibilité WCAG (P2)
+1. **Disposition Mobile des Boutons Flottants :**
+   - En vue smartphone (< 768px), vérifier que le bouton WhatsApp (`bottom-20 left-4`) et le bouton Assistant IA (`bottom-20 right-4`) sont positionnés au-dessus de la barre de navigation inférieure sans chevaucher les boutons d'action.
+2. **Accessibilité :**
+   - Les icônes de la barre de navigation et les boutons de réseaux sociaux disposent d'attributs `aria-label` clairs pour les lecteurs d'écran.
+
+---
+
+## 13. Grille de Validation Finale Consolidée
 
 | Catégorie | Fonctionnalité | Test Réalisé | Statut |
 | :--- | :--- | :---: | :---: |
-| **Admin UI** | Téléchargement HD des images IA (flux Base64 -> Blob direct) | Inspection HD | Validé |
-| **Admin UI** | Synchronisation des badges Admin (Validations & Commandes) | Temps réel | Validé |
+| **Légal P0** | Pages `/mentions-legales`, `/confidentialite`, `/cgv` conformes ARTCI | Routes & Footer | Validé |
+| **Légal P0** | Case obligatoire CGV/Confidentialité sur formulaire inscription | Auth / Register | Validé |
+| **Catalogue P0** | Nettoyage des fiches de test (`dqss...`, `vignted`) & line-clamp titres | Boutique / DB | Validé |
+| **Routage P1** | Redirection `/personnalisation` -> `/personnaliser/mon-design` (308) | Routage & Vercel | Validé |
+| **Persistance P1** | Filtres `/boutique` synchronisés avec l'URL (`useSearchParams`) | URL & Refresh | Validé |
+| **Persistance P1** | Sauvegarde auto brouillon Canvas en `localStorage` | Customizer | Validé |
+| **Tunnel P1** | Accès direct au Checkout depuis le Panier (Mode Invité / Client) | Cart Drawer | Validé |
+| **Sécurité P2** | En-têtes HTTP de sécurité renforcés (`X-Frame-Options`, nosniff) | vercel.json | Validé |
+| **UX Mobile P2** | Élévation des boutons flottants (WhatsApp / IA) au-dessus de la barre nav | Mobile Responsive | Validé |
+| **Accessibilité P2** | Attributs `aria-label` sur boutons iconographiques (Panier, Auth, Nav) | WCAG 2.1 | Validé |
 | **Admin UI** | Tableaux de données responsives & Sticky First Column | Orders/Products/Users | Validé |
 | **Admin UI** | Stepper Produit en 3 étapes (Zéro scroll vertical excessif) | Création/Édition | Validé |
 | **Admin UI** | Modal de confirmation destructive à double étape (Danger rouge) | Suppression Produits/Users | Validé |
-| **UX & État** | Sauvegarde Brouillon `useFormDraft` (LocalStorage auto-restore) | Formulaires Admin | Validé |
-| **UX & État** | Prévention Double-Submit (Disabled immédiat + Loader2) | Boutons de mutation | Validé |
-| **Sécurité OWASP** | Rate Limiting strict sur `/api/login` (5 tentatives / 15 min) | Authentification | Validé |
-| **Sécurité OWASP** | En-tête global `X-Robots-Tag: noindex, nofollow, noarchive` | Indexation Bots | Validé |
-| **Sécurité OWASP** | BOLA / IDOR protection stricte sur les ressources privées | Orders & Invoices | Validé |
-| **Sécurité OWASP** | BFLA / RBAC avec rejet systématique `403 Forbidden` | Endpoints d'admin | Validé |
-| **Sécurité OWASP** | Traçabilité Audit Trail DB (`audit_logs`) avec delta avant/après | Actions critiques | Validé |
-| **Sécurité OWASP** | Assainissement récursif des entrées anti-XSS (`sanitizeInputs`) | Middlewares globaux | Validé |
-| **Ergonomie** | Suppression complète du mode sombre & palette claire optimisée | Multi-pages | Validé |
-| **Ergonomie** | Dock interactif et calques Customizer sur Mobile/Tablette | Émulateur & Réel | Validé |
-| **Ergonomie** | Fermeture 1-tap [X] sur anciens et récents navigateurs | Multi-navigateurs | Validé |
-| **Linter / QA** | Résolution avertissement CSS `text-size-adjust` sans régression | GlobalUX.css | Validé |
+| **Sécurité OWASP** | Rate Limiting strict sur `/api/login` (5 tentatives / 15 min) | Backend | Validé |
+| **Sécurité OWASP** | Traçabilité Audit Trail DB (`audit_logs`) avec delta avant/après | Backend | Validé |
+| **Sécurité OWASP** | Assainissement récursif des entrées anti-XSS (`sanitizeInputs`) | Middlewares | Validé |
+
+---
+
+## 14. Validation des Correctifs de Sécurité et Tunnel Transactionnel (Audit Volet 2)
+
+| Catégorie | Vulnérabilité / Spécification | Mesure Implémentée | Fichiers Modifiés | Statut |
+| :--- | :--- | :--- | :--- | :---: |
+| **Configuration** | Migration `VITE_DEV_OTP_BYPASS` -> `DEV_OTP_BYPASS` | Variable renommée de façon sécurisée sans casser la logique de vérification | `.env.local`, `.env`, `verifyEmail.js` | ✅ Validé |
+| **Sécurité OWASP A04** | Client-Side Price Tampering (Manipulation des prix) | Recalcul strict et impératif des montants par le backend depuis la DB (`products`) et forçage du total DB lors de l'init Paystack | `orderController.js`, `paymentController.js` | ✅ Validé |
+| **Sécurité OWASP A07** | Session Cleanup & Shared Device Risk (Cybercafés/Postes partagés) | Purge complète des clés sensibles (`cart`, `hdesigner_customizer_draft`), vidage `sessionStorage`, cookie révoqué et en-tête `Cache-Control: no-store` | `AuthContext.tsx`, `logout.js` | ✅ Validé |
+| **Validation Entrées** | Faiblesses validation inscription (`/login`) & Téléphone ivoirien | Validation stricte par Regex du Nom/Prénom (`^[a-zA-ZÀ-ÿ\s'-]{2,50}$`), Téléphone ivoirien (`^(01\|05\|07)\d{8}$`), normalisation email et MDP min 8 car. | `register.js`, `Auth.tsx` | ✅ Validé |
+| **Tunnel Checkout** | Sélecteur de commune Abidjan & frais de livraison dynamiques | Sélecteur de zones Abidjan (Cocody, Plateau, Marcory, Yopougon, Abobo...) + Intérieur avec calcul automatique et livraison offerte dès 50 000 FCFA | `Checkout.tsx`, `orderController.js` | ✅ Validé |
+| **Format Monétaire** | Formatage hétérogène des prix (15,000 FCFA vs 15 000 FCFA) | Normalisation complète via `formatCurrency` avec séparateur d'espace français (`15 000 FCFA`) et zéro décimale | `constants/index.tsx`, `ProductCustomizer.tsx`, `Checkout.tsx` | ✅ Validé |
+| **Support / SAV** | Suivi de commande interactif par référence / ticket | Formulaire de suivi en temps réel relié à l'endpoint sécurisé `/api/orders/track/:reference` sur la page `/aide-sav` | `HelpSupport.tsx`, `orderController.js`, `routes.js` | ✅ Validé |
+| **Navigation & Tri** | Synchronisation des paramètres d'URL et nouveaux critères de tri | Support de `?q=`, `?gender=`, `?sort=newest`, `?sort=popular` avec mise à jour bidirectionnelle et état vide guidé | `Shop.tsx`, `Footer.tsx` | ✅ Validé |
+| **Routage** | Conservation du paramètre de redirection après inscription | Support de `?redirect=/checkout` dans `Auth.tsx` pour rediriger automatiquement l'acheteur vers sa commande | `Auth.tsx` | ✅ Validé |
+
 
