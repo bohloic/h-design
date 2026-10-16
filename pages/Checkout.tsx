@@ -74,6 +74,19 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
 
   const [stockErrors, setStockErrors] = useState<any[]>([]);
   
+  // 🚨 Gestion des alertes et erreurs de validation en direct
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    nom?: string;
+    prenom?: string;
+    email?: string;
+    phone?: string;
+    city?: string;
+    address?: string;
+  }>({});
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
+
   // 🛡️ Protection Anti-Robot Turnstile / Captcha
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState<string>('');
@@ -156,58 +169,94 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
       const cleanCity = (formData.city || '').trim();
       const cleanPhone = (formData.phone || '').trim().replace(/\s+/g, '');
 
-      if (!cleanNom || !cleanPrenom || !cleanAddress || !cleanPhone || !cleanCity || !cleanEmail) {
-        useNotificationStore.getState().addNotification({
-          title: "Informations incomplètes",
-          message: "Veuillez remplir tous les champs obligatoires (Nom, Prénom, Email, Téléphone, Ville et Adresse complète).",
-          type: "warning"
-        });
-        return;
+      const errors: typeof fieldErrors = {};
+
+      if (!cleanPrenom) {
+        errors.prenom = "Le prénom est obligatoire.";
+      } else if (cleanPrenom.length < 2) {
+        errors.prenom = "Le prénom doit comporter au moins 2 caractères.";
       }
 
-      if (!isValidEmail(cleanEmail)) {
-        useNotificationStore.getState().addNotification({
-          title: "Email invalide",
-          message: "Veuillez saisir une adresse email valide avec le symbole @ et un domaine (ex: contact@domaine.com).",
-          type: "warning"
-        });
-        return;
+      if (!cleanNom) {
+        errors.nom = "Le nom de famille est obligatoire.";
+      } else if (cleanNom.length < 2) {
+        errors.nom = "Le nom doit comporter au moins 2 caractères.";
       }
 
-      if (cleanAddress.length < 5) {
-        useNotificationStore.getState().addNotification({
-          title: "Adresse incomplète",
-          message: "Veuillez renseigner votre adresse de livraison complète (Rue, quartier, repère).",
-          type: "warning"
-        });
-        return;
+      if (!cleanEmail) {
+        errors.email = "L'adresse email est requise pour le suivi.";
+      } else if (!isValidEmail(cleanEmail)) {
+        errors.email = "Format d'email invalide (ex: contact@exemple.com).";
       }
 
       const ivorianPhoneRegex = /^(01|05|07)\d{8}$/;
-      if (!ivorianPhoneRegex.test(cleanPhone)) {
+      if (!cleanPhone) {
+        errors.phone = "Le numéro de téléphone est obligatoire.";
+      } else if (!ivorianPhoneRegex.test(cleanPhone)) {
+        errors.phone = "Numéro ivoirien invalide : 10 chiffres débutant par 01, 05 ou 07.";
+      }
+
+      if (!cleanCity) {
+        errors.city = "Veuillez choisir votre commune ou zone de livraison.";
+      }
+
+      if (!cleanAddress) {
+        errors.address = "L'adresse de livraison complète est obligatoire.";
+      } else if (cleanAddress.length < 5) {
+        errors.address = "L'adresse doit comporter au moins 5 caractères (Rue, quartier, repère).";
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        setFormError("Certains champs sont incomplets ou invalides. Veuillez corriger les informations en rouge ci-dessous.");
         useNotificationStore.getState().addNotification({
-          title: "Format téléphone",
-          message: "Le numéro de téléphone doit comporter exactement 10 chiffres (Orange, MTN ou Moov débutant par 01, 05 ou 07).",
+          title: "Champs requis",
+          message: "Veuillez corriger les champs en rouge avant de passer à l'étape suivante.",
+          type: "warning"
+        });
+        const formEl = document.getElementById('checkout-step1-form');
+        if (formEl) formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
+      setFieldErrors({});
+      setFormError(null);
+    }
+
+    if (step === 2) {
+      if (!paymentMethod) {
+        setPaymentError("Veuillez sélectionner un mode de paiement (Paiement Mobile ou Carte) pour continuer.");
+        useNotificationStore.getState().addNotification({
+          title: "Mode de paiement requis",
+          message: "Veuillez choisir votre mode de paiement pour poursuivre.",
           type: "warning"
         });
         return;
       }
+      setPaymentError(null);
     }
+
     setStep(step + 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleBack = () => {
     setStockErrors([]);
+    setFormError(null);
+    setPaymentError(null);
+    setOrderError(null);
     setStep(step - 1);
   };
 
   const handleFinish = async () => {
     if (isLoading) return;
     const token = localStorage.getItem('token');
+    setOrderError(null);
 
-    const userEmail = (formData.email || '').trim();
+    const userEmail = (formData.email || '').trim().toLowerCase();
     if (!userEmail || !isValidEmail(userEmail)) {
+      setFieldErrors(prev => ({ ...prev, email: "Adresse email obligatoire et valide." }));
+      setFormError("Veuillez fournir une adresse email valide pour la réception de votre confirmation et le paiement.");
       useNotificationStore.getState().addNotification({
         title: "Email invalide",
         message: "Veuillez fournir une adresse email valide pour la réception de votre confirmation et le paiement.",
@@ -219,6 +268,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
 
     if (!captchaToken) {
       setCaptchaError("Veuillez valider le test de sécurité anti-robot ci-dessous avant de procéder au paiement.");
+      setOrderError("Vérification anti-robot requise avant de valider votre commande.");
       useNotificationStore.getState().addNotification({
         title: "Vérification requise",
         message: "Veuillez valider le test de sécurité anti-robot ci-dessous.",
@@ -298,9 +348,11 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
 
     } catch (error: any) {
       console.error("ERREUR COMMANDE:", error);
+      const msg = error.message || "Impossible de finaliser la transaction. Veuillez réessayer.";
+      setOrderError(msg);
       useNotificationStore.getState().addNotification({
         title: "Problème Technique",
-        message: error.message || "Impossible de finaliser la transaction. Veuillez réessayer.",
+        message: msg,
         type: "error"
       });
     } finally {
@@ -458,24 +510,128 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
         <div className="lg:col-span-2 space-y-6 md:space-y-8">
 
           {step === 1 && (
-            <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} className="bg-white dark:bg-carbon p-6 md:p-12 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 transition-colors">
-              <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-pure mb-6 md:mb-10 flex items-center gap-3">
+            <form
+              id="checkout-step1-form"
+              noValidate
+              onSubmit={(e) => { e.preventDefault(); handleNext(); }}
+              className="bg-white dark:bg-carbon p-6 md:p-12 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 transition-colors"
+            >
+              <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-pure mb-6 md:mb-8 flex items-center gap-3">
                 <MapPin className="text-theme-primary" size={28} /> Détails de Livraison
               </h2>
 
+              {/* 🚨 Alerte Globale d'Erreur dans le Formulaire */}
+              {formError && (
+                <div
+                  className="mb-8 p-4 md:p-5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-300 dark:border-rose-800/80 flex items-start gap-3.5 text-rose-900 dark:text-rose-100 shadow-sm animate-alert-shake"
+                  role="alert"
+                >
+                  <div className="p-2 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5">
+                    <AlertCircle size={22} />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <h4 className="font-black text-sm md:text-base">Informations incomplètes ou erronées</h4>
+                    <p className="text-xs md:text-sm text-rose-700 dark:text-rose-300 mt-1 leading-relaxed font-medium">
+                      {formError}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormError(null)}
+                    className="text-rose-400 hover:text-rose-600 dark:hover:text-rose-200 text-sm font-bold p-1 transition-colors"
+                    title="Fermer cette alerte"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="prenom" className="text-xs font-bold text-slate-500 uppercase ml-1">Prénom</label>
-                  <input id="prenom" type="text" name="prenom" placeholder="Votre prénom" title="Votre prénom" value={formData.prenom} onChange={(e) => setFormData({ ...formData, prenom: e.target.value })} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
+                {/* PRÉNOM */}
+                <div className="space-y-1.5 text-left">
+                  <label htmlFor="prenom" className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase ml-1 flex items-center justify-between">
+                    <span>Prénom *</span>
+                    {fieldErrors.prenom && <span className="text-rose-500 font-bold text-[11px] normal-case">Requis</span>}
+                  </label>
+                  <input
+                    id="prenom"
+                    type="text"
+                    name="prenom"
+                    placeholder="Votre prénom"
+                    title="Votre prénom"
+                    value={formData.prenom}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, prenom: e.target.value }));
+                      if (fieldErrors.prenom) {
+                        setFieldErrors(prev => {
+                          const next = { ...prev };
+                          delete next.prenom;
+                          if (Object.keys(next).length === 0) setFormError(null);
+                          return next;
+                        });
+                      }
+                    }}
+                    className={`w-full p-3 md:p-4 rounded-2xl border-2 transition-all outline-none ${
+                      fieldErrors.prenom
+                        ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-100 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20'
+                        : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 text-slate-800 dark:text-pure'
+                    }`}
+                    aria-invalid={!!fieldErrors.prenom}
+                    required
+                  />
+                  {fieldErrors.prenom && (
+                    <p className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5 mt-1 animate-alert-shake" role="alert">
+                      <AlertCircle size={14} className="shrink-0" />
+                      <span>{fieldErrors.prenom}</span>
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="nom" className="text-xs font-bold text-slate-500 uppercase ml-1">Nom</label>
-                  <input id="nom" type="text" name="nom" placeholder="Votre nom" title="Votre nom" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
+
+                {/* NOM */}
+                <div className="space-y-1.5 text-left">
+                  <label htmlFor="nom" className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase ml-1 flex items-center justify-between">
+                    <span>Nom *</span>
+                    {fieldErrors.nom && <span className="text-rose-500 font-bold text-[11px] normal-case">Requis</span>}
+                  </label>
+                  <input
+                    id="nom"
+                    type="text"
+                    name="nom"
+                    placeholder="Votre nom"
+                    title="Votre nom"
+                    value={formData.nom}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, nom: e.target.value }));
+                      if (fieldErrors.nom) {
+                        setFieldErrors(prev => {
+                          const next = { ...prev };
+                          delete next.nom;
+                          if (Object.keys(next).length === 0) setFormError(null);
+                          return next;
+                        });
+                      }
+                    }}
+                    className={`w-full p-3 md:p-4 rounded-2xl border-2 transition-all outline-none ${
+                      fieldErrors.nom
+                        ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-100 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20'
+                        : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 text-slate-800 dark:text-pure'
+                    }`}
+                    aria-invalid={!!fieldErrors.nom}
+                    required
+                  />
+                  {fieldErrors.nom && (
+                    <p className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5 mt-1 animate-alert-shake" role="alert">
+                      <AlertCircle size={14} className="shrink-0" />
+                      <span>{fieldErrors.nom}</span>
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-xs font-bold text-slate-500 uppercase ml-1">
-                    Email {isAuth && <span className="text-green-600 font-medium normal-case">(vérifié ✓)</span>}
+
+                {/* EMAIL */}
+                <div className="space-y-1.5 text-left">
+                  <label htmlFor="email" className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase ml-1 flex items-center justify-between">
+                    <span>Email * {isAuth && <span className="text-emerald-600 dark:text-emerald-400 font-medium normal-case">(vérifié ✓)</span>}</span>
+                    {fieldErrors.email && <span className="text-rose-500 font-bold text-[11px] normal-case">Invalide</span>}
                   </label>
                   <div className="relative">
                     <input
@@ -483,49 +639,114 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
                       type="email"
                       name="email"
                       placeholder="votre@email.com"
-                      title={isAuth ? "L'email est verrouillé pour éviter les erreurs de paiement" : "Votre email"}
+                      title={isAuth ? "L'email est verrouillé pour sécuriser vos commandes" : "Votre email"}
                       value={formData.email}
-                      onChange={(e) => !isAuth && setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) => {
+                        if (!isAuth) {
+                          setFormData(prev => ({ ...prev, email: e.target.value }));
+                          if (fieldErrors.email) {
+                            setFieldErrors(prev => {
+                              const next = { ...prev };
+                              delete next.email;
+                              if (Object.keys(next).length === 0) setFormError(null);
+                              return next;
+                            });
+                          }
+                        }
+                      }}
                       readOnly={isAuth}
-                      className={`w-full p-3 md:p-4 border-2 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none ${
-                        isAuth
-                          ? 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-                          : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 text-slate-800 dark:text-pure'
+                      className={`w-full p-3 md:p-4 rounded-2xl border-2 transition-all outline-none ${
+                        fieldErrors.email
+                          ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-100 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20'
+                          : isAuth
+                            ? 'bg-slate-100 dark:bg-slate-700/60 border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                            : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 text-slate-800 dark:text-pure'
                       }`}
+                      aria-invalid={!!fieldErrors.email}
                       required
                     />
                     {isAuth && (
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" title="Champ verrouillé">🔒</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" title="Champ vérifié et sécurisé">🔒</span>
                     )}
                   </div>
+                  {fieldErrors.email && (
+                    <p className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5 mt-1 animate-alert-shake" role="alert">
+                      <AlertCircle size={14} className="shrink-0" />
+                      <span>{fieldErrors.email}</span>
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="phone" className="text-xs font-bold text-slate-500 uppercase ml-1">Téléphone (10 chiffres)</label>
+
+                {/* TÉLÉPHONE */}
+                <div className="space-y-1.5 text-left">
+                  <label htmlFor="phone" className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase ml-1 flex items-center justify-between">
+                    <span>Téléphone (10 chiffres) *</span>
+                    {fieldErrors.phone && <span className="text-rose-500 font-bold text-[11px] normal-case">Invalide</span>}
+                  </label>
                   <input
                     id="phone"
                     type="tel"
                     name="phone"
-                    placeholder="0102030405"
-                    title="Téléphone (10 chiffres)"
+                    placeholder="ex: 0701020304"
+                    title="Téléphone (10 chiffres ivoiriens)"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
-                    className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure"
+                    onChange={(e) => {
+                      const clean = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setFormData(prev => ({ ...prev, phone: clean }));
+                      if (fieldErrors.phone) {
+                        setFieldErrors(prev => {
+                          const next = { ...prev };
+                          delete next.phone;
+                          if (Object.keys(next).length === 0) setFormError(null);
+                          return next;
+                        });
+                      }
+                    }}
+                    className={`w-full p-3 md:p-4 rounded-2xl border-2 transition-all outline-none ${
+                      fieldErrors.phone
+                        ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-100 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20'
+                        : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 text-slate-800 dark:text-pure'
+                    }`}
+                    aria-invalid={!!fieldErrors.phone}
                     required
                     maxLength={10}
                   />
+                  {fieldErrors.phone && (
+                    <p className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5 mt-1 animate-alert-shake" role="alert">
+                      <AlertCircle size={14} className="shrink-0" />
+                      <span>{fieldErrors.phone}</span>
+                    </p>
+                  )}
                 </div>
-                <div className="md:col-span-2 space-y-2">
-                  <label htmlFor="city" className="text-xs font-bold text-slate-500 uppercase ml-1 flex items-center justify-between">
-                    <span>Commune / Zone de Livraison (Abidjan & Intérieur)</span>
-                    {isFreeShipping && <span className="text-emerald-600 font-bold normal-case text-xs">🎉 Livraison Offerte</span>}
+
+                {/* COMMUNE / ZONE */}
+                <div className="md:col-span-2 space-y-1.5 text-left">
+                  <label htmlFor="city" className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase ml-1 flex items-center justify-between">
+                    <span>Commune / Zone de Livraison (Abidjan & Intérieur) *</span>
+                    {isFreeShipping && <span className="text-emerald-600 dark:text-emerald-400 font-bold normal-case text-xs">🎉 Livraison Offerte</span>}
                   </label>
                   <select
                     id="city"
                     name="city"
                     title="Sélectionnez votre commune de livraison"
                     value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure font-bold cursor-pointer"
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, city: e.target.value }));
+                      if (fieldErrors.city) {
+                        setFieldErrors(prev => {
+                          const next = { ...prev };
+                          delete next.city;
+                          if (Object.keys(next).length === 0) setFormError(null);
+                          return next;
+                        });
+                      }
+                    }}
+                    className={`w-full p-3 md:p-4 rounded-2xl border-2 transition-all outline-none font-bold cursor-pointer ${
+                      fieldErrors.city
+                        ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-100 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20'
+                        : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 text-slate-800 dark:text-pure'
+                    }`}
+                    aria-invalid={!!fieldErrors.city}
                     required
                   >
                     {DELIVERY_ZONES.map(zone => (
@@ -534,17 +755,59 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
                       </option>
                     ))}
                   </select>
+                  {fieldErrors.city && (
+                    <p className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5 mt-1 animate-alert-shake" role="alert">
+                      <AlertCircle size={14} className="shrink-0" />
+                      <span>{fieldErrors.city}</span>
+                    </p>
+                  )}
                 </div>
-                <div className="md:col-span-2 space-y-2">
-                  <label htmlFor="address" className="text-xs font-bold text-slate-500 uppercase ml-1">Adresse Complète</label>
-                  <input id="address" type="text" name="address" placeholder="Rue, Quartier..." title="Votre adresse complète" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="w-full p-3 md:p-4 bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 transition-all outline-none text-slate-800 dark:text-pure" required />
+
+                {/* ADRESSE */}
+                <div className="md:col-span-2 space-y-1.5 text-left">
+                  <label htmlFor="address" className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase ml-1 flex items-center justify-between">
+                    <span>Adresse Complète (Rue, Quartier, Repère) *</span>
+                    {fieldErrors.address && <span className="text-rose-500 font-bold text-[11px] normal-case">Incomplète</span>}
+                  </label>
+                  <input
+                    id="address"
+                    type="text"
+                    name="address"
+                    placeholder="ex: Angré 8ème Tranche, en face de la pharmacie du carrefour"
+                    title="Votre adresse complète"
+                    value={formData.address}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, address: e.target.value }));
+                      if (fieldErrors.address) {
+                        setFieldErrors(prev => {
+                          const next = { ...prev };
+                          delete next.address;
+                          if (Object.keys(next).length === 0) setFormError(null);
+                          return next;
+                        });
+                      }
+                    }}
+                    className={`w-full p-3 md:p-4 rounded-2xl border-2 transition-all outline-none ${
+                      fieldErrors.address
+                        ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 text-rose-900 dark:text-rose-100 focus:border-rose-600 focus:ring-4 focus:ring-rose-500/20'
+                        : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700 focus:border-theme-primary focus:ring-4 focus:ring-theme-primary/10 text-slate-800 dark:text-pure'
+                    }`}
+                    aria-invalid={!!fieldErrors.address}
+                    required
+                  />
+                  {fieldErrors.address && (
+                    <p className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5 mt-1 animate-alert-shake" role="alert">
+                      <AlertCircle size={14} className="shrink-0" />
+                      <span>{fieldErrors.address}</span>
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="flex justify-end mt-8 md:mt-12">
                 <button
                   type="submit"
-                  className="w-full md:w-auto bg-slate-900 dark:bg-theme-primary text-white px-10 py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all shadow-xl"
+                  className="w-full md:w-auto bg-slate-900 dark:bg-theme-primary text-white px-10 py-4 rounded-2xl font-black flex items-center justify-center gap-3 hover:opacity-90 active:scale-95 transition-all shadow-xl cursor-pointer"
                 >
                   Suivant <ArrowRight size={20} />
                 </button>
@@ -558,10 +821,25 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
               <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center dark:text-pure">
                 <CreditCard className="mr-2 w-5 h-5 md:w-6 md:h-6 text-theme-primary" /> Mode de Paiement
               </h2>
+
+              {/* 🚨 Alerte si aucun mode de paiement sélectionné */}
+              {paymentError && (
+                <div
+                  className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-800/80 flex items-start gap-3 text-amber-900 dark:text-amber-100 shadow-sm animate-alert-shake"
+                  role="alert"
+                >
+                  <AlertCircle size={20} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 text-left text-xs md:text-sm font-bold">
+                    {paymentError}
+                  </div>
+                  <button type="button" onClick={() => setPaymentError(null)} className="text-amber-500 hover:text-amber-700 p-0.5" title="Fermer">✕</button>
+                </div>
+              )}
+
               <div className="space-y-3 md:space-y-4">
 
                 <button
-                  onClick={() => setPaymentMethod('Mobile Money')}
+                  onClick={() => { setPaymentMethod('Mobile Money'); setPaymentError(null); }}
                   className={`w-full p-4 md:p-6 border-2 rounded-3xl flex items-center justify-between transition-all ${paymentMethod === 'Mobile Money' ? 'border-theme-primary bg-theme-primary/[.05]' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
                     }`}
                 >
@@ -630,8 +908,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
                 <button onClick={handleBack} disabled={isLoading} className="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 py-3 md:py-4 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Retour</button>
                 <button
                   onClick={handleNext}
-                  disabled={!paymentMethod}
-                  className={`flex-[2] text-white py-3 md:py-4 rounded-2xl font-bold transition-transform ${paymentMethod ? 'opacity-95 hover:opacity-100 active:scale-95 shadow-lg bg-theme-primary' : 'bg-slate-300 cursor-not-allowed'}`}
+                  className="flex-[2] text-white py-3 md:py-4 rounded-2xl font-bold transition-transform shadow-lg bg-theme-primary hover:opacity-95 active:scale-95 cursor-pointer"
                 >
                   Confirmer
                 </button>
@@ -647,6 +924,39 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
               >
                 <CheckCircle2 size={40} className="md:w-16 md:h-16" />
               </div>
+
+              {/* 🚨 Alerte en cas d'erreur de transaction ou de paiement */}
+              {orderError && (
+                <div
+                  className="bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-300 dark:border-rose-800/80 p-5 rounded-2xl text-left animate-alert-shake shadow-sm transition-colors flex items-start gap-3.5 text-rose-900 dark:text-rose-100"
+                  role="alert"
+                >
+                  <div className="p-2 rounded-xl bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5">
+                    <AlertCircle size={22} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-black text-sm md:text-base">Échec lors de la transaction</h4>
+                    <p className="text-xs md:text-sm text-rose-700 dark:text-rose-300 mt-1 leading-relaxed font-medium">
+                      {orderError}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleFinish}
+                      className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 transition-colors shadow-sm"
+                    >
+                      Réessayer la validation
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOrderError(null)}
+                    className="text-rose-400 hover:text-rose-600 dark:hover:text-rose-200 text-sm font-bold p-1"
+                    title="Fermer cette alerte"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
 
               <div className="bg-slate-50 dark:bg-slate-900/50 rounded-3xl p-4 md:p-6 text-left space-y-3 md:space-y-4 border border-slate-100 dark:border-slate-800 text-sm md:text-base transition-colors">
                 <div className="flex justify-between border-b border-slate-200 dark:border-slate-700 pb-2">

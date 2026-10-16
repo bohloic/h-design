@@ -389,5 +389,17 @@ button svg, a svg, [role="button"] svg {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
+/* 🚨 Animation de secousse pour alertes et erreurs de validation */
+@keyframes alert-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.animate-alert-shake {
+  animation: alert-shake 0.35s ease-in-out;
+}
+
+
 
 

@@ -42,7 +42,13 @@ function Auth() {
     const [showVerification, setShowVerification] = useState(false);
     const [isForgotMode, setIsForgotMode] = useState(false);
 
-    const [registeredEmail, setRegisteredEmail] = useState('');
+    const [registeredEmail, setRegisteredEmail] = useState(() => {
+        try {
+            return sessionStorage.getItem('hdesigner_registered_email') || '';
+        } catch {
+            return '';
+        }
+    });
     const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -156,17 +162,25 @@ function Auth() {
     // 2. RENVOYER LE CODE DE VÉRIFICATION
     const handleResendCode = async () => {
         if (resendCooldown > 0) return;
+        const targetEmail = (registeredEmail || formData.email || sessionStorage.getItem('hdesigner_registered_email') || '').trim().toLowerCase();
+        
+        const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!targetEmail || !EMAIL_REGEX.test(targetEmail)) {
+            setStatus({ type: 'error', message: "Adresse email introuvable ou invalide. Veuillez retourner au formulaire." });
+            return;
+        }
+
         setIsLoading(true);
         setStatus({ type: '', message: '' });
 
         try {
-            const data = await submitPublicAuthForm(`${API_BASE_URL}/resend-verification`, { email: registeredEmail });
+            const data = await submitPublicAuthForm(`${API_BASE_URL}/resend-verification`, { email: targetEmail });
             setStatus({ type: 'success', message: data.message || "Un nouveau code a été envoyé !" });
             setResendCooldown(60);
             setVerificationCode(['', '', '', '', '', '']);
             inputRefs.current[0]?.focus();
         } catch (error: any) {
-            setStatus({ type: 'error', message: error.message });
+            setStatus({ type: 'error', message: error.message || "Impossible de renvoyer le code pour le moment." });
         } finally {
             setIsLoading(false);
         }
@@ -178,26 +192,32 @@ function Auth() {
         const fullCode = verificationCode.join('');
         if (fullCode.length !== 6) return setStatus({ type: 'error', message: "Veuillez entrer les 6 chiffres." });
 
+        const targetEmail = (registeredEmail || formData.email || sessionStorage.getItem('hdesigner_registered_email') || '').trim().toLowerCase();
+        if (!targetEmail) {
+            return setStatus({ type: 'error', message: "Adresse email introuvable. Veuillez vous reconnecter." });
+        }
+
         setIsLoading(true);
         setStatus({ type: '', message: '' });
 
         try {
             // 🛡️ SÉCURITÉ : Appel propre sans résidus d'Authorization
-            const data = await submitPublicAuthForm(`${API_BASE_URL}/verify-email`, { email: registeredEmail, code: fullCode });
+            const data = await submitPublicAuthForm(`${API_BASE_URL}/verify-email`, { email: targetEmail, code: fullCode });
 
             authLogin(data.token, data.user);
+            sessionStorage.removeItem('hdesigner_registered_email');
             setStatus({ type: 'success', message: data.message || "Email vérifié ! Bienvenue." });
                 
-                // 🪄 REDIRECTION INTELLIGENTE (Supporte ?redirect=/checkout et state)
-                const searchParams = new URLSearchParams(location.search);
-                const redirectParam = searchParams.get('redirect');
-                const state = location.state as any;
-                const target = redirectParam || state?.from?.pathname || '/dashboard';
-                const destination = data.user?.role === 'admin' 
-                    ? ADMIN_BASE_PATH 
-                    : ((target.startsWith('/') && !target.startsWith('//')) ? target : '/dashboard');
+            // 🪄 REDIRECTION INTELLIGENTE (Supporte ?redirect=/checkout et state)
+            const searchParams = new URLSearchParams(location.search);
+            const redirectParam = searchParams.get('redirect');
+            const state = location.state as any;
+            const target = redirectParam || state?.from?.pathname || '/dashboard';
+            const destination = data.user?.role === 'admin' 
+                ? ADMIN_BASE_PATH 
+                : ((target.startsWith('/') && !target.startsWith('//')) ? target : '/dashboard');
 
-                setTimeout(() => navigate(destination), 1000);
+            setTimeout(() => navigate(destination), 1000);
         } catch (error: any) {
             setStatus({ type: 'error', message: error.message });
         } finally {
@@ -262,13 +282,16 @@ function Auth() {
 
             if (isLoginMode) {
                 if (data.requireVerification) {
-                    setRegisteredEmail(data.email || formData.email);
+                    const verifiedEmail = (data.email || formData.email).trim().toLowerCase();
+                    setRegisteredEmail(verifiedEmail);
+                    try { sessionStorage.setItem('hdesigner_registered_email', verifiedEmail); } catch {}
                     setShowVerification(true);
                     setStatus({ type: 'success', message: data.message });
                 }
                 else {
                     authLogin(data.token, data.user);
                     sessionStorage.removeItem('hdesigner_auth_draft');
+                    sessionStorage.removeItem('hdesigner_registered_email');
                     setStatus({ type: 'success', message: "Connexion réussie !" });
 
                     let decodedUserId = '';
@@ -297,7 +320,9 @@ function Auth() {
                 }
             } else {
                 if (data.requireVerification) {
-                    setRegisteredEmail(data.email || formData.email);
+                    const verifiedEmail = (data.email || formData.email).trim().toLowerCase();
+                    setRegisteredEmail(verifiedEmail);
+                    try { sessionStorage.setItem('hdesigner_registered_email', verifiedEmail); } catch {}
                     setShowVerification(true);
                     setStatus({ type: 'success', message: "Code envoyé ! Vérifiez votre boîte mail." });
                     setResendCooldown(60);
