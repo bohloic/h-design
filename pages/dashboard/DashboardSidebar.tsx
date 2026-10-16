@@ -32,26 +32,31 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ user, activeTab, is
       {/* 1. OVERLAY (FOND NOIR) - Visible uniquement sur mobile quand isOpen est true */}
       {isOpen && (
         <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
-            onClick={onClose} // Ferme quand on clique à côté
+            className="fixed inset-0 bg-black/60 z-[1040] lg:hidden backdrop-blur-sm transition-opacity"
+            onClick={onClose}
         />
       )}
 
-      {/* 2. LA SIDEBAR ELLE-MÊME */}
+      {/* 2. LA SIDEBAR ELLE-MÊME (Sticky sur Desktop, Drawer Responsive sur Mobile) */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-80 bg-slate-50 dark:bg-[#151515] h-[100dvh] overflow-y-auto transition-transform duration-300 ease-in-out p-4
-        lg:translate-x-0 lg:relative lg:top-0 lg:z-0 lg:h-auto lg:w-72 lg:bg-transparent dark:lg:bg-transparent lg:p-0 lg:overflow-visible
-        ${isOpen ? 'translate-x-0 shadow-2xl dark:shadow-black/50' : '-translate-x-full'}
+        fixed inset-y-0 left-0 z-[1050] w-80 max-w-[85vw] bg-white dark:bg-[#151515] h-[100dvh] overflow-y-auto transition-transform duration-300 ease-in-out p-4 sm:p-5
+        lg:translate-x-0 lg:sticky lg:top-24 lg:self-start lg:z-10 lg:h-auto lg:max-h-[calc(100vh-7rem)] lg:w-72 lg:bg-transparent dark:lg:bg-transparent lg:p-0 lg:overflow-y-auto custom-scrollbar
+        ${isOpen ? 'translate-x-0 shadow-2xl dark:shadow-black/70' : '-translate-x-full'}
       `}>
         
-        {/* BOUTON FERMER (Mobile seulement) */}
-            <button 
-              onClick={onClose} 
-              aria-label="Fermer le menu"
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-white dark:bg-slate-800 rounded-full shadow-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer relative z-50 touch-target-44 active:scale-95"
-            >
-                <X size={24} />
-            </button>
+        {/* EN-TÊTE TIROIR MOBILE */}
+        <div className="lg:hidden flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-white/10">
+          <span className="font-bold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Mon Espace Client
+          </span>
+          <button 
+            onClick={onClose} 
+            aria-label="Fermer le menu"
+            className="min-w-[40px] min-h-[40px] flex items-center justify-center p-2 bg-slate-100 dark:bg-slate-800 rounded-full shadow-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer touch-target-44 active:scale-95"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
         <div className="space-y-4 lg:space-y-6">
             {/* CARTE PROFIL */}

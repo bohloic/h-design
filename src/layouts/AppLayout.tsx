@@ -3,9 +3,8 @@ import { Header } from "../components/admin/Header";
 import { Sidebar } from "../components/admin/Sidebar";
 import { Menu, LogOut, Store } from 'lucide-react';
 import { NotificationDropdown } from '../components/elements/NotificationDropdown.tsx';
-import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../utils/context/ThemeContext.tsx';
-import { triggerLoginPurgeAndRedirect } from '../utils/sessionManager';
+import { logoutAndPurgeBrowserData } from '../utils/sessionManager';
 
 export const AppLayout = ({ children, title }: { children?: React.ReactNode; title: string }) => {
   const navigate = useNavigate();
@@ -40,7 +39,7 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
   }, [themeMode]);
 
   const handleLogout = () => {
-    triggerLoginPurgeAndRedirect('/login');
+    logoutAndPurgeBrowserData({ keepCart: true, keepTheme: true });
   };
 
   return (

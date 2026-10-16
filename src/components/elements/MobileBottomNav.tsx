@@ -3,7 +3,6 @@ import { Home as HomeIcon, ShoppingBag, Palette, ShoppingCart, User, ShieldCheck
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/utils/context/AuthContext';
 import { ADMIN_BASE_PATH } from '@/constants';
-import { triggerLoginPurgeAndRedirect } from '@/utils/sessionManager';
 
 interface MobileBottomNavProps {
   cartCount: number;
@@ -109,9 +108,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onO
             </Link>
           )
         ) : (
-          <button 
-            type="button"
-            onClick={() => triggerLoginPurgeAndRedirect('/login')}
+          <Link 
+            to="/login"
             className={`flex flex-col items-center justify-center min-h-[48px] py-1 transition-all touch-target-44 cursor-pointer ${
               isActive('/login') 
                 ? 'text-theme-primary font-bold scale-105' 
@@ -120,7 +118,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ cartCount, onO
           >
             <User size={20} />
             <span className="text-[10px] mt-1 font-medium">Connexion</span>
-          </button>
+          </Link>
         )}
 
       </div>

@@ -112,11 +112,7 @@ function Auth() {
     };
 
     const toggleMode = () => {
-        const nextIsLogin = !isLoginMode;
-        if (nextIsLogin) {
-            purgeAllSessionData();
-        }
-        setIsLoginMode(nextIsLogin);
+        setIsLoginMode(!isLoginMode);
         setStatus({ type: '', message: '' });
         setFormData(prev => ({ ...prev, nom: '', prenom: '', password: '', confirmPassword: '' }));
         setShowVerification(false);
@@ -396,7 +392,7 @@ function Auth() {
                                     <p>Vous êtes déjà connecté à un compte.</p>
                                     <button 
                                         type="button"
-                                        onClick={() => triggerLoginPurgeAndRedirect('/login')}
+                                        onClick={() => logoutAndPurgeBrowserData({ keepCart: true })}
                                         className="text-[11px] underline uppercase mt-1 hover:text-blue-900 cursor-pointer"
                                     >
                                         Se déconnecter pour changer de compte

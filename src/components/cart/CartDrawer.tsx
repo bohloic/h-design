@@ -4,6 +4,7 @@ import { X, Trash2, Plus, Minus, ArrowRight, ShoppingCart } from 'lucide-react';
 import { CartItem } from '../../../types';
 import { formatCurrency } from '../../../constants';
 import SafeImage from '../tools/SafeImage';
+import { useAuth } from '../../utils/context/AuthContext';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface CartDrawerProps {
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdateQuantity, onRemove, onCheckout }) => {
   const navigate = useNavigate(); 
+  const { isAuthenticated } = useAuth();
   
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -43,13 +45,17 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
 
   const handleCheckoutClick = () => {
     onClose();
-    navigate('/checkout');
+    if (!isAuthenticated) {
+      navigate('/login?redirect=/checkout');
+    } else {
+      navigate('/checkout');
+    }
     if (onCheckout) onCheckout();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-[1100] flex justify-end overflow-hidden">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onClick={onClose} />
       <div className="relative w-full max-w-md bg-white h-[100dvh] max-h-[100dvh] shadow-2xl flex flex-col animate-slide-in-right text-slate-900 transition-colors overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between transition-colors bg-white shrink-0 z-10">
           <h2 className="text-lg sm:text-xl font-bold flex items-center text-slate-900">
@@ -130,7 +136,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
         </div>
 
         {items.length > 0 && (
-          <div className="p-4 sm:p-6 bg-white sm:bg-slate-50 border-t border-slate-200 space-y-3 shrink-0 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] z-20 pb-[max(1.25rem,env(safe-area-inset-bottom))] transition-colors">
+          <div className="p-4 sm:p-6 bg-white sm:bg-slate-50 border-t border-slate-200 space-y-3 shrink-0 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] z-20 pb-[max(1.75rem,calc(env(safe-area-inset-bottom)+1.25rem))] transition-colors">
             <div className="flex justify-between items-center text-base sm:text-lg font-bold">
               <span>Total</span>
               <span style={{ color: 'var(--theme-primary)' }} className="text-xl sm:text-2xl font-black">{formatCurrency(total)}</span>

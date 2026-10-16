@@ -9,7 +9,12 @@ import { purgeAllSessionData } from './sessionManager';
 
 let isHandling401 = false;
 
-export const authFetch = async (endpoint: string, options: RequestInit = {}) => {
+export interface AuthFetchOptions extends RequestInit {
+  timeoutMs?: number;
+  retries?: number;
+}
+
+export const authFetch = async (endpoint: string, options: AuthFetchOptions = {}) => {
   // 1. CONSTRUIRE L'URL INTELLIGENTE
   let url = endpoint;
   
@@ -46,42 +51,82 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  try {
-    let response = await fetch(url, {
-      ...options,
-      credentials: 'include', // 🛡️ Crucial : Envoie et reçoit les cookies HttpOnly (SameSite / Secure)
-      headers,
-    });
+  const method = (options.method || 'GET').toUpperCase();
+  const isIdempotent = method === 'GET' || method === 'HEAD';
+  const maxRetries = options.retries !== undefined ? options.retries : (isIdempotent ? 3 : 0);
+  const timeoutMs = options.timeoutMs || 12000;
 
-    // 🛡️ FALLBACK INTEL : Si /api/products direct renvoie 404, basculer sur /api/products/shop
-    if (response.status === 404 && url.endsWith('/api/products')) {
-      const fallbackUrl = `${url}/shop`;
-      console.warn(`⚠️ 404 sur ${url}, fallback sur ${fallbackUrl}`);
-      response = await fetch(fallbackUrl, {
+  let attempt = 0;
+  while (attempt <= maxRetries) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      let response = await fetch(url, {
         ...options,
-        credentials: 'include',
+        signal: options.signal || controller.signal,
+        credentials: 'include', // 🛡️ Crucial : Envoie et reçoit les cookies HttpOnly (SameSite / Secure)
         headers,
       });
-    }
 
-    if (response.status === 401 && !url.includes('/api/auth/me') && window.location.pathname !== '/login') {
-      if (!isHandling401) {
-        isHandling401 = true;
-        console.warn("Session expirée. Déconnexion automatique et purge...");
-        purgeAllSessionData();
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 60);
+      clearTimeout(timeoutId);
+
+      // 🛡️ FALLBACK INTEL : Si /api/products direct renvoie 404, basculer sur /api/products/shop
+      if (response.status === 404 && url.endsWith('/api/products')) {
+        const fallbackUrl = `${url}/shop`;
+        console.warn(`⚠️ 404 sur ${url}, fallback sur ${fallbackUrl}`);
+        response = await fetch(fallbackUrl, {
+          ...options,
+          credentials: 'include',
+          headers,
+        });
       }
-      return null;
+
+      // Si erreur transitoire de serveur (502, 503, 504) et requête idempotente, on retente
+      if (isIdempotent && [502, 503, 504].includes(response.status) && attempt < maxRetries) {
+        attempt++;
+        console.warn(`🔄 Retry automatique (${attempt}/${maxRetries}) suite à erreur HTTP ${response.status} sur ${url}`);
+        await new Promise(r => setTimeout(r, attempt * 400));
+        continue;
+      }
+
+      if (response.status === 401 && !url.includes('/api/auth/me') && window.location.pathname !== '/login') {
+        if (!isHandling401) {
+          isHandling401 = true;
+          console.warn("Session expirée. Déconnexion automatique et purge...");
+          purgeAllSessionData();
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 60);
+        }
+        return null;
+      }
+
+      return response;
+
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+
+      const isTimeout = error.name === 'AbortError';
+      const isNetworkError = error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError');
+
+      if (isIdempotent && (isNetworkError || isTimeout) && attempt < maxRetries) {
+        attempt++;
+        console.warn(`🔄 Retry automatique (${attempt}/${maxRetries}) suite à déconnexion/timeout sur ${url}`);
+        await new Promise(r => setTimeout(r, attempt * 500));
+        continue;
+      }
+
+      if (isTimeout) {
+        throw new Error(`Délai d'attente réseau dépassé (${Math.round(timeoutMs / 1000)}s). Veuillez vérifier votre connexion.`);
+      }
+
+      console.error("Erreur réseau API:", error);
+      throw error;
     }
-
-    return response;
-
-  } catch (error) {
-    console.error("Erreur réseau API:", error);
-    throw error;
   }
+
+  throw new Error("Échec de la requête réseau après plusieurs tentatives.");
 };
 
 /**

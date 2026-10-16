@@ -75,8 +75,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onAddToCart }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 lg:py-12 bg-slate-50 dark:bg-carbon min-h-screen transition-colors">
       
-      {/* --- HEADER MOBILE (Visible uniquement sur mobile) --- */}
-      <div className="lg:hidden flex items-center justify-between mb-6 bg-white dark:bg-[#1A1A1C] p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 transition-colors">
+      {/* --- HEADER MOBILE STICKY (Toujours accessible lors du défilement) --- */}
+      <div className="lg:hidden sticky top-16 z-30 flex items-center justify-between mb-6 bg-white/95 dark:bg-[#1A1A1C]/95 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 transition-colors">
         <div className="flex items-center gap-3">
              {/* Petit Avatar - 🪄 COULEURS DYNAMIQUES ICI */}
              <div 

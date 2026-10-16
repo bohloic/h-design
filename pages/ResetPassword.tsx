@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { authFetch } from '../src/utils/apiClient';
 import { Lock, Loader2, AlertCircle, CheckCircle2, KeyRound, Eye, EyeOff } from 'lucide-react';
 import ModernCaptcha from '../src/components/security/ModernCaptcha';
-import { triggerLoginPurgeAndRedirect, submitPublicAuthForm } from '../src/utils/sessionManager';
+import { submitPublicAuthForm } from '../src/utils/sessionManager';
 
 function ResetPassword() {
     const [searchParams] = useSearchParams();
@@ -50,7 +50,7 @@ function ResetPassword() {
             const data = await submitPublicAuthForm(`/api/reset-password`, { token, newPassword: password });
 
             setStatus({ type: 'success', message: data.message || "Mot de passe modifié avec succès ! Redirection..." });
-            setTimeout(() => triggerLoginPurgeAndRedirect('/login'), 3000);
+            setTimeout(() => navigate('/login'), 2500);
         } catch (error: any) {
             setStatus({ type: 'error', message: error.message });
         } finally {
@@ -149,14 +149,13 @@ function ResetPassword() {
                         </form>
                     )}
 
-                    <div className="mt-8 text-center pt-6 border-t border-slate-100">
-                        <button 
-                            type="button"
-                            onClick={() => triggerLoginPurgeAndRedirect('/login')} 
+                    <div className="mt-8 text-center pt-6 border-t border-slate-100 dark:border-slate-800">
+                        <Link 
+                            to="/login"
                             className="text-slate-500 dark:text-slate-400 text-sm font-bold transition-colors hover-theme-text cursor-pointer"
                         >
                             Retourner à la connexion
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>

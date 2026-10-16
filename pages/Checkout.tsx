@@ -9,7 +9,6 @@ import { usePaymentStore } from '@/store/usePaymentStore';
 import { useNotificationStore } from '../src/store/useNotificationStore';
 import { sanitizeFormData, isValidEmail } from '../src/utils/security';
 import ModernCaptcha from '../src/components/security/ModernCaptcha';
-import { triggerLoginPurgeAndRedirect } from '../src/utils/sessionManager';
 
 export interface CartItem {
   id: string | number;
@@ -384,8 +383,57 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
     );
   }
 
+  // 🛡️ OBLIGATION DE CONNEXION AVANT FINALISATION (Anti-Paiements Rejetés & Suivi Client)
+  if (!isAuth && step !== 3) {
+    return (
+      <div className="max-w-xl mx-auto py-12 px-4 sm:px-6">
+        <div className="bg-white dark:bg-carbon p-6 sm:p-10 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 text-center space-y-6">
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto bg-theme-primary/10 text-theme-primary">
+            <Lock size={36} />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-pure">
+              Connexion requise
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+              Pour sécuriser votre paiement Paystack, générer votre facture officielle et suivre l'expédition de votre commande, veuillez vous connecter ou créer votre compte.
+            </p>
+          </div>
+
+          {/* Badge réassurance panier */}
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-2xl p-4 flex items-center gap-3 text-left">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="text-xs text-emerald-800 dark:text-emerald-300">
+              <span className="font-bold">Votre panier ({cartItems.reduce((s, i) => s + i.quantity, 0)} articles — {formatCurrency(total)}) est précieusement conservé.</span>
+              <p className="opacity-90 mt-0.5">Vous reviendrez automatiquement sur cette page immédiatement après votre connexion.</p>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={() => navigate('/login?redirect=/checkout')}
+              style={{ backgroundColor: 'var(--theme-primary)' }}
+              className="w-full text-white py-4 rounded-2xl font-black text-base shadow-lg hover:opacity-95 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+            >
+              <span>Se connecter pour finaliser</span>
+              <ArrowRight size={18} />
+            </button>
+
+            <button
+              onClick={() => navigate('/login?redirect=/checkout')}
+              className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 py-3.5 rounded-2xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
+            >
+              Créer un compte en 1 minute
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 md:py-12">
+    <div className="max-w-5xl mx-auto px-4 py-6 md:py-12 pb-28 md:pb-12">
 
       {/* Progress Bar */}
       <div className="flex items-center justify-center mb-8 md:mb-16 space-x-2 md:space-x-4">
@@ -415,22 +463,7 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
                 <MapPin className="text-theme-primary" size={28} /> Détails de Livraison
               </h2>
 
-              {/* 🛍️ BANNIÈRE MODE INVITÉ */}
-              {isGuestMode && (
-                <div className="mb-6 p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center gap-3 justify-between bg-theme-primary/[.06] border-theme-primary/25">
-                  <div>
-                    <p className="font-bold text-sm text-theme-primary">👤 Vous commandez en tant qu'invité</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Remplissez votre email pour recevoir la confirmation de commande.</p>
-                  </div>
-                  <button 
-                    type="button"
-                    onClick={() => triggerLoginPurgeAndRedirect('/login')} 
-                    className="text-xs font-black whitespace-nowrap px-3 py-2 rounded-xl transition-all bg-theme-primary text-white cursor-pointer active:scale-95"
-                  >
-                    Se connecter
-                  </button>
-                </div>
-              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2">
                   <label htmlFor="prenom" className="text-xs font-bold text-slate-500 uppercase ml-1">Prénom</label>

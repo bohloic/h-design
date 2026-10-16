@@ -201,60 +201,65 @@ export async function logoutAndPurgeBrowserData(options: { keepCart?: boolean; k
 }
 
 /**
- * Purge intégrale de toutes les données locales en mémoire et en stockage.
- * (Maintient la compatibilité avec le reste de l'application).
+ * Purge des artefacts d'authentification sans détruire le panier ni les préférences.
  */
-export const purgeAllSessionData = () => {
+export const purgeAllSessionData = (options: { keepCart?: boolean; keepTheme?: boolean } = { keepCart: true, keepTheme: true }) => {
   clearAllCookies();
 
-  try {
-    window.localStorage.clear();
-    window.sessionStorage.clear();
-  } catch (_) {}
+  const savedCart = options?.keepCart !== false ? window.localStorage.getItem('cart') : null;
+  const savedTheme = options?.keepTheme !== false ? window.localStorage.getItem('theme') : null;
+  const savedCheckoutDraft = window.sessionStorage.getItem('hdesigner_checkout_draft');
+
+  const authKeys = [
+    'token', 'accessToken', 'refreshToken', 'auth_token', 'jwt',
+    'user', 'currentUser', 'auth-storage', 'session', 'role', 'data'
+  ];
+
+  for (const k of authKeys) {
+    try {
+      window.localStorage.removeItem(k);
+      window.sessionStorage.removeItem(k);
+    } catch (_) {}
+  }
+
+  // Nettoyer les clés dynamiques d'authentification
+  for (const storage of [window.localStorage, window.sessionStorage]) {
+    try {
+      const keys = Object.keys(storage);
+      for (const k of keys) {
+        if (k.toLowerCase().includes('token') || k.toLowerCase().includes('auth') || k.startsWith('sb-')) {
+          storage.removeItem(k);
+        }
+      }
+    } catch (_) {}
+  }
+
+  // Préservation garantie du panier et du thème
+  if (savedCart) {
+    try { window.localStorage.setItem('cart', savedCart); } catch (_) {}
+  }
+  if (savedTheme) {
+    try { window.localStorage.setItem('theme', savedTheme); } catch (_) {}
+  }
+  if (savedCheckoutDraft) {
+    try { window.sessionStorage.setItem('hdesigner_checkout_draft', savedCheckoutDraft); } catch (_) {}
+  }
 
   try {
     useNotificationStore.getState().reset?.();
     useWishlistStore.getState().reset?.();
     usePaymentStore.getState().reset?.();
   } catch (_) {}
-
-  try {
-    window.dispatchEvent(new Event('userLoggedOut'));
-  } catch (_) {}
 };
-
-let isPurgingAndRedirecting = false;
 
 /**
- * Exécute la purge complète et actualise la page vers la connexion.
- * Garantit qu'un seul rechargement s'exécute même en cas de clics multiples.
+ * Redirige proprement vers la connexion sans purger le panier ni forcer un rechargement destructif.
  */
 export const triggerLoginPurgeAndRedirect = (targetUrl: string = '/login') => {
-  if (isPurgingAndRedirecting) return;
-  isPurgingAndRedirecting = true;
-
-  // 1. Purge locale immédiate
-  purgeAllSessionData();
-
-  // 2. Appel serveur asynchrone non-bloquant pour invalider le cookie backend HttpOnly
-  const baseUrl = import.meta.env.VITE_API_URL || DEFAULT_BACKEND_URL;
-  try {
-    fetch(`${baseUrl.replace(/\/$/, '')}/api/logout`, { 
-      method: 'POST', 
-      credentials: 'include',
-      headers: { 'Cache-Control': 'no-store' }
-    }).catch(() => {});
-  } catch (_) {}
-
-  // 3. Rechargement propre et direct avec remplacement d'historique
-  setTimeout(() => {
-    if (window.location.pathname === '/login' && !targetUrl.includes('?')) {
-      window.location.reload();
-    } else {
-      window.location.replace(targetUrl);
-    }
-  }, 30);
+  if (window.location.pathname === targetUrl) return;
+  window.location.assign(targetUrl);
 };
+
 
 /**
  * 4. WRAPPER FETCH SÉCURISÉ POUR /login ET /register

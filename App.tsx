@@ -29,6 +29,7 @@ import Dashboard from './pages/dashboard/Dashboard';
 import Checkout from './pages/Checkout';
 import Auth from './pages/Auth';
 import NotFound from './pages/NotFound';
+import ServerError from './pages/ServerError';
 import OrderConfirmed from './pages/OrderConfirmed';
 import ProductDetails from './pages/products/ProductDetails';
 import ProductCustomizer from './pages/products/ProductCustomizer';
@@ -151,8 +152,8 @@ const AppShell: React.FC<{
         />
       )}
 
-      {/* 📱 Barre de navigation mobile fixe (TechNova / Learnova UX) */}
-      {!hidePublicLayout && !isCustomizerZone && (
+      {/* 📱 Barre de navigation mobile fixe (Cachée en Admin, Atelier, Caisse et Panier ouvert) */}
+      {!hidePublicLayout && !isCustomizerZone && !isCheckoutZone && !isCartOpen && (
         <MobileBottomNav cartCount={cartCount} onOpenCart={onOpenCart} />
       )}
 
@@ -227,7 +228,8 @@ const AppShell: React.FC<{
               <Route path={`${ADMIN_BASE_PATH}/deliveries`} element={<AppLayout title="Livraisons"><DeliveryView /></AppLayout>} />
             </Route>
 
-            {/* 404 */}
+            {/* 500 & 404 */}
+            <Route path="/500" element={<ServerError />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </PageTransition>
