@@ -49,6 +49,9 @@ if (typeof window !== 'undefined') {
   // 🛡️ 2. Intercepteur global : sur n'importe quel bouton ou lien de connexion cliqué,
   // purge automatiquement tous les cookies, sessionStorage et localStorage, puis actualise la page.
   document.addEventListener('click', (e) => {
+    // Si on est déjà sur la page d'authentification, ne pas intercepter les interactions internes (bascule d'onglets, formulaire)
+    if (window.location.pathname === '/login' || window.location.pathname.startsWith('/login/')) return;
+
     const target = (e.target as HTMLElement)?.closest('a, button');
     if (!target) return;
     const href = target.getAttribute('href');

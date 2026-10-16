@@ -150,18 +150,45 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!formData.nom || !formData.prenom || !formData.address || !formData.phone || !formData.city) {
+      const cleanNom = (formData.nom || '').trim();
+      const cleanPrenom = (formData.prenom || '').trim();
+      const cleanEmail = (formData.email || '').trim().toLowerCase();
+      const cleanAddress = (formData.address || '').trim();
+      const cleanCity = (formData.city || '').trim();
+      const cleanPhone = (formData.phone || '').trim().replace(/\s+/g, '');
+
+      if (!cleanNom || !cleanPrenom || !cleanAddress || !cleanPhone || !cleanCity || !cleanEmail) {
         useNotificationStore.getState().addNotification({
           title: "Informations incomplètes",
-          message: "Veuillez remplir tous les champs obligatoires pour la livraison.",
+          message: "Veuillez remplir tous les champs obligatoires (Nom, Prénom, Email, Téléphone, Ville et Adresse complète).",
           type: "warning"
         });
         return;
       }
-      if (formData.phone.length !== 10) {
+
+      if (!isValidEmail(cleanEmail)) {
+        useNotificationStore.getState().addNotification({
+          title: "Email invalide",
+          message: "Veuillez saisir une adresse email valide avec le symbole @ et un domaine (ex: contact@domaine.com).",
+          type: "warning"
+        });
+        return;
+      }
+
+      if (cleanAddress.length < 5) {
+        useNotificationStore.getState().addNotification({
+          title: "Adresse incomplète",
+          message: "Veuillez renseigner votre adresse de livraison complète (Rue, quartier, repère).",
+          type: "warning"
+        });
+        return;
+      }
+
+      const ivorianPhoneRegex = /^(01|05|07)\d{8}$/;
+      if (!ivorianPhoneRegex.test(cleanPhone)) {
         useNotificationStore.getState().addNotification({
           title: "Format téléphone",
-          message: "Le numéro de téléphone doit comporter exactement 10 chiffres.",
+          message: "Le numéro de téléphone doit comporter exactement 10 chiffres (Orange, MTN ou Moov débutant par 01, 05 ou 07).",
           type: "warning"
         });
         return;

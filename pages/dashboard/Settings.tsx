@@ -76,32 +76,79 @@ export const Settings: React.FC = () => {
     e.preventDefault();
     if (!userId) return;
 
+    // 🛡️ Validation stricte côté client (Anti-XSS & Intégrité des données)
+    const nameRegex = /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/;
+    const phoneRegex = /^(01|05|07)\d{8}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const cleanNom = formData.nom.trim();
+    const cleanPrenom = formData.prenom.trim();
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const cleanPhone = formData.phone.trim().replace(/\s+/g, '');
+
+    if (/[<>]/.test(cleanNom) || /[<>]/.test(cleanPrenom)) {
+      setMessage({ type: 'error', text: "Les balises HTML ne sont pas autorisées dans le nom ou le prénom." });
+      return;
+    }
+
+    if (!cleanNom || !nameRegex.test(cleanNom)) {
+      setMessage({ type: 'error', text: "Le nom doit comporter entre 2 et 50 caractères valides (lettres, accents, tirets)." });
+      return;
+    }
+
+    if (!cleanPrenom || !nameRegex.test(cleanPrenom)) {
+      setMessage({ type: 'error', text: "Le prénom doit comporter entre 2 et 50 caractères valides (lettres, accents, tirets)." });
+      return;
+    }
+
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setMessage({ type: 'error', text: "Veuillez entrer une adresse email valide." });
+      return;
+    }
+
+    if (cleanPhone && !phoneRegex.test(cleanPhone)) {
+      setMessage({ type: 'error', text: "Le numéro de téléphone ivoirien doit comporter exactement 10 chiffres (débutant par 01, 05 ou 07)." });
+      return;
+    }
+
     setIsSaving(true);
     setMessage(null);
 
     try {
+      const payload = {
+        ...formData,
+        nom: cleanNom,
+        prenom: cleanPrenom,
+        email: cleanEmail,
+        phone: cleanPhone
+      };
+
       const response = await authFetch(`/api/users/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
 
-      if (!response.ok) throw new Error("Échec de la sauvegarde");
-      
-        setMessage({ type: 'success', text: "Vos informations ont été mises à jour avec succès !" });
-        
-        // 🔄 Sync Global State
-        updateUser(formData);
+      const resData = await response.json().catch(() => ({}));
 
-        useNotificationStore.getState().addNotification({
+      if (!response.ok) {
+        throw new Error(resData?.message || "Échec de la sauvegarde");
+      }
+      
+      setMessage({ type: 'success', text: "Vos informations ont été mises à jour avec succès !" });
+      
+      // 🔄 Sync Global State
+      updateUser(payload);
+
+      useNotificationStore.getState().addNotification({
         user_id: userId || undefined,
         title: "Profil mis à jour",
         message: "Vos informations personnelles ont été enregistrées avec succès.",
         type: "success",
         link: "/dashboard/settings"
       });
-    } catch (error) {
-      setMessage({ type: 'error', text: "Une erreur est survenue lors de l'enregistrement." });
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || "Une erreur est survenue lors de l'enregistrement." });
     } finally {
       setIsSaving(false);
     }

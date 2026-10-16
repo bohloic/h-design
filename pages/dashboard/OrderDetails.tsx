@@ -60,12 +60,21 @@ export const OrderDetails: React.FC = () => {
 
 
 
-    const isPaid = order && (
-        (order.status || '').toLowerCase().includes('payé') ||
-        (order.status || '').toLowerCase().includes('paid') ||
-        order.status === 'delivered' ||
-        order.status === 'shipped' ||
-        (order.status || '').toLowerCase().includes('préparation')
+    const rawStatus = (order?.status || '').toLowerCase();
+    const isPaid = Boolean(order) && (
+        rawStatus.includes('payé') ||
+        rawStatus.includes('paid') ||
+        rawStatus.includes('livré') ||
+        rawStatus.includes('delivered') ||
+        rawStatus.includes('expédié') ||
+        rawStatus.includes('shipped') ||
+        rawStatus.includes('préparation') ||
+        rawStatus.includes('processing')
+    ) && !(
+        rawStatus.includes('attente de paiement') ||
+        rawStatus.includes('pending') ||
+        rawStatus.includes('annulé') ||
+        rawStatus.includes('cancelled')
     );
 
     const handleDownloadInvoice = async () => {
@@ -155,7 +164,7 @@ export const OrderDetails: React.FC = () => {
     if (!order) return <div className="p-12 text-center text-red-500">Commande introuvable.</div>;
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="space-y-6 pb-24 md:pb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* EN-TÊTE & RETOUR */}
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <div className="flex items-center gap-4">

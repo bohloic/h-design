@@ -467,7 +467,7 @@ function Auth() {
                                             {isLoading ? <Loader2 className="animate-spin" /> : 'Valider mon compte'}
                                         </button>
                                     </form>
-                                    <button onClick={handleResendCode} disabled={resendCooldown > 0 || isLoading} className="w-full text-[14px] font-bold text-gray-500 hover:text-[#0b2e35] transition-colors flex items-center justify-center gap-2">
+                                    <button type="button" onClick={handleResendCode} disabled={resendCooldown > 0 || isLoading} className="w-full text-[14px] font-bold text-gray-500 hover:text-[#0b2e35] transition-colors flex items-center justify-center gap-2">
                                         <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
                                         {resendCooldown > 0 ? `Renvoyer dans ${resendCooldown}s` : "Renvoyer le code"}
                                     </button>
@@ -571,7 +571,7 @@ function Auth() {
                                     <div className="mt-8 text-center pt-2">
                                         <p className="text-gray-500 text-[14px] font-medium">
                                             {isLoginMode ? "Vous n'avez pas de compte ?" : "Vous avez déjà un compte ?"}
-                                            <button onClick={toggleMode} className="ml-1.5 font-bold text-[#0b2e35] hover:underline focus:outline-none rounded">
+                                            <button type="button" onClick={toggleMode} className="ml-1.5 font-bold text-[#0b2e35] hover:underline focus:outline-none rounded cursor-pointer">
                                                 {isLoginMode ? "S'inscrire" : "Se connecter"}
                                             </button>
                                         </p>

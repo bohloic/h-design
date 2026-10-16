@@ -67,7 +67,7 @@ export const Commande: React.FC = () => {
     // SINON, ON AFFICHE LA LISTE NORMALE
     return(
         <div>
-            <main className="flex-1 space-y-6 lg:space-y-8 animate-in fade-in duration-300">
+            <main className="flex-1 space-y-6 lg:space-y-8 pb-24 md:pb-8 animate-in fade-in duration-300">
                 {/* --- STATISTIQUES (Cards) --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                     <div 

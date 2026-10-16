@@ -144,12 +144,12 @@ const Home: React.FC<HomeProps> = () => {
                 <Palette className="w-5 h-5 group-hover:rotate-12 transition-transform" style={{ color: 'var(--theme-primary)' }} />
                 Je personnalise
               </button>
-              {/* 🔘 Bouton Outline dynamique (Noir en Clair, Blanc en Sombre) */}
+              {/* 🔘 Bouton Acheter avec fort contraste (Audit WCAG AAA : Blanc pur translucide sur fond sombre) */}
               <button
                 onClick={() => navigate('/boutique')}
-                className="w-full sm:w-auto btn-outline px-8 py-4 rounded-full font-bold text-base sm:text-lg backdrop-blur-sm transition-all flex items-center justify-center gap-2 group cursor-pointer hero-text-shadow"
+                className="w-full sm:w-auto border-2 border-white/80 bg-white/15 hover:bg-white/25 text-white font-bold text-base sm:text-lg px-8 py-4 rounded-full backdrop-blur-md transition-all flex items-center justify-center gap-2 group cursor-pointer shadow-lg hover:shadow-xl transform hover:-translate-y-1 hero-text-shadow"
               >
-                Acheter
+                <span>Acheter</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
@@ -313,8 +313,8 @@ const Home: React.FC<HomeProps> = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-4 backdrop-blur-sm">
               <Sparkles size={14} className="text-yellow-300" /> Assistant IA
             </div>
-            <h2 className="text-3xl md:text-5xl font-black mb-4 leading-tight hero-text-shadow">En panne d'inspiration ?</h2>
-            <p className="text-white/95 text-lg mb-8 hero-text-shadow">Laissez notre intelligence artificielle vous trouver l'idée cadeau parfaite en quelques secondes.</p>
+            <h2 className="text-3xl md:text-5xl font-black mb-4 leading-tight text-white drop-shadow-md" style={{ color: '#FFFFFF' }}>En panne d'inspiration ?</h2>
+            <p className="text-white/95 text-lg mb-8 drop-shadow-sm" style={{ color: '#FFFFFF' }}>Laissez notre intelligence artificielle vous trouver l'idée cadeau parfaite en quelques secondes.</p>
 
             <div className="bg-white dark:bg-[#111827] p-2 rounded-2xl shadow-lg flex flex-col sm:flex-row gap-2 border border-slate-200 dark:border-slate-800">
               <input

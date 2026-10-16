@@ -84,6 +84,11 @@ const useIsCustomizerZone = () => {
   return location.pathname.startsWith('/personnaliser') || location.pathname.startsWith('/personnalisation');
 };
 
+const useIsCheckoutZone = () => {
+  const location = useLocation();
+  return location.pathname.startsWith('/checkout') || location.pathname.startsWith('/caisse');
+};
+
 // ============================================================
 // Composant Shell : gère la mise en page conditionnelle
 // ============================================================
@@ -101,11 +106,17 @@ const AppShell: React.FC<{
   const isAdminZone = useIsAdminZone();
   const isAuthZone = useIsAuthZone();
   const isCustomizerZone = useIsCustomizerZone();
+  const isCheckoutZone = useIsCheckoutZone();
   const { activeCollection } = useTheme();
   const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);
 
   // On cache le layout public UNIQUEMENT en zone Admin ou sur les pages Auth
   const hidePublicLayout = isAdminZone || isAuthZone;
+
+  // 🛡️ SÉCURITÉ & ERGONOMIE (Audit P1 & P7) :
+  // Masquage automatique des bulles flottantes (WhatsApp + ChatBot)
+  // lorsque le Panier est ouvert, dans l'Atelier ou lors du Checkout
+  const hideFloatingAssistance = hidePublicLayout || isCustomizerZone || isCartOpen || isCheckoutZone;
 
   return (
     <div className={`min-h-screen flex flex-col ${isCustomizerZone ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : ''}`}>
@@ -145,8 +156,8 @@ const AppShell: React.FC<{
         <MobileBottomNav cartCount={cartCount} onOpenCart={onOpenCart} />
       )}
 
-      {/* 💬 ChatBot & Support (Caché en Admin) */}
-      {!hidePublicLayout && (
+      {/* 💬 ChatBot & Support (Caché en Admin, Atelier, Caisse, et lorsque le Panier est ouvert) */}
+      {!hideFloatingAssistance && (
         <>
            <ChatWidget />
            <WhatsAppButton />

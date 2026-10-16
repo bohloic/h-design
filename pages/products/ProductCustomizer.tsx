@@ -569,15 +569,15 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
           </div>
       </div>
 
-      {/* ZONE CENTRALE : CANVAS ET TIROIRS RESPONSIVES */}
-      <div className="flex flex-1 overflow-hidden relative z-10 min-h-0">
+      {/* ZONE CENTRALE : CANVAS ET TIROIRS RESPONSIVES (GRILLE 3 COLONNES SUR DESKTOP) */}
+      <div className="flex flex-1 overflow-hidden relative z-10 min-h-0 w-full h-full">
         
-        {/* SIDEBAR PRODUITS - DRAWER FLUIDE SUR MOBILE/TABLETTE */}
-        <aside className={`fixed lg:relative inset-x-0 bottom-0 lg:inset-y-0 lg:left-0 z-40 w-full lg:w-80 bg-white border-t lg:border-t-0 lg:border-r border-slate-200 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:-translate-x-full lg:translate-x-0'} max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
+        {/* SIDEBAR PRODUITS - DRAWER FLUIDE SUR MOBILE/TABLETTE (< 1024px) / COLONNE FIXE SUR DESKTOP (>= 1024px) */}
+        <aside className={`fixed lg:static inset-x-0 bottom-0 z-40 w-full lg:w-80 lg:shrink-0 bg-white border-t lg:border-t-0 lg:border-r border-slate-200 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transition-transform duration-300 ease-in-out ${mobileView === 'products' ? 'translate-y-0' : 'translate-y-full'} lg:transform-none lg:translate-y-0 lg:translate-x-0 max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
             <div className="lg:hidden py-2 flex justify-center shrink-0">
               <div className="w-12 h-1.5 rounded-full bg-slate-300" />
             </div>
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col min-h-0">
                 <div className="lg:hidden p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm"><Shirt size={18}/> Sélection du Produit</h3>
                     <button 
@@ -590,7 +590,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
                       <X size={22} className="pointer-events-none"/>
                     </button>
                 </div>
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
                     <SidebarLeft 
                       products={products} 
                       categories={categories} 
@@ -604,8 +604,8 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             </div>
         </aside>
 
-        {/* CANVAS DU PRODUIT */}
-        <main className="flex-1 flex flex-col relative bg-slate-100 items-center justify-center p-2 sm:p-4 lg:p-6 transition-colors min-h-0 overflow-hidden">
+        {/* CANVAS DU PRODUIT — TOUJOURS CENTRÉ ET VISIBLE */}
+        <main className="flex-1 flex flex-col relative bg-slate-100 items-center justify-center p-2 sm:p-4 lg:p-6 transition-colors min-h-0 h-full overflow-hidden">
             <div 
               className="relative shadow-xl rounded-2xl overflow-hidden bg-white transition-all duration-300 ease-in-out border border-slate-200"
               style={{
@@ -642,8 +642,8 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
             )}
         </main>
 
-        {/* SIDEBAR OUTILS - DRAWER FLUIDE SUR MOBILE/TABLETTE */}
-        <aside className={`fixed lg:relative inset-x-0 bottom-0 lg:inset-y-0 lg:right-0 z-40 w-full lg:w-80 bg-white border-t lg:border-t-0 lg:border-l border-slate-200 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transform transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-x-full lg:translate-x-0'} max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
+        {/* SIDEBAR OUTILS — DRAWER FLUIDE SUR MOBILE/TABLETTE (< 1024px) / COLONNE FIXE SUR DESKTOP (>= 1024px) */}
+        <aside className={`fixed lg:static inset-x-0 bottom-0 z-40 w-full lg:w-96 lg:shrink-0 bg-white border-t lg:border-t-0 lg:border-l border-slate-200 rounded-t-3xl lg:rounded-none shadow-2xl lg:shadow-none transition-transform duration-300 ease-in-out ${mobileView === 'tools' ? 'translate-y-0' : 'translate-y-full'} lg:transform-none lg:translate-y-0 lg:translate-x-0 max-h-[85vh] lg:max-h-full flex flex-col h-full`}>
              <div className="lg:hidden py-2 flex justify-center shrink-0">
                <div className="w-12 h-1.5 rounded-full bg-slate-300" />
              </div>

@@ -48,13 +48,13 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
         <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
            <Grid size={14} /> Catégories
         </h2>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1.5 lg:flex-wrap">
           
           {/* Bouton "Tous" */}
            <button
               onClick={() => setActiveTab('Tous')}
               style={activeTab === 'Tous' ? { backgroundColor: 'var(--theme-primary)', borderColor: 'var(--theme-primary)', touchAction: 'manipulation' } : { touchAction: 'manipulation' }}
-              className={`flex-shrink-0 px-4 py-2.5 min-h-[44px] rounded-full text-xs font-bold border transition-all touch-target-44 flex items-center justify-center cursor-pointer ${
+              className={`flex-shrink-0 px-3.5 py-2 min-h-[38px] rounded-full text-xs font-bold border transition-all flex items-center justify-center cursor-pointer whitespace-nowrap ${
                 activeTab === 'Tous' 
                 ? 'text-white shadow-sm' 
                 : 'bg-white text-slate-600 border-slate-200 hover-border-theme'
@@ -74,7 +74,7 @@ const SidebarLeft: React.FC<SidebarLeftProps> = ({
                   borderColor: 'color-mix(in srgb, var(--theme-primary) 30%, transparent)',
                   touchAction: 'manipulation'
               } : { touchAction: 'manipulation' }}
-              className={`flex-shrink-0 px-4 py-2.5 min-h-[44px] rounded-full text-xs font-bold border transition-all touch-target-44 flex items-center justify-center cursor-pointer ${
+              className={`flex-shrink-0 px-3.5 py-2 min-h-[38px] rounded-full text-xs font-bold border transition-all flex items-center justify-center cursor-pointer whitespace-nowrap ${
                 activeTab === cat.name 
                 ? '' 
                 : 'bg-white text-slate-600 border-slate-200 hover-border-theme'
