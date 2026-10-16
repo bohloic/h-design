@@ -7,6 +7,7 @@ import { ADMIN_BASE_PATH } from '@/constants';
 import logoLight from '../../assets/logo.png';
 import logoDark from '../../assets/logoo2.png';
 import SafeImage from '../tools/SafeImage';
+import { triggerLoginPurgeAndRedirect } from '../../utils/sessionManager';
 
 interface NavbarProps {
   cartCount: number;
@@ -74,9 +75,12 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                 Mon Compte
               </Link>
             ) : (
-              <Link to="/login" className="text-slate-600 dark:text-slate-300 hover-theme-text transition-colors">
+              <button 
+                onClick={() => triggerLoginPurgeAndRedirect('/login')} 
+                className="text-slate-600 dark:text-slate-300 hover-theme-text transition-colors font-bold cursor-pointer"
+              >
                 Connexion
-              </Link>
+              </button>
             )}
 
             {/* LIEN ADMIN SÉCURISÉ */}
@@ -104,9 +108,13 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                 <NotificationDropdown />
               </div>
             ) : (
-              <Link to="/login" aria-label="Accéder à la connexion" className="hidden md:block p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors">
+              <button 
+                onClick={() => triggerLoginPurgeAndRedirect('/login')} 
+                aria-label="Accéder à la connexion" 
+                className="hidden md:block p-2 text-slate-600 dark:text-slate-300 hover-theme-bg-light rounded-full transition-colors cursor-pointer"
+              >
                 <User className="w-5 h-5" />
-              </Link>
+              </button>
             )}
 
             {/* Panier avec bulle dynamique et animée */}
@@ -194,13 +202,16 @@ const Navbar: React.FC<NavbarProps> = ({ cartCount, onOpenCart, isAuthenticated,
                   </button>
                 </>
               ) : (
-                <Link
-                  to="/login"
-                  onClick={closeMenu}
-                  className="flex items-center justify-center w-full text-white px-4 py-4 rounded-xl font-black mt-4 shadow-lg active:scale-95 transition-transform theme-bg-primary"
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeMenu();
+                    triggerLoginPurgeAndRedirect('/login');
+                  }}
+                  className="flex items-center justify-center w-full text-white px-4 py-4 rounded-xl font-black mt-4 shadow-lg active:scale-95 transition-transform theme-bg-primary cursor-pointer"
                 >
                   Se connecter / S'inscrire
-                </Link>
+                </button>
               )}
             </div>
           </div>

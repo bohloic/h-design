@@ -8,6 +8,8 @@ import SafeImage from '../src/components/tools/SafeImage';
 import { usePaymentStore } from '@/store/usePaymentStore';
 import { useNotificationStore } from '../src/store/useNotificationStore';
 import { sanitizeFormData, isValidEmail } from '../src/utils/security';
+import ModernCaptcha from '../src/components/security/ModernCaptcha';
+import { triggerLoginPurgeAndRedirect } from '../src/utils/sessionManager';
 
 export interface CartItem {
   id: string | number;
@@ -72,6 +74,10 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
   const [useLoyaltyPoints, setUseLoyaltyPoints] = useState<boolean>(false);
 
   const [stockErrors, setStockErrors] = useState<any[]>([]);
+  
+  // 🛡️ Protection Anti-Robot Turnstile / Captcha
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState<string>('');
 
   // 💾 Persistance des formulaires en sessionStorage (anti-perte en cas de rechargement/navigation accidentelle)
   const [formData, setFormData] = useState(() => {
@@ -184,6 +190,17 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
       setStep(1);
       return;
     }
+
+    if (!captchaToken) {
+      setCaptchaError("Veuillez valider le test de sécurité anti-robot ci-dessous avant de procéder au paiement.");
+      useNotificationStore.getState().addNotification({
+        title: "Vérification requise",
+        message: "Veuillez valider le test de sécurité anti-robot ci-dessous.",
+        type: "warning"
+      });
+      return;
+    }
+    setCaptchaError('');
 
     let finalUserId = formData.userId || null;
     if (token) {
@@ -378,9 +395,13 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
                     <p className="font-bold text-sm text-theme-primary">👤 Vous commandez en tant qu'invité</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Remplissez votre email pour recevoir la confirmation de commande.</p>
                   </div>
-                  <Link to="/login" state={{ from: { pathname: '/checkout' } }} className="text-xs font-black whitespace-nowrap px-3 py-2 rounded-xl transition-all bg-theme-primary text-white">
+                  <button 
+                    type="button"
+                    onClick={() => triggerLoginPurgeAndRedirect('/login')} 
+                    className="text-xs font-black whitespace-nowrap px-3 py-2 rounded-xl transition-all bg-theme-primary text-white cursor-pointer active:scale-95"
+                  >
                     Se connecter
-                  </Link>
+                  </button>
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -609,6 +630,19 @@ const Checkout: React.FC<CheckoutProps> = ({ cartItems, data }) => {
                   </button>
                 </div>
               )}
+
+              {/* 🛡️ Protection Anti-Robot Turnstile pour la validation de commande */}
+              <div className="text-left pt-2 pb-1">
+                <ModernCaptcha
+                  id="checkout-security-captcha"
+                  verified={!!captchaToken}
+                  onVerify={(tok) => {
+                    setCaptchaToken(tok);
+                    if (tok) setCaptchaError('');
+                  }}
+                  errorMessage={captchaError}
+                />
+              </div>
 
               <div className="flex flex-col-reverse md:flex-row gap-4">
                 <button onClick={handleBack} disabled={isLoading} className="w-full md:flex-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 py-4 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">

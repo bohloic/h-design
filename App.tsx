@@ -81,7 +81,7 @@ const useIsAuthZone = () => {
 
 const useIsCustomizerZone = () => {
   const location = useLocation();
-  return location.pathname.startsWith('/personnaliser');
+  return location.pathname.startsWith('/personnaliser') || location.pathname.startsWith('/personnalisation');
 };
 
 // ============================================================
@@ -108,12 +108,12 @@ const AppShell: React.FC<{
   const hidePublicLayout = isAdminZone || isAuthZone;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={`min-h-screen flex flex-col ${isCustomizerZone ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : ''}`}>
       <ScrollToTop />
       <WelcomeTour />
 
-      {/* 🖼️ BANNIÈRE PUBLIQUE DYNAMIQUE (Cachée UNIQUEMENT en zone Admin) */}
-      {!hidePublicLayout && activeCollection?.ui_config?.banner_url && (
+      {/* 🖼️ BANNIÈRE PUBLIQUE DYNAMIQUE (Cachée en zone Admin et en zone Personnalisation) */}
+      {!hidePublicLayout && !isCustomizerZone && activeCollection?.ui_config?.banner_url && (
         <div className="w-full bg-slate-900 flex items-center justify-center overflow-hidden h-12 sm:h-16 relative z-50">
           <img 
             src={activeCollection.ui_config.banner_url} 
@@ -154,7 +154,7 @@ const AppShell: React.FC<{
       )}
 
       {/* 📄 Contenu principal */}
-      <main className="flex-grow">
+      <main className={`flex-grow ${isCustomizerZone ? 'flex flex-col flex-1 min-h-0 overflow-hidden' : ''}`}>
         <PageTransition>
           <Routes>
             {/* --- Routes Publiques --- */}

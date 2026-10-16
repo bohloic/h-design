@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { authFetch } from '../src/utils/apiClient';
 import { Lock, Loader2, AlertCircle, CheckCircle2, KeyRound, Eye, EyeOff } from 'lucide-react';
+import ModernCaptcha from '../src/components/security/ModernCaptcha';
+import { triggerLoginPurgeAndRedirect, submitPublicAuthForm } from '../src/utils/sessionManager';
 
 function ResetPassword() {
     const [searchParams] = useSearchParams();
@@ -13,6 +15,10 @@ function ResetPassword() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     
+    // 🛡️ Protection Anti-Robot Turnstile / Captcha
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const [captchaError, setCaptchaError] = useState<string>('');
+
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState({ type: '', message: '' });
 
@@ -32,23 +38,19 @@ function ResetPassword() {
             return setStatus({ type: 'error', message: "Le mot de passe doit contenir au moins 6 caractères." });
         }
 
+        if (!captchaToken) {
+            setCaptchaError("Veuillez valider la vérification de sécurité ci-dessous.");
+            return setStatus({ type: 'error', message: "Veuillez valider la vérification de sécurité ci-dessous." });
+        }
+        setCaptchaError('');
+
         setIsLoading(true);
 
         try {
-            const response = await authFetch(`/api/reset-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, newPassword: password })
-            });
+            const data = await submitPublicAuthForm(`/api/reset-password`, { token, newPassword: password });
 
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                setStatus({ type: 'success', message: "Mot de passe modifié avec succès ! Redirection..." });
-                setTimeout(() => navigate('/login'), 3000);
-            } else {
-                throw new Error(data.message || "Erreur lors de la modification.");
-            }
+            setStatus({ type: 'success', message: data.message || "Mot de passe modifié avec succès ! Redirection..." });
+            setTimeout(() => triggerLoginPurgeAndRedirect('/login'), 3000);
         } catch (error: any) {
             setStatus({ type: 'error', message: error.message });
         } finally {
@@ -124,6 +126,18 @@ function ResetPassword() {
                                 </div>
                             </div>
 
+                            {/* 🛡️ Vérification Anti-Robot Turnstile */}
+                            <ModernCaptcha
+                                id="reset-password-captcha"
+                                verified={!!captchaToken}
+                                onVerify={(token) => {
+                                    setCaptchaToken(token);
+                                    if (token) setCaptchaError('');
+                                }}
+                                errorMessage={captchaError}
+                                className="pt-2"
+                            />
+
                             <button 
                                 type="submit" 
                                 disabled={isLoading} 
@@ -136,12 +150,13 @@ function ResetPassword() {
                     )}
 
                     <div className="mt-8 text-center pt-6 border-t border-slate-100">
-                        <Link 
-                            to="/login" 
-                            className="text-slate-500 dark:text-slate-400 text-sm font-bold transition-colors hover-theme-text"
+                        <button 
+                            type="button"
+                            onClick={() => triggerLoginPurgeAndRedirect('/login')} 
+                            className="text-slate-500 dark:text-slate-400 text-sm font-bold transition-colors hover-theme-text cursor-pointer"
                         >
                             Retourner à la connexion
-                        </Link>
+                        </button>
                     </div>
                 </div>
             </div>

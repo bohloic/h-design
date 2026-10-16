@@ -5,6 +5,7 @@ import { Menu, LogOut, Store } from 'lucide-react';
 import { NotificationDropdown } from '../components/elements/NotificationDropdown.tsx';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../utils/context/ThemeContext.tsx';
+import { triggerLoginPurgeAndRedirect } from '../utils/sessionManager';
 
 export const AppLayout = ({ children, title }: { children?: React.ReactNode; title: string }) => {
   const navigate = useNavigate();
@@ -39,10 +40,7 @@ export const AppLayout = ({ children, title }: { children?: React.ReactNode; tit
   }, [themeMode]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('data');
-    navigate('/login');
-    window.location.href = '/login';
+    triggerLoginPurgeAndRedirect('/login');
   };
 
   return (

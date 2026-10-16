@@ -28,6 +28,8 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return () => clearTimeout(loadTimer);
   }, [location.pathname]);
 
+  const isCustomizer = location.pathname.startsWith('/personnaliser') || location.pathname.startsWith('/personnalisation');
+
   return (
     <>
       {/* Barre de progression en haut de l'écran */}
@@ -48,11 +50,17 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
       {/* Contenu de la page avec animation d'entrée */}
       <div
+        className={isCustomizer ? "flex-1 flex flex-col min-h-0 h-full overflow-hidden" : undefined}
         style={{
           opacity: isVisible ? 1 : 0,
           transform: isVisible ? 'translateY(0)' : 'translateY(12px)',
           transition: 'opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-          minHeight: '100%',
+          minHeight: isCustomizer ? '0' : '100%',
+          height: isCustomizer ? '100%' : undefined,
+          display: isCustomizer ? 'flex' : undefined,
+          flexDirection: isCustomizer ? 'column' : undefined,
+          flex: isCustomizer ? 1 : undefined,
+          overflow: isCustomizer ? 'hidden' : undefined,
         }}
       >
         {children}

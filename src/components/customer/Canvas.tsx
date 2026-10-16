@@ -333,12 +333,11 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
   } as React.CSSProperties);
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 bg-slate-100 dark:bg-slate-900/40 canvas-container relative h-full transition-colors">
-      
+    <div className="w-full h-full flex flex-col items-center justify-center canvas-container relative transition-colors">
       <div 
         ref={containerRef}
         id="actual-canvas-area"
-        className="relative shadow-2xl rounded-2xl bg-white dark:bg-slate-800 w-full max-w-[350px] md:max-w-[500px] aspect-square transition-colors z-0 overflow-hidden"
+        className="relative bg-white dark:bg-slate-800 w-full h-full transition-colors z-0 overflow-hidden"
         onClick={() => {
             onSelectElement(null);
             setEditingId(null); 

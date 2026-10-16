@@ -10,6 +10,14 @@ import loginBg from '../src/assets/image1.png';
 
 import { useAuth } from '../src/utils/context/AuthContext';
 import FormAlert from '../src/components/elements/FormAlert';
+import ModernCaptcha from '../src/components/security/ModernCaptcha';
+import { 
+    purgeAllSessionData, 
+    triggerLoginPurgeAndRedirect, 
+    sanitizeStaleAuthBeforeSubmit, 
+    submitPublicAuthForm,
+    logoutAndPurgeBrowserData
+} from '../src/utils/sessionManager';
 import '../src/styles/Auth.css';
 
 interface MonTokenCustom {
@@ -46,8 +54,17 @@ function Auth() {
     });
     const [acceptTerms, setAcceptTerms] = useState(false);
 
+    // 🛡️ Protection Anti-Robot Turnstile / Captcha
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const [captchaError, setCaptchaError] = useState<string>('');
+
     const [status, setStatus] = useState({ type: '', message: '' });
     const API_BASE_URL = "/api";
+
+    // 🛡️ Assainissement préventif à l'ouverture de /login : purge tout jeton corrompu ou résiduel
+    useEffect(() => {
+        sanitizeStaleAuthBeforeSubmit();
+    }, []);
 
     // --- GESTION DU COMPTE À REBOURS ---
     useEffect(() => {
@@ -95,13 +112,19 @@ function Auth() {
     };
 
     const toggleMode = () => {
-        setIsLoginMode(!isLoginMode);
+        const nextIsLogin = !isLoginMode;
+        if (nextIsLogin) {
+            purgeAllSessionData();
+        }
+        setIsLoginMode(nextIsLogin);
         setStatus({ type: '', message: '' });
         setFormData(prev => ({ ...prev, nom: '', prenom: '', password: '', confirmPassword: '' }));
         setShowVerification(false);
         setIsForgotMode(false);
         setShowPassword(false);
         setShowConfirmPassword(false);
+        setCaptchaToken(null);
+        setCaptchaError('');
     };
 
 
@@ -111,22 +134,21 @@ function Auth() {
         e.preventDefault();
         if (!formData.email) return setStatus({ type: 'error', message: "Veuillez entrer votre adresse email." });
 
+        if (!captchaToken) {
+            setCaptchaError("Veuillez valider la vérification de sécurité ci-dessous.");
+            return;
+        }
+        setCaptchaError('');
+
         setIsLoading(true);
         setStatus({ type: '', message: '' });
 
         try {
-            const response = await authFetch(`${API_BASE_URL}/forgot-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: formData.email })
-            });
-            const data = await response.json();
+            const data = await submitPublicAuthForm(`${API_BASE_URL}/forgot-password`, { email: formData.email });
 
-            if (response.ok && data.success) {
-                setStatus({ type: 'success', message: "Lien envoyé ! Vérifiez votre boîte mail." });
+            if (data.success || data.message) {
+                setStatus({ type: 'success', message: data.message || "Lien envoyé ! Vérifiez votre boîte mail." });
                 setTimeout(() => setIsForgotMode(false), 3000);
-            } else {
-                throw new Error(data.message || "Erreur lors de l'envoi.");
             }
         } catch (error: any) {
             setStatus({ type: 'error', message: error.message });
@@ -142,21 +164,11 @@ function Auth() {
         setStatus({ type: '', message: '' });
 
         try {
-            const response = await authFetch(`${API_BASE_URL}/resend-verification`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: registeredEmail })
-            });
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                setStatus({ type: 'success', message: "Un nouveau code a été envoyé !" });
-                setResendCooldown(60);
-                setVerificationCode(['', '', '', '', '', '']);
-                inputRefs.current[0]?.focus();
-            } else {
-                throw new Error(data.message || "Erreur lors du renvoi.");
-            }
+            const data = await submitPublicAuthForm(`${API_BASE_URL}/resend-verification`, { email: registeredEmail });
+            setStatus({ type: 'success', message: data.message || "Un nouveau code a été envoyé !" });
+            setResendCooldown(60);
+            setVerificationCode(['', '', '', '', '', '']);
+            inputRefs.current[0]?.focus();
         } catch (error: any) {
             setStatus({ type: 'error', message: error.message });
         } finally {
@@ -174,18 +186,11 @@ function Auth() {
         setStatus({ type: '', message: '' });
 
         try {
-            // 🛡️ SÉCURITÉ : Le bypass 000000 a été supprimé pour la production.
-            // Toutes les vérifications passent désormais par le backend avec un vrai code.
-            const response = await authFetch(`${API_BASE_URL}/verify-email`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: registeredEmail, code: fullCode })
-            });
-            const data = await response.json();
+            // 🛡️ SÉCURITÉ : Appel propre sans résidus d'Authorization
+            const data = await submitPublicAuthForm(`${API_BASE_URL}/verify-email`, { email: registeredEmail, code: fullCode });
 
-            if (response.ok && data.success) {
-                authLogin(data.token, data.user);
-                setStatus({ type: 'success', message: "Email vérifié ! Bienvenue." });
+            authLogin(data.token, data.user);
+            setStatus({ type: 'success', message: data.message || "Email vérifié ! Bienvenue." });
                 
                 // 🪄 REDIRECTION INTELLIGENTE (Supporte ?redirect=/checkout et state)
                 const searchParams = new URLSearchParams(location.search);
@@ -197,9 +202,6 @@ function Auth() {
                     : ((target.startsWith('/') && !target.startsWith('//')) ? target : '/dashboard');
 
                 setTimeout(() => navigate(destination), 1000);
-            } else {
-                throw new Error(data.message || "Code invalide.");
-            }
         } catch (error: any) {
             setStatus({ type: 'error', message: error.message });
         } finally {
@@ -240,6 +242,12 @@ function Auth() {
             }
         }
 
+        if (!captchaToken) {
+            setCaptchaError("Veuillez valider la vérification de sécurité ci-dessous.");
+            return;
+        }
+        setCaptchaError('');
+
         setIsLoading(true);
         const url = isLoginMode ? `${API_BASE_URL}/login` : `${API_BASE_URL}/register`;
         const bodyData = isLoginMode
@@ -253,14 +261,8 @@ function Auth() {
               };
 
         try {
-            const response = await authFetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyData)
-            });
-            const data = await response.json();
-
-            if (!response.ok) throw new Error(data.message || "Une erreur est survenue");
+            // 🛡️ OWASP: Soumission sécurisée via submitPublicAuthForm sans en-tête Authorization résiduel
+            const data = await submitPublicAuthForm(url, bodyData);
 
             if (isLoginMode) {
                 if (data.requireVerification) {
@@ -393,8 +395,9 @@ function Auth() {
                                 <div>
                                     <p>Vous êtes déjà connecté à un compte.</p>
                                     <button 
-                                        onClick={() => { localStorage.clear(); window.location.reload(); }}
-                                        className="text-[11px] underline uppercase mt-1 hover:text-blue-900"
+                                        type="button"
+                                        onClick={() => triggerLoginPurgeAndRedirect('/login')}
+                                        className="text-[11px] underline uppercase mt-1 hover:text-blue-900 cursor-pointer"
                                     >
                                         Se déconnecter pour changer de compte
                                     </button>
@@ -425,6 +428,18 @@ function Auth() {
                                             />
                                         </div>
                                     </div>
+
+                                    {/* 🛡️ Vérification Anti-Robot Turnstile */}
+                                    <ModernCaptcha
+                                        id="auth-forgot-captcha"
+                                        verified={!!captchaToken}
+                                        onVerify={(token) => {
+                                            setCaptchaToken(token);
+                                            if (token) setCaptchaError('');
+                                        }}
+                                        errorMessage={captchaError}
+                                        className="my-1"
+                                    />
 
                                     <button 
                                         type="submit"
@@ -531,6 +546,18 @@ function Auth() {
                                     )}
 
 
+
+                                    {/* 🛡️ Vérification Anti-Robot Turnstile */}
+                                    <ModernCaptcha
+                                        id="auth-main-captcha"
+                                        verified={!!captchaToken}
+                                        onVerify={(token) => {
+                                            setCaptchaToken(token);
+                                            if (token) setCaptchaError('');
+                                        }}
+                                        errorMessage={captchaError}
+                                        className="pt-1 pb-1"
+                                    />
 
                                     <div className="pt-2">
                                         <button type="submit" disabled={isLoading} className="w-full bg-[#0b2e35] text-white py-3.5 rounded-xl font-bold text-[15px] shadow-sm hover:bg-opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0b2e35]">

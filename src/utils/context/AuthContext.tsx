@@ -3,7 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 import { authFetch } from '../apiClient';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
-import { usePaymentStore } from '../../store/usePaymentStore';
+import { purgeAllSessionData, logoutAndPurgeBrowserData } from '../sessionManager';
 
 interface UserData {
   id?: string;
@@ -35,6 +35,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   const refreshUser = async () => {
+    const storedToken = localStorage.getItem('token');
+    
+    // 🛡️ Si aucun jeton n'est stocké, l'utilisateur est un simple visiteur non connecté
+    // Inutile d'appeler /api/auth/me et d'inonder la console d'erreurs 401 !
+    if (!storedToken) {
+      setIsAuthenticated(false);
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    // 🛡️ Si le jeton stocké est déjà expiré ou invalide, purge immédiate sans requête inutile
+    try {
+      const decoded: any = jwtDecode(storedToken);
+      if (decoded?.exp && decoded.exp * 1000 < Date.now()) {
+        purgeAllSessionData();
+        setIsAuthenticated(false);
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+    } catch {
+      purgeAllSessionData();
+      setIsAuthenticated(false);
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       // 🛡️ OWASP: On vérifie l'identité directement via le cookie HttpOnly sur le backend
       const response = await authFetch('/api/auth/me');
@@ -49,26 +78,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('role', safeUser.role);
         }
       } else {
-        // Fallback résilient avec les données locales si le cookie n'est pas envoyé en cross-origin
-        const storedToken = localStorage.getItem('token');
-        const storedData = localStorage.getItem('data');
-        if (storedToken && storedData) {
-          try {
-            const parsed = JSON.parse(storedData);
-            setUser(parsed);
-            setIsAuthenticated(true);
-          } catch {
-            setIsAuthenticated(false);
-            setUser(null);
-          }
-        } else {
-          setIsAuthenticated(false);
-          setUser(null);
-        }
+        // Le serveur a rejeté la session (401 Unauthorized ou token expiré)
+        // On purge les données invalides sans laisser de session fantôme !
+        localStorage.removeItem('token');
+        localStorage.removeItem('data');
+        localStorage.removeItem('role');
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
-      console.warn("Vérification session:", error);
-      const storedToken = localStorage.getItem('token');
+      // Erreur réseau (offline)
       const storedData = localStorage.getItem('data');
       if (storedToken && storedData) {
         try {
@@ -129,38 +148,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    // 🔐 1. Révoquer la session côté serveur (Suppression du Cookie HttpOnly)
-    try {
-      await authFetch('/api/logout', { method: 'POST' });
-    } catch (err) {
-      console.warn("Erreur déconnexion backend:", err);
-    }
-
-    // 🔐 2. Nettoyage complet du localStorage & sessionStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('data');
-    localStorage.removeItem('role');
-    localStorage.removeItem('cart');
-    localStorage.removeItem('hdesigner_customizer_draft');
-    sessionStorage.clear();
-
-    // 🧹 3. Réinitialisation de tous les stores Zustand
-    useNotificationStore.getState().reset();
-    useWishlistStore.getState().reset();
-    usePaymentStore.getState().reset();
-
-    // 🛒 4. Événement pour vider le panier dans App.tsx
-    window.dispatchEvent(new Event('userLoggedOut'));
-
-    // 📡 5. Synchronise la déconnexion sur TOUS les onglets/fenêtres ouverts
-    localStorage.setItem('__logout_event__', String(Date.now()));
-    localStorage.removeItem('__logout_event__');
-
     setUser(null);
     setIsAuthenticated(false);
     
-    // 🔄 6. Rechargement complet
-    window.location.href = '/login';
+    // 🔐 Révocation serveur + purge totale client (cookies, storage) + redirection /login
+    await logoutAndPurgeBrowserData({ keepCart: false, keepTheme: true });
   };
 
   const updateUser = (newData: Partial<UserData>) => {

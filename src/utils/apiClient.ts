@@ -5,6 +5,10 @@ const DEFAULT_BACKEND_URL = import.meta.env.DEV
   ? 'http://localhost:205' 
   : 'https://h-design-back-off.vercel.app';
 
+import { purgeAllSessionData } from './sessionManager';
+
+let isHandling401 = false;
+
 export const authFetch = async (endpoint: string, options: RequestInit = {}) => {
   // 1. CONSTRUIRE L'URL INTELLIGENTE
   let url = endpoint;
@@ -28,8 +32,17 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
     headers['Content-Type'] = 'application/json';
   }
 
-  // Support header de secours si présent
-  if (token) {
+  // 🛡️ OWASP: Ne JAMAIS injecter d'en-tête Authorization sur les routes d'authentification publiques
+  const isPublicAuthRoute = 
+    url.includes('/login') ||
+    url.includes('/register') ||
+    url.includes('/forgot-password') ||
+    url.includes('/reset-password') ||
+    url.includes('/resend-verification') ||
+    url.includes('/verify-email');
+
+  // Support header de secours si présent ET uniquement sur les routes privées
+  if (token && token !== 'undefined' && token !== 'null' && !isPublicAuthRoute) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
@@ -52,11 +65,14 @@ export const authFetch = async (endpoint: string, options: RequestInit = {}) => 
     }
 
     if (response.status === 401 && !url.includes('/api/auth/me') && window.location.pathname !== '/login') {
-      console.warn("Session expirée. Déconnexion...");
-      localStorage.removeItem('token');
-      localStorage.removeItem('data');
-      localStorage.removeItem('role');
-      window.location.href = '/login';
+      if (!isHandling401) {
+        isHandling401 = true;
+        console.warn("Session expirée. Déconnexion automatique et purge...");
+        purgeAllSessionData();
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 60);
+      }
       return null;
     }
 

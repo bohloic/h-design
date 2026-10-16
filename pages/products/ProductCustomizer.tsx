@@ -60,6 +60,18 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   // Clavier virtuel mobile
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
+  // 🔒 Verrouillage strict du scroll de page en mode personnalisation
+  useEffect(() => {
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+    };
+  }, []);
+
   // Écouteur pour la touche Échap pour fermer les tiroirs
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -476,7 +488,7 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
   if (!selectedProduct) return <WorkshopSkeleton />;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-64px)] lg:h-[calc(100vh-64px)] bg-slate-50 overflow-hidden relative transition-colors">
+    <div className="flex flex-col flex-1 h-full w-full min-h-0 bg-slate-50 overflow-hidden relative transition-colors">
       
       {/* ⚠️ BANDEAU MODE ÉDITION DE COMMANDE CLIENT */}
       {isEditMode && (
@@ -593,8 +605,16 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
         </aside>
 
         {/* CANVAS DU PRODUIT */}
-        <main className="flex-1 flex flex-col relative bg-slate-100 items-center justify-center p-3 lg:p-6 transition-colors min-h-0 overflow-hidden">
-            <div className="relative shadow-2xl rounded-2xl overflow-hidden bg-white w-full max-w-[500px] transition-all duration-500 ease-in-out aspect-square max-h-full border border-slate-200">
+        <main className="flex-1 flex flex-col relative bg-slate-100 items-center justify-center p-2 sm:p-4 lg:p-6 transition-colors min-h-0 overflow-hidden">
+            <div 
+              className="relative shadow-xl rounded-2xl overflow-hidden bg-white transition-all duration-300 ease-in-out border border-slate-200"
+              style={{
+                width: '100%',
+                maxWidth: 'min(500px, 100%)',
+                maxHeight: '100%',
+                aspectRatio: '1 / 1'
+              }}
+            >
                 <Canvas 
                   ref={canvasRef} 
                   product={selectedProduct} 
