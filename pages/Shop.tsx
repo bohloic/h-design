@@ -39,7 +39,7 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
-  const [availableColors, setAvailableColors] = useState<typeof TEXTILE_COLORS>([]);
+  const [availableColors, setAvailableColors] = useState<{ name: string; hex: string; border?: boolean }[]>([]);
   const [availableCategories, setAvailableCategories] = useState<string[]>([]);
   const [collections, setCollections] = useState<string[]>(['Toutes']);
 
@@ -159,7 +159,15 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             try { variants = JSON.parse(p.variants); } catch (e) { variants = []; }
           }
 
-          const mainColorName = p.color || (variants.length > 0 ? variants[0].colorName : null);
+          // 🎨 Normalisation des variantes pour supporter colorName/color_name et colorCode/color_code
+          const normalizedVariants = variants.map((v: any) => ({
+            ...v,
+            colorName: (v.colorName || v.color_name || v.color || '').trim(),
+            colorCode: (v.colorCode || v.color_code || v.hex || '').trim(),
+            hex: (v.hex || v.colorCode || v.color_code || '').trim()
+          }));
+
+          const mainColorName = p.color || (normalizedVariants.length > 0 ? normalizedVariants[0].colorName : null);
 
           return {
             ...p,
@@ -167,8 +175,8 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             gender: p.gender ? p.gender.toLowerCase() : 'unisexe',
             category: p.category_name || 'Autre',
             collection: p.collection_name || 'Standard',
-            hasOptions: variants.length > 0 || sizes.length > 0,
-            variants: variants,
+            hasOptions: normalizedVariants.length > 0 || sizes.length > 0,
+            variants: normalizedVariants,
             sizes: sizes,
             mainColor: mainColorName
           };
@@ -182,18 +190,96 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
         const uniqueSizes = Array.from(new Set(formattedProducts.flatMap((p: any) => p.sizes || []))).sort();
         setAvailableSizes(['Toutes', ...uniqueSizes as string[]]);
 
-        const usedColorNames = new Set<string>();
+        // 🎨 PALETTE DE RÉFÉRENCE POUR CODES HEXADÉCIMAUX STANDARD
+        const COLOR_PRESETS: Record<string, { name: string; hex: string; border?: boolean }> = {
+          'blanc': { name: 'Blanc', hex: '#FFFFFF', border: true },
+          'white': { name: 'Blanc', hex: '#FFFFFF', border: true },
+          'noir': { name: 'Noir', hex: '#000000' },
+          'black': { name: 'Noir', hex: '#000000' },
+          'gris': { name: 'Gris Chiné', hex: '#9CA3AF' },
+          'gris chiné': { name: 'Gris Chiné', hex: '#9CA3AF' },
+          'gris anthracite': { name: 'Gris Anthracite', hex: '#374151' },
+          'bleu': { name: 'Bleu', hex: '#2563EB' },
+          'bleu marine': { name: 'Bleu Marine', hex: '#172554' },
+          'bleu roi': { name: 'Bleu Roi', hex: '#1D4ED8' },
+          'bleu ciel': { name: 'Bleu Ciel', hex: '#93C5FD' },
+          'rouge': { name: 'Rouge', hex: '#DC2626' },
+          'red': { name: 'Rouge', hex: '#DC2626' },
+          'bordeaux': { name: 'Bordeaux', hex: '#7F1D1D' },
+          'vert': { name: 'Vert', hex: '#16A34A' },
+          'green': { name: 'Vert', hex: '#16A34A' },
+          'vert forêt': { name: 'Vert Forêt', hex: '#14532D' },
+          'vert pomme': { name: 'Vert Pomme', hex: '#22C55E' },
+          'jaune': { name: 'Jaune', hex: '#EAB308' },
+          'yellow': { name: 'Jaune', hex: '#EAB308' },
+          'orange': { name: 'Orange', hex: '#EA580C' },
+          'rose': { name: 'Rose', hex: '#EC4899' },
+          'pink': { name: 'Rose', hex: '#EC4899' },
+          'violet': { name: 'Violet', hex: '#7C3AED' },
+          'purple': { name: 'Violet', hex: '#7C3AED' },
+          'marron': { name: 'Marron', hex: '#451a03' },
+          'brown': { name: 'Marron', hex: '#451a03' },
+          'beige': { name: 'Beige', hex: '#F5F5DC', border: true },
+          'kaki': { name: 'Kaki', hex: '#556B2F' }
+        };
+
+        const capitalize = (str: string) => {
+          if (!str) return '';
+          return str.trim().split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(' ');
+        };
+
+        // 🔍 EXTRACTION DYNAMIQUE DE TOUTES LES COULEURS RÉELLES DES PRODUITS ET VARIANTES
+        const extractedColorsMap = new Map<string, { name: string; hex: string; border?: boolean }>();
+
         formattedProducts.forEach((p: any) => {
-          if (p.mainColor) usedColorNames.add(p.mainColor);
-          if (p.variants) {
+          // A. Couleur principale du produit
+          const mainRaw = (p.color || p.mainColor || '').toString().trim();
+          if (mainRaw) {
+            mainRaw.split(',').forEach((cStr: string) => {
+              const clean = cStr.trim();
+              if (!clean) return;
+              const key = clean.toLowerCase();
+              const preset = COLOR_PRESETS[key];
+              if (!extractedColorsMap.has(key)) {
+                extractedColorsMap.set(key, {
+                  name: preset ? preset.name : capitalize(clean),
+                  hex: preset ? preset.hex : '#334155',
+                  border: preset?.border || key.includes('blanc') || key.includes('white')
+                });
+              }
+            });
+          }
+
+          // B. Couleurs des variantes
+          if (Array.isArray(p.variants)) {
             p.variants.forEach((v: any) => {
-              if (v.colorName) usedColorNames.add(v.colorName);
+              const rawName = (v.colorName || v.color_name || v.color || '').toString().trim();
+              if (!rawName) return;
+              const key = rawName.toLowerCase();
+              const preset = COLOR_PRESETS[key];
+              const rawHex = (v.colorCode || v.color_code || v.hex || '').trim();
+
+              const finalHex = (rawHex && rawHex.startsWith('#') && rawHex.length >= 4)
+                ? rawHex
+                : (preset ? preset.hex : '#334155');
+
+              const isWhite = key.includes('blanc') || key.includes('white') || finalHex.toUpperCase() === '#FFFFFF';
+
+              if (!extractedColorsMap.has(key)) {
+                extractedColorsMap.set(key, {
+                  name: preset ? preset.name : capitalize(rawName),
+                  hex: finalHex,
+                  border: preset?.border || isWhite
+                });
+              } else if (rawHex && rawHex !== '#000000' && extractedColorsMap.get(key)!.hex === '#334155') {
+                extractedColorsMap.get(key)!.hex = rawHex;
+              }
             });
           }
         });
 
-        const activeStandardColors = TEXTILE_COLORS.filter(col => usedColorNames.has(col.name));
-        setAvailableColors([{ name: 'Toutes', hex: '', border: false }, ...activeStandardColors]);
+        const sortedColors = Array.from(extractedColorsMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+        setAvailableColors([{ name: 'Toutes', hex: '', border: false }, ...sortedColors]);
 
       } catch (error) {
         console.error("❌ Erreur Chargement Boutique:", error);
@@ -214,9 +300,36 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
         const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchSize = activeSize === 'Toutes' || (p.sizes && p.sizes.includes(activeSize));
 
-        const matchColor = activeColor === 'Toutes' ||
-          p.mainColor === activeColor ||
-          (p.variants && p.variants.some((v: any) => v.colorName === activeColor));
+        // 🎨 Filtrage multi-couleurs flexible et insensible à la casse
+        const matchColor = activeColor === 'Toutes' || (() => {
+          const target = activeColor.toLowerCase().trim();
+
+          // 1. Vérification dans la couleur principale
+          if (p.color && typeof p.color === 'string') {
+            const list = p.color.split(',').map((c: string) => c.trim().toLowerCase());
+            if (list.includes(target)) return true;
+          }
+          if (p.mainColor && typeof p.mainColor === 'string' && p.mainColor.toLowerCase().trim() === target) {
+            return true;
+          }
+          if (Array.isArray(p.colors)) {
+            const hasC = p.colors.some((c: any) => {
+              const name = typeof c === 'string' ? c : (c?.name || '');
+              return name.trim().toLowerCase() === target;
+            });
+            if (hasC) return true;
+          }
+
+          // 2. Vérification dans les variantes
+          if (Array.isArray(p.variants)) {
+            return p.variants.some((v: any) => {
+              const vColor = (v.colorName || v.color_name || v.color || '').toLowerCase().trim();
+              return vColor === target;
+            });
+          }
+
+          return false;
+        })();
 
         return matchCollection && matchGender && matchCategory && matchSearch && matchSize && matchColor;
       })
@@ -380,20 +493,32 @@ const Shop: React.FC<ShopProps> = ({ onAddToCart }) => {
             <div className="mb-8">
               <h3 className="font-bold text-xs uppercase tracking-wider text-[#4B5563] dark:text-[#D1D5DB] mb-4 flex items-center gap-2"><Palette size={14} /> Couleur</h3>
               <div className="flex flex-wrap gap-3">
-                {availableColors.map((col, idx) => (
-                  <button
-                    key={idx} onClick={() => setActiveColor(col.name)} title={col.name}
-                    className={`w-9 h-9 rounded-full border shadow-sm transition-transform flex items-center justify-center cursor-pointer ${activeColor === col.name ? 'ring-2 ring-offset-2 scale-110 border-transparent' : 'hover:scale-110'
+                {availableColors.map((col, idx) => {
+                  const isSelected = activeColor.toLowerCase() === col.name.toLowerCase();
+                  const isLight = col.border || (col.hex && col.hex.toUpperCase() === '#FFFFFF') || ['blanc', 'jaune', 'beige', 'ciel'].some(c => col.name.toLowerCase().includes(c));
+                  return (
+                    <button
+                      key={idx} 
+                      onClick={() => setActiveColor(col.name)} 
+                      title={col.name}
+                      aria-label={`Filtrer par couleur ${col.name}`}
+                      className={`w-9 h-9 rounded-full border shadow-sm transition-transform flex items-center justify-center cursor-pointer ${
+                        col.border ? 'border-slate-300 dark:border-slate-600' : 'border-transparent'
+                      } ${
+                        isSelected ? 'ring-2 ring-offset-2 scale-110' : 'hover:scale-110'
                       }`}
-                    style={{
-                      backgroundColor: col.name === 'Toutes' ? 'transparent' : col.hex,
-                      ...(activeColor === col.name ? { '--tw-ring-color': 'var(--theme-primary)' } as React.CSSProperties : {})
-                    }}
-                  >
-                    {col.name === 'Toutes' && <span className="text-[10px] font-bold text-[#4B5563] dark:text-[#D1D5DB]">All</span>}
-                    {activeColor === col.name && col.name !== 'Toutes' && <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${col.name === 'Blanc' || col.name === 'Jaune' ? 'bg-slate-900' : 'bg-white'}`} />}
-                  </button>
-                ))}
+                      style={{
+                        backgroundColor: col.name === 'Toutes' ? 'transparent' : col.hex,
+                        ...(isSelected ? { '--tw-ring-color': 'var(--theme-primary, #0F4C3A)' } as React.CSSProperties : {})
+                      }}
+                    >
+                      {col.name === 'Toutes' && <span className="text-[10px] font-bold text-[#4B5563] dark:text-[#D1D5DB]">All</span>}
+                      {isSelected && col.name !== 'Toutes' && (
+                        <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${isLight ? 'bg-slate-900' : 'bg-white'}`} />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
