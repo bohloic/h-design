@@ -474,8 +474,34 @@ function Auth() {
                                     </button>
                                 </form>
                             ) : showVerification ? (
-                                <div className="space-y-8 animate-in zoom-in-95 duration-500">
-                                    <form onSubmit={handleVerifySubmit} className="space-y-8">
+                                <div className="space-y-6 animate-in zoom-in-95 duration-500">
+                                    {/* 📬 Carte d'information affichant l'email de destination */}
+                                    <div className="p-4 bg-emerald-50/80 border border-emerald-100 rounded-2xl flex items-center justify-between gap-3 text-emerald-950 shadow-sm">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0 text-[#0F4C3A]">
+                                                <Mail size={20} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[11px] uppercase tracking-wider font-bold text-emerald-700">Code envoyé à</p>
+                                                <p className="text-[14px] font-extrabold text-slate-800 truncate" title={registeredEmail || formData.email || sessionStorage.getItem('hdesigner_registered_email') || ''}>
+                                                    {registeredEmail || formData.email || sessionStorage.getItem('hdesigner_registered_email') || 'Votre adresse e-mail'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowVerification(false);
+                                                setStatus({ type: '', message: '' });
+                                            }}
+                                            className="text-[12px] font-bold text-[#0b2e35] hover:underline shrink-0 px-2 py-1 rounded hover:bg-emerald-100/50 transition-colors"
+                                            title="Changer d'adresse email"
+                                        >
+                                            Modifier
+                                        </button>
+                                    </div>
+
+                                    <form onSubmit={handleVerifySubmit} className="space-y-6">
                                         <div className="relative flex justify-between gap-2 sm:gap-3 cursor-text" onClick={handleContainerClick} aria-label="Code de vérification à 6 chiffres">
                                             <input ref={hiddenInputRef} type="tel" pattern="\d*" className="absolute opacity-0 pointer-events-none inset-0 w-full" value={verificationCode.join('')} onChange={handleOtpChange} autoFocus aria-label="Entrez votre code de vérification" />
                                             {verificationCode.map((digit, index) => (
