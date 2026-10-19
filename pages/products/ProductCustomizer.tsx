@@ -123,25 +123,27 @@ const ProductCustomizer = ({ onAddToCart }: { onAddToCart: (item: any) => void }
         }
 
         // 🪄 CHARGEMENT DESIGN EXISTANT (MODE ÉDITION)
-        if (state?.isEdit && state.existingDesign) {
+        if (state?.isEdit) {
             setIsEditMode(true);
             if (state.orderId) setEditOrderId(state.orderId);
             if (state.orderItemId) setEditOrderItemId(state.orderItemId);
             if (state.rejectionReason) setEditRejectionReason(state.rejectionReason);
 
-            let rawDesign = state.existingDesign;
-            if (typeof rawDesign === 'string') {
-                try { rawDesign = JSON.parse(rawDesign); } catch (e) {
-                  console.error("Erreur parsing design", e);
+            if (state.existingDesign) {
+                let rawDesign = state.existingDesign;
+                if (typeof rawDesign === 'string') {
+                    try { rawDesign = JSON.parse(rawDesign); } catch (e) {
+                      console.error("Erreur parsing design", e);
+                    }
                 }
-            }
-            const elems = rawDesign?.elements || rawDesign?.design || (Array.isArray(rawDesign) ? rawDesign : []);
-            if (Array.isArray(elems)) setDesignElements(elems);
-            if (rawDesign?.options?.size) {
-                setSelectedSize(rawDesign.options.size);
-            }
-            if (rawDesign?.hideBaseDesign !== undefined) {
-                setHideBaseDesign(rawDesign.hideBaseDesign);
+                const elems = rawDesign?.elements || rawDesign?.design || (Array.isArray(rawDesign) ? rawDesign : []);
+                if (Array.isArray(elems)) setDesignElements(elems);
+                if (rawDesign?.options?.size) {
+                    setSelectedSize(rawDesign.options.size);
+                }
+                if (rawDesign?.hideBaseDesign !== undefined) {
+                    setHideBaseDesign(rawDesign.hideBaseDesign);
+                }
             }
 
             // 🎯 Accès complet immédiat aux outils de personnalisation (Texte, Images, Couleurs, Calques, IA)

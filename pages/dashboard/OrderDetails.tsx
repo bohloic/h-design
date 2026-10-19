@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Package, Truck, CheckCircle2, MapPin, Download, Phone, ShoppingBag, Clock, XCircle, Loader2, Palette, AlertTriangle, CreditCard } from 'lucide-react';
 import { useToast } from '@/utils/context/ToastContext';
-import { formatCurrency } from '@/constants';
+import { formatCurrency, formatProductName } from '@/constants';
 import { authFetch, safeParseJson } from '@/utils/apiClient';
 import { useAutoRefresh } from '@/utils/hooks/useAutoRefresh';
 import { BASE_IMG_URL } from '@/components/images/VoirImage';
@@ -322,7 +322,7 @@ export const OrderDetails: React.FC = () => {
 
                                     <div className="flex justify-between items-start">
                                         <h4 className="font-bold text-slate-800 line-clamp-1">
-                                            {item.customization ? (item.name || 'Création personnalisée') : (item.product_name || item.name)}
+                                            {item.customization ? (formatProductName(item.name) || 'Création personnalisée') : formatProductName(item.product_name || item.name)}
                                         </h4>
                                         <p className="text-sm font-black text-theme-primary">{formatCurrency(item.unit_price || item.price)}</p>
                                     </div>
@@ -336,26 +336,38 @@ export const OrderDetails: React.FC = () => {
                                         )}
                                     </div>
                                     
-                                    {/* STATUS DU DESIGN PAR ARTICLE (Uniquement si personnalisé) */}
-                                    {item.customization && (
+                                    {/* STATUS DU DESIGN PAR ARTICLE (Uniquement pour les articles personnalisés) */}
+                                    {Boolean(item.customization) && (
                                         <div className="mt-3 flex flex-wrap gap-2 items-center">
                                             {['Validé', 'approved'].includes(item.design_status) ? (
                                                 <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold border border-emerald-100">
                                                     <CheckCircle2 size={12} /> Design Validé
                                                 </span>
-                                            ) : ['Refusé', 'rejected'].includes(item.design_status) ? (
+                                            ) : (['Refusé', 'rejected'].includes(item.design_status) || Boolean(item.rejection_reason)) ? (
                                                 <>
                                                     <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-bold border border-red-100">
                                                         <AlertTriangle size={12} /> Action Requise
                                                     </span>
                                                     <button 
                                                         onClick={() => {
-                                                            const customization = typeof item.customization === 'string' ? JSON.parse(item.customization) : item.customization;
+                                                            let customization = null;
+                                                            if (item.customization) {
+                                                                if (typeof item.customization === 'string') {
+                                                                    try {
+                                                                        customization = JSON.parse(item.customization);
+                                                                    } catch (e) {
+                                                                        console.error("Erreur parsing customization", e);
+                                                                        customization = null;
+                                                                    }
+                                                                } else {
+                                                                    customization = item.customization;
+                                                                }
+                                                            }
                                                             // 🪄 On récupère la variante et la couleur pour que le customizer s'ouvre sur le même produit
                                                             const variantId = item.variant_id || customization?.options?.variant_info?.id || customization?.variantId;
                                                             const colorName = item.color || customization?.options?.color || item.color;
                                                             const sizeName = item.size || customization?.options?.size || item.size;
-    
+     
                                                             navigate('/personnaliser/mon-design', { 
                                                                 state: { 
                                                                     productId: item.product_id, 
@@ -370,7 +382,7 @@ export const OrderDetails: React.FC = () => {
                                                                 } 
                                                             });
                                                         }}
-                                                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800 transition-colors shadow-sm active:scale-95"
+                                                        className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800 transition-colors shadow-sm active:scale-95 cursor-pointer"
                                                     >
                                                         <Palette size={12} /> Modifier mon design
                                                     </button>
@@ -383,7 +395,7 @@ export const OrderDetails: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {['Refusé', 'rejected'].includes(item.design_status) && item.rejection_reason && (
+                                    {Boolean(item.customization) && ['Refusé', 'rejected'].includes(item.design_status) && item.rejection_reason && (
                                         <div className="mt-2 p-2 bg-red-50 border-l-2 border-red-400 rounded-r-lg text-[10px] text-red-700 italic">
                                             Motif : "{item.rejection_reason}"
                                         </div>

@@ -77,3 +77,21 @@ export const formatCurrency = (amount: number): string => {
   if (isNaN(amount) || amount === null || amount === undefined) return '0 FCFA';
   return `${Math.round(amount).toLocaleString('fr-FR')} FCFA`;
 };
+
+/**
+ * Harmonise la typographie des noms de produits (ex: "t-shirt bleu" -> "T-shirt Bleu")
+ */
+export const formatProductName = (name?: string): string => {
+  if (!name) return '';
+  return name
+    .trim()
+    .split(/\s+/)
+    .map(word => {
+      return word.split('-').map((subWord, idx) => {
+        if (!subWord) return '';
+        if (idx > 0 && subWord.toLowerCase() === 'shirt') return 'shirt';
+        return subWord.charAt(0).toUpperCase() + subWord.slice(1);
+      }).join('-');
+    })
+    .join(' ');
+};

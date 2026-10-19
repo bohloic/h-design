@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Eye, Heart, AlertCircle } from 'lucide-react'; 
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency } from '../../../constants'; 
+import { formatCurrency, formatProductName } from '@/constants'; 
 import { useWishlistStore } from '@/store/useWishlistStore';
 import SafeImage from '../tools/SafeImage';
 
@@ -202,8 +202,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onAddToCart }) => {
         </div>
         
         {/* 🎨 Titres des produits sur 2 lignes harmonieuses sans troncature brute */}
-        <h3 className={`font-bold text-sm sm:text-base mb-2 line-clamp-2 min-h-[2.5rem] leading-tight transition-colors ${isOutOfStock ? 'text-slate-400 line-through' : 'text-[#111827] dark:text-[#F9FAFB]'}`} title={product.name}>
-            {product.name}
+        <h3 className={`font-bold text-sm sm:text-base mb-2 line-clamp-2 min-h-[2.5rem] leading-tight transition-colors ${isOutOfStock ? 'text-slate-400 line-through' : 'text-[#111827] dark:text-[#F9FAFB]'}`} title={formatProductName(product.name)}>
+            {formatProductName(product.name)}
         </h3>
 
         {/* VARIANTES + MAIN COLOR avec Zone Cliquable 44x44px pour Mobile */}

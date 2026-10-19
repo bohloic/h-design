@@ -24,7 +24,7 @@ import {
     Box, Image as ImageIcon
 } from 'lucide-react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { formatCurrency } from '@/constants';
+import { formatCurrency, formatProductName } from '@/constants';
 import { authFetch, safeParseJson } from '@/utils/apiClient';
 import GenderCategorySection from '@/components/product/GenderCategorySection';
 import ProductCarousel from '@/components/product/ProductCarousel';
@@ -717,7 +717,7 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ onAddToCart }) => {
                         <div className="border-b border-slate-100 pb-4">
                             <div className="flex justify-between items-start gap-4">
                                 <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight flex-1">
-                                    {product.name}
+                                    {formatProductName(product.name)}
                                 </h1>
                                 <div className="flex gap-2">
                                     <button
